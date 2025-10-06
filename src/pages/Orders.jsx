@@ -226,9 +226,14 @@ export default function Orders() {
         body: JSON.stringify({ status: nextStatus }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      // Show success confirmation
+      alert(`✅ Order status updated successfully to "${nextStatus}"!`);
+      console.log(`✅ Order ${order.id} status updated to: ${nextStatus}`);
+      
     } catch (e) {
       await load();
-      alert("Could not update status: " + (e.message || "unknown error"));
+      alert("❌ Could not update status: " + (e.message || "unknown error"));
     }
   }
 
