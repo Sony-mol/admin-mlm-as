@@ -35,6 +35,6 @@ RUN ls -la /app/dist/
 # Expose port (Railway will use $PORT)
 EXPOSE 3000
 
-# Start the application
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Start the application  
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-3000}"]
 
