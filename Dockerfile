@@ -20,11 +20,9 @@ FROM node:20-bullseye-slim
 
 WORKDIR /app
 
-# Copy built files
+# Copy built files and server
 COPY --from=builder /app/dist ./dist
-
-# Install serve globally
-RUN npm install -g serve
+COPY server.js ./
 
 # Set environment
 ENV NODE_ENV=production
@@ -33,5 +31,5 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Start the application
-CMD ["sh", "-c", "serve -s dist -p ${PORT:-3000}"]
+CMD ["node", "server.js"]
 
