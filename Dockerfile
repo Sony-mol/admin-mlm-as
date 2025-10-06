@@ -3,10 +3,10 @@ FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json package-lock.json ./
+# Copy package file only (not package-lock.json to avoid optional dependency issues)
+COPY package.json ./
 
-# Install dependencies - use npm install instead of npm ci due to rollup optional dependencies
+# Install dependencies - fresh install will properly handle optional dependencies
 RUN npm install --legacy-peer-deps
 
 # Copy source code
