@@ -4,31 +4,37 @@ FROM node:20 AS builder
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json package-lock.json ./
 
-# Install dependencies with verbose logging
-RUN npm install --verbose
+# Clean install dependencies
+RUN npm ci --legacy-peer-deps
 
-# Copy source files
+# Copy all source files
 COPY . .
 
-# Build the app with verbose output
-RUN npm run build -- --mode production
+# Build the application
+RUN npm run build
+
+# Verify dist folder was created
+RUN ls -la dist/
 
 # Production stage
 FROM node:20-slim
 
 WORKDIR /app
 
-# Install serve globally
-RUN npm install -g serve
+# Install serve
+RUN npm install -g serve@14.2.1
 
-# Copy built files from builder stage
-COPY --from=builder /app/dist ./dist
+# Copy built files from builder
+COPY --from=builder /app/dist /app/dist
 
-# Expose port
+# Verify files were copied
+RUN ls -la /app/dist/
+
+# Expose port (Railway will use $PORT)
 EXPOSE 3000
 
-# Start the app
+# Start the application
 CMD ["serve", "-s", "dist", "-l", "3000"]
 
