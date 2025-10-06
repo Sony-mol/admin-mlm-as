@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/* Theme variables on a wrapper we control */
+.theme {
+  --bg: 248 250 252;     /* gray-50  */
+  --fg: 17 24 39;        /* gray-900 */
+  --card: 255 255 255;   /* white    */
+  --border: 229 231 235; /* gray-200 */
+}
+.theme[data-theme="dark"] {
+  --bg: 3 7 18;          /* gray-950 */
+  --fg: 243 244 246;     /* gray-100 */
+  --card: 17 24 39;      /* gray-900 */
+  --border: 31 41 55;    /* gray-800 */
+}
+/* Accent palette for charts/badges (light/dark aware) */
+.theme {
+  --accent-1: 59 130 246;   /* blue-500  */
+  --accent-2: 245 158 11;   /* amber-500 */
+  --accent-3: 34 197 94;    /* green-500 */
+  --accent-4: 244 114 182;  /* pink-400  */
+}
+.theme[data-theme="dark"] {
+  --accent-1: 96 165 250;   /* blue-400  */
+  --accent-2: 251 191 36;   /* amber-400 */
+  --accent-3: 74 222 128;   /* green-400 */
+  --accent-4: 249 168 212;  /* pink-300  */
+}
+
+
+/* === Tier color utilities (theme-aware) === */
+.theme[data-theme="light"] {
+  /* Darker, higher-contrast tones for light backgrounds */
+  --tier-bronze: 150 83 20;   /* darker bronze */
+  --tier-silver: 96 96 96;    /* darker neutral for “silver” */
+  --tier-gold:   184 134 11;  /* dark goldenrod */
+}
+
+.theme[data-theme="dark"] {
+  --tier-bronze: 174 108 43;
+  --tier-silver: 255 255 255;  /* white on dark */
+  --tier-gold:   218 165 32;
+}
+
+/* Apply to any element that renders a level. Only text/border colors change. */
+[data-tier="bronze"] {
+  color: rgb(var(--tier-bronze)) !important;
+  border-color: rgb(var(--tier-bronze)) !important;
+}
+[data-tier="silver"] {
+  color: rgb(var(--tier-silver)) !important;
+  border-color: rgb(var(--tier-silver)) !important;
+}
+[data-tier="gold"] {
+  color: rgb(var(--tier-gold)) !important;
+  border-color: rgb(var(--tier-gold)) !important;
+}
+
+/* (Optional) micro-contrast boost for silver on light backgrounds */
+.theme[data-theme="light"] [data-tier="silver"] {
+  text-shadow: 0 0 1px rgba(0,0,0,.35);
+}
+
+
+/* index.css */
+.theme {
+  /* …existing vars… */
+  --border-hover: 107 114 128; /* gray-500 — clearly darker than gray-200 */
+}
+.theme[data-theme="dark"] {
+  /* …existing vars… */
+  --border-hover: 75 85 99;    /* gray-600 — clearly lighter than gray-800 */
+}
+
+
+
+/* No other global rules. Don’t style html/body. */

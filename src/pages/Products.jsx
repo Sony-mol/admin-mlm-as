@@ -1,0 +1,852 @@
+import React, { useEffect, useState } from 'react';
+import { API_ENDPOINTS } from '../config/api';
+import { 
+  Package, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Search, 
+  Filter, 
+  Upload, 
+  Eye,
+  EyeOff,
+  Star,
+  TrendingUp,
+  DollarSign,
+  ShoppingCart,
+  Image as ImageIcon,
+  Camera,
+  Crop,
+  RotateCw,
+  Download,
+  Share,
+  MoreVertical,
+  Grid,
+  List,
+  Tag,
+  AlertCircle,
+  CheckCircle,
+  Loader2
+} from 'lucide-react';
+
+// Product Card Component
+const ProductCard = ({ product, onEdit, onDelete, onView }) => (
+  <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 group">
+    <div className="relative">
+      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+        {product.image ? (
+          <img 
+            src={product.image} 
+            alt={product.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+      </div>
+      
+      {/* Product Status Badge */}
+      <div className="absolute top-2 right-2">
+        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+          product.status === 'active' ? 'bg-green-100 text-green-800' :
+          product.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
+          'bg-red-100 text-red-800'
+        }`}>
+          {product.status}
+        </span>
+      </div>
+    </div>
+
+    <div className="space-y-3">
+      <div>
+        <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
+        <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-2xl font-bold text-gray-900">₹{product.price}</div>
+          <div className="text-sm text-gray-500">Stock: {product.stock}</div>
+        </div>
+        <div className="flex items-center space-x-1">
+          <Star className="w-4 h-4 text-yellow-400 fill-current" />
+          <span className="text-sm text-gray-600">{product.rating || '4.5'}</span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => onView(product)}
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onEdit(product)}
+            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(product)}
+            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="flex items-center space-x-1 text-sm text-gray-500">
+          <ShoppingCart className="w-4 h-4" />
+          <span>{product.sales || 0}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Photo Editor Component
+const PhotoEditor = ({ image, onSave, onCancel }) => {
+  const [editedImage, setEditedImage] = useState(image);
+  const [filters, setFilters] = useState({
+    brightness: 100,
+    contrast: 100,
+    saturation: 100,
+    blur: 0,
+    sepia: 0
+  });
+
+  const applyFilters = (img, filterValues) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const imgElement = new Image();
+    
+    imgElement.onload = () => {
+      canvas.width = imgElement.width;
+      canvas.height = imgElement.height;
+      
+      ctx.filter = `
+        brightness(${filterValues.brightness}%) 
+        contrast(${filterValues.contrast}%) 
+        saturate(${filterValues.saturation}%) 
+        blur(${filterValues.blur}px) 
+        sepia(${filterValues.sepia}%)
+      `;
+      
+      ctx.drawImage(imgElement, 0, 0);
+      setEditedImage(canvas.toDataURL());
+    };
+    
+    imgElement.src = img;
+  };
+
+  const handleFilterChange = (filter, value) => {
+    const newFilters = { ...filters, [filter]: value };
+    setFilters(newFilters);
+    applyFilters(image, newFilters);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-900">Photo Editor</h3>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onSave(editedImage)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Save
+            </button>
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Image Preview */}
+          <div className="space-y-4">
+            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+              <img 
+                src={editedImage} 
+                alt="Edited"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="flex items-center space-x-2">
+              <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                <Crop className="w-4 h-4" />
+                <span>Crop</span>
+              </button>
+              <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                <RotateCw className="w-4 h-4" />
+                <span>Rotate</span>
+              </button>
+              <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                <Download className="w-4 h-4" />
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filters Panel */}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Brightness</label>
+              <input
+                type="range"
+                min="0"
+                max="200"
+                value={filters.brightness}
+                onChange={(e) => handleFilterChange('brightness', e.target.value)}
+                className="w-full"
+              />
+              <div className="text-xs text-gray-500">{filters.brightness}%</div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Contrast</label>
+              <input
+                type="range"
+                min="0"
+                max="200"
+                value={filters.contrast}
+                onChange={(e) => handleFilterChange('contrast', e.target.value)}
+                className="w-full"
+              />
+              <div className="text-xs text-gray-500">{filters.contrast}%</div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Saturation</label>
+              <input
+                type="range"
+                min="0"
+                max="200"
+                value={filters.saturation}
+                onChange={(e) => handleFilterChange('saturation', e.target.value)}
+                className="w-full"
+              />
+              <div className="text-xs text-gray-500">{filters.saturation}%</div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Blur</label>
+              <input
+                type="range"
+                min="0"
+                max="10"
+                value={filters.blur}
+                onChange={(e) => handleFilterChange('blur', e.target.value)}
+                className="w-full"
+              />
+              <div className="text-xs text-gray-500">{filters.blur}px</div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sepia</label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={filters.sepia}
+                onChange={(e) => handleFilterChange('sepia', e.target.value)}
+                className="w-full"
+              />
+              <div className="text-xs text-gray-500">{filters.sepia}%</div>
+            </div>
+
+            {/* Preset Filters */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Preset Filters</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { name: 'Original', filters: { brightness: 100, contrast: 100, saturation: 100, blur: 0, sepia: 0 }},
+                  { name: 'Vintage', filters: { brightness: 90, contrast: 110, saturation: 80, blur: 0, sepia: 20 }},
+                  { name: 'Bright', filters: { brightness: 120, contrast: 90, saturation: 110, blur: 0, sepia: 0 }},
+                  { name: 'Dark', filters: { brightness: 80, contrast: 120, saturation: 90, blur: 0, sepia: 0 }}
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={() => {
+                      setFilters(preset.filters);
+                      applyFilters(image, preset.filters);
+                    }}
+                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Product Form Component
+const ProductForm = ({ product, onSave, onCancel }) => {
+  const [formData, setFormData] = useState({
+    name: product?.name || '',
+    description: product?.description || '',
+    price: product?.price || '',
+    stock: product?.stock || '',
+    category: product?.category || '',
+    status: product?.status || 'active',
+    image: product?.image || null
+  });
+
+  const [showPhotoEditor, setShowPhotoEditor] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData({ ...formData, image: event.target.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-900">
+            {product ? 'Edit Product' : 'Add New Product'}
+          </h3>
+          <button
+            onClick={onCancel}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Product Image */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+            <div className="flex items-center space-x-4">
+              <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
+                {formData.image ? (
+                  <img src={formData.image} alt="Product" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Image</span>
+                </label>
+                {formData.image && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPhotoEditor(true)}
+                    className="flex items-center space-x-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50"
+                  >
+                    <Crop className="w-4 h-4" />
+                    <span>Edit Image</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Product Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
+              <input
+                type="number"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
+              <input
+                type="number"
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select Category</option>
+                <option value="electronics">Electronics</option>
+                <option value="clothing">Clothing</option>
+                <option value="accessories">Accessories</option>
+                <option value="home">Home & Garden</option>
+                <option value="beauty">Beauty & Health</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              {product ? 'Update Product' : 'Create Product'}
+            </button>
+          </div>
+        </form>
+
+        {showPhotoEditor && (
+          <PhotoEditor
+            image={formData.image}
+            onSave={(editedImage) => {
+              setFormData({ ...formData, image: editedImage });
+              setShowPhotoEditor(false);
+            }}
+            onCancel={() => setShowPhotoEditor(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default function Products() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [viewMode, setViewMode] = useState('grid');
+  const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+
+  // Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        
+        const authData = localStorage.getItem('auth');
+        const token = authData ? JSON.parse(authData).accessToken : '';
+        
+        console.log('🛍️ Fetching products from backend...');
+        console.log('🔑 Using token for authentication:', token ? token.substring(0, 20) + '...' : 'No token');
+        
+        const response = await fetch(API_ENDPOINTS.PRODUCTS, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('📦 Products API Response Status:', response.status);
+        
+        if (response.ok) {
+          const productsData = await response.json();
+          console.log('✅ Products fetched successfully:', productsData);
+          
+          // Transform backend data to match frontend expectations
+          const transformedProducts = productsData.map(product => ({
+            ...product,
+            stock: product.stockQuantity, // Map 'stockQuantity' to 'stock'
+            status: product.isActive ? 'active' : 'inactive' // Map 'isActive' to 'status'
+          }));
+          
+          setProducts(transformedProducts);
+        } else {
+          console.log('❌ Products API Failed:', response.status, await response.text());
+          // Fallback to mock data if API fails
+          setProducts([
+            {
+              id: 1,
+              name: 'Premium Wireless Headphones',
+              description: 'High-quality wireless headphones with noise cancellation',
+              price: 2999,
+              stock: 50,
+              category: 'electronics',
+              status: 'active',
+              image: '/api/placeholder/300/300',
+              rating: 4.5,
+              sales: 25
+            }
+          ]);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching products:', error);
+        // Fallback to mock data on error
+        setProducts([
+          {
+            id: 1,
+            name: 'Premium Wireless Headphones',
+            description: 'High-quality wireless headphones with noise cancellation',
+            price: 2999,
+            stock: 50,
+            category: 'electronics',
+            status: 'active',
+            image: '/api/placeholder/300/300',
+            rating: 4.5,
+            sales: 25
+          }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !filterCategory || product.category === filterCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (product) => {
+    if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
+      try {
+        const authData = localStorage.getItem('auth');
+        const token = authData ? JSON.parse(authData).accessToken : '';
+        
+        if (!token) {
+          console.error('❌ No authentication token found');
+          alert('Please login to delete products');
+          return;
+        }
+        
+        console.log('🔑 Using token for authentication:', token.substring(0, 20) + '...');
+        console.log('🗑️ Deleting product:', product.id);
+        const response = await fetch(`${API_ENDPOINTS.PRODUCTS}/${product.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          console.log('✅ Product deleted successfully');
+          setProducts(products.filter(p => p.id !== product.id));
+        } else {
+          console.log('❌ Product deletion failed:', response.status, await response.text());
+          // Fallback to local deletion
+          setProducts(products.filter(p => p.id !== product.id));
+        }
+      } catch (error) {
+        console.error('❌ Error deleting product:', error);
+        // Fallback to local deletion
+        setProducts(products.filter(p => p.id !== product.id));
+      }
+    }
+  };
+
+  const handleSave = async (productData) => {
+    try {
+      const authData = localStorage.getItem('auth');
+      const token = authData ? JSON.parse(authData).accessToken : '';
+      
+      if (!token) {
+        console.error('❌ No authentication token found');
+        alert('Please login to edit products');
+        return;
+      }
+      
+      console.log('🔑 Using token for authentication:', token.substring(0, 20) + '...');
+      
+      if (editingProduct) {
+        // Update existing product
+        console.log('📝 Updating product:', editingProduct.id);
+        // Transform frontend data to match backend DTO
+        const backendData = {
+          name: productData.name,
+          description: productData.description,
+          category: productData.category,
+          price: productData.price,
+          stockQuantity: productData.stock, // Map 'stock' to 'stockQuantity'
+          imageUrl: productData.image
+        };
+        
+        console.log('📝 Sending to backend:', backendData);
+        
+        const response = await fetch(`${API_ENDPOINTS.PRODUCTS}/${editingProduct.id}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(backendData)
+        });
+        
+        if (response.ok) {
+          const updatedProduct = await response.json();
+          console.log('✅ Product updated successfully:', updatedProduct);
+          setProducts(products.map(p => 
+            p.id === editingProduct.id ? updatedProduct : p
+          ));
+        } else {
+          console.log('❌ Product update failed:', response.status, await response.text());
+          // Fallback to local update
+          setProducts(products.map(p => 
+            p.id === editingProduct.id ? { ...p, ...productData } : p
+          ));
+        }
+      } else {
+        // Create new product
+        console.log('➕ Creating new product...');
+        
+        // Transform frontend data to match backend DTO
+        const backendData = {
+          name: productData.name,
+          description: productData.description,
+          category: productData.category,
+          price: productData.price,
+          stockQuantity: productData.stock, // Map 'stock' to 'stockQuantity'
+          imageUrl: productData.image
+        };
+        
+        console.log('➕ Sending to backend:', backendData);
+        
+        const response = await fetch(API_ENDPOINTS.PRODUCTS, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(backendData)
+        });
+        
+        if (response.ok) {
+          const newProduct = await response.json();
+          console.log('✅ Product created successfully:', newProduct);
+          setProducts([...products, newProduct]);
+        } else {
+          console.log('❌ Product creation failed:', response.status, await response.text());
+          // Fallback to local creation
+          const newProduct = {
+            ...productData,
+            id: Date.now(),
+            rating: 0,
+            sales: 0
+          };
+          setProducts([...products, newProduct]);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error saving product:', error);
+      // Fallback to local save
+      if (editingProduct) {
+        setProducts(products.map(p => 
+          p.id === editingProduct.id ? { ...p, ...productData } : p
+        ));
+      } else {
+        const newProduct = {
+          ...productData,
+          id: Date.now(),
+          rating: 0,
+          sales: 0
+        };
+        setProducts([...products, newProduct]);
+      }
+    } finally {
+      setShowForm(false);
+      setEditingProduct(null);
+    }
+  };
+
+  const handleView = (product) => {
+    // Implement product view functionality
+    console.log('Viewing product:', product);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
+              <p className="text-gray-600 mt-2">Manage your product catalog with photos and details</p>
+            </div>
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Product</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Categories</option>
+                <option value="electronics">Electronics</option>
+                <option value="clothing">Clothing</option>
+                <option value="accessories">Accessories</option>
+                <option value="home">Home & Garden</option>
+                <option value="beauty">Beauty & Health</option>
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Products Grid */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        ) : (
+          <div className={`grid gap-6 ${
+            viewMode === 'grid' 
+              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+              : 'grid-cols-1'
+          }`}>
+            {filteredProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onView={handleView}
+              />
+            ))}
+          </div>
+        )}
+
+        {filteredProducts.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+          </div>
+        )}
+
+        {/* Product Form Modal */}
+        {showForm && (
+          <ProductForm
+            product={editingProduct}
+            onSave={handleSave}
+            onCancel={() => {
+              setShowForm(false);
+              setEditingProduct(null);
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
