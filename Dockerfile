@@ -33,5 +33,5 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Start the application
-CMD serve -s dist -l ${PORT:-3000}
+CMD serve -s dist -p ${PORT:-3000}
 
