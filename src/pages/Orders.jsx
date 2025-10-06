@@ -220,7 +220,7 @@ export default function Orders() {
     setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
     setView((v) => (v?.id === order.id ? updated : v));
     try {
-      const res = await fetch(`${API_ORDERS}/${order.id}`, {
+      const res = await fetch(`${API_ENDPOINTS.ORDERS}/${order.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated),
