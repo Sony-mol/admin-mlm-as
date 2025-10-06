@@ -14,14 +14,13 @@ export default defineConfig({
     },
   },
   build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'esbuild',
     rollupOptions: {
-      external: [],
       output: {
         manualChunks: undefined,
       },
-    },
-    commonjsOptions: {
-      include: [/node_modules/],
     },
   },
   optimizeDeps: {

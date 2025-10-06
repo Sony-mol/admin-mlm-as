@@ -1,19 +1,19 @@
 # Build stage
-FROM node:20-slim AS builder
+FROM node:20 AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with verbose logging
+RUN npm install --verbose
 
 # Copy source files
 COPY . .
 
-# Build the app
-RUN npm run build
+# Build the app with verbose output
+RUN npm run build -- --mode production
 
 # Production stage
 FROM node:20-slim
