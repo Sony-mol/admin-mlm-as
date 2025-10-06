@@ -1,40 +1,37 @@
 # Build stage
-FROM node:20 AS builder
+FROM node:20-bullseye AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Clean install dependencies
+# Install dependencies
 RUN npm ci --legacy-peer-deps
 
-# Copy all source files
+# Copy source code
 COPY . .
 
 # Build the application
 RUN npm run build
 
-# Verify dist folder was created
-RUN ls -la dist/
-
 # Production stage
-FROM node:20-slim
+FROM node:20-bullseye-slim
 
 WORKDIR /app
 
-# Install serve
-RUN npm install -g serve@14.2.1
+# Copy built files
+COPY --from=builder /app/dist ./dist
 
-# Copy built files from builder
-COPY --from=builder /app/dist /app/dist
+# Install serve globally
+RUN npm install -g serve
 
-# Verify files were copied
-RUN ls -la /app/dist/
+# Set environment
+ENV NODE_ENV=production
 
-# Expose port (Railway will use $PORT)
+# Expose port
 EXPOSE 3000
 
-# Start the application  
-CMD ["sh", "-c", "serve -s dist -l ${PORT:-3000}"]
+# Start the application
+CMD serve -s dist -l ${PORT:-3000}
 
