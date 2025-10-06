@@ -223,7 +223,7 @@ export default function Orders() {
       const res = await fetch(`${API_ENDPOINTS.ORDERS}/${order.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
+        body: JSON.stringify({ status: nextStatus }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch (e) {
