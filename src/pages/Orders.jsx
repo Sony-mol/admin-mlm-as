@@ -145,14 +145,14 @@ export default function Orders() {
         
         // Transform backend order data to match frontend format
         const transformedOrders = realOrders.map(order => ({
-          id: order.orderId,
+          id: order.id,
           orderNo: order.orderNumber,
-          customerName: order.customerName || `User ${order.userId}`,
+          customerName: order.userName || `User ${order.userId}`,
           customerCode: order.customerCode || `REF${order.userId}`,
           products: order.orderItems ? order.orderItems.map(item => item.productName) : ['MLM Package'],
           amount: parseFloat(order.totalAmount) || 0,
           status: order.status || 'Pending',
-          orderDate: order.orderDate || new Date().toISOString(),
+          orderDate: order.createdAt || new Date().toISOString(),
           deliveryDate: order.deliveryDate || null,
           paymentMethod: order.paymentMethod || 'Razorpay',
           shippingAddress: order.shippingAddress || 'MLM System - Digital Delivery',
