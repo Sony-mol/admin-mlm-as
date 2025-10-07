@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config/api';
+import { useAuth } from '../context/AuthContext';
 import { 
   Users, 
   DollarSign, 
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 const Withdrawals = () => {
+  const { authFetch } = useAuth();
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('ALL');
@@ -65,7 +67,7 @@ const Withdrawals = () => {
     try {
       setLoading(true);
       console.log('Fetching withdrawals from:', WITHDRAWALS_API);
-      const response = await fetch(WITHDRAWALS_API);
+      const response = await authFetch('/api/withdrawals');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -99,7 +101,7 @@ const Withdrawals = () => {
   const fetchStatistics = async () => {
     try {
       console.log('Fetching statistics from:', STATISTICS_API);
-      const response = await fetch(STATISTICS_API);
+      const response = await authFetch('/api/withdrawals/statistics');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -123,13 +125,13 @@ const Withdrawals = () => {
   const handleStatusFilter = async (status) => {
     try {
       setLoading(true);
-      let url = WITHDRAWALS_API;
+      let url = '/api/withdrawals';
       if (status !== 'ALL') {
-        url = `${WITHDRAWALS_API}/status/${status}`;
+        url = `/api/withdrawals?status=${status}`;
       }
       
       console.log('Filtering withdrawals with URL:', url);
-      const response = await fetch(url);
+      const response = await authFetch(url);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -137,7 +139,8 @@ const Withdrawals = () => {
       
       const data = await response.json();
       console.log('Filtered withdrawals data:', data);
-      setWithdrawals(Array.isArray(data) ? data : []);
+      const withdrawalsData = data.withdrawals || data;
+      setWithdrawals(Array.isArray(withdrawalsData) ? withdrawalsData : []);
       setSelectedStatus(status);
     } catch (error) {
       console.error('Error filtering withdrawals:', error);
@@ -160,14 +163,14 @@ const Withdrawals = () => {
         return;
       }
       
-      const response = await fetch(`${WITHDRAWALS_API}/${withdrawalId}/${action}`, {
-        method: 'POST',
+      const response = await authFetch(`/api/withdrawals/${withdrawalId}/status`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          adminId: 1, // This should come from auth context
-          adminNotes: notes
+          status: action.toUpperCase(),
+          reason: notes
         }),
       });
 

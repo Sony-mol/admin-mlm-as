@@ -65,7 +65,7 @@ export default function Sidebar({ open = true, onNavigate = () => {} }) {
     >
       {/* Sidebar header: brand + profile (Theme toggle stays in Header) */}
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h1 className="text-lg font-bold tracking-wide">CAMGO ADMIN</h1>
+        <h1 className="text-lg font-bold tracking-wide">CQ WEALTH ADMIN</h1>
 
         {/* Profile dropdown with solid background & ring */}
         <div className="relative">
