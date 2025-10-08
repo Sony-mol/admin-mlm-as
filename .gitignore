@@ -12,6 +12,9 @@ node_modules/
 .pnp
 .pnp.js
 
+# lock file
+package-lock.json
+
 # Testing
 coverage/
 

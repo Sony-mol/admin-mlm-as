@@ -1,3 +1,4 @@
+// src/pages/Commissions.jsx
 import React, { useEffect, useState } from 'react';
 import { Check, X, Clock, DollarSign, Users, TrendingUp } from 'lucide-react';
 
@@ -24,10 +25,10 @@ const Stat = ({ label, value, sub, icon: Icon, color = "text-blue-600" }) => (
 function StatusPill({ value, onClick }) {
   const key = String(value || "").toLowerCase();
   const color =
-    key === "paid" ? "bg-green-500" :
-    key === "pending" ? "bg-yellow-500" :
-    key === "cancelled" ? "bg-red-500" :
-    "bg-gray-400";
+    key === "paid" ? "bg-green-600" :
+    key === "pending" ? "bg-yellow-600" :
+    key === "cancelled" ? "bg-red-600" :
+    "bg-[rgba(var(--fg),0.4)]";
   
   return (
     <span 
@@ -152,7 +153,7 @@ export default function Commissions() {
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
       
       console.log(`🔄 Updating commission ${commissionId} to ${newStatus}`);
-      const response = await fetch(`${API_ENDPOINTS.UPDATE_COMMISSION}/${commissionId}/status`, {
+      const response = await fetch(`${UPDATE_COMMISSION_API}/${commissionId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -299,7 +300,7 @@ export default function Commissions() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[rgb(var(--fg))]">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Commission Management</h1>
         <div className="flex items-center gap-2">
@@ -357,7 +358,7 @@ export default function Commissions() {
             <select
               value={bulkAction}
               onChange={(e) => setBulkAction(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+              className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
             >
               <option value="">Select Action</option>
               <option value="PAID">Approve & Pay</option>
@@ -400,8 +401,10 @@ export default function Commissions() {
             {pendingCommissions.map((commission) => (
               <div
                 key={commission.id}
-                className={`p-4 rounded-lg border border-[rgb(var(--border))] transition-all ${
-                  selectedCommissions.has(commission.id) ? 'bg-blue-50 border-blue-300' : 'hover:bg-[rgba(var(--fg),0.02)]'
+                className={`p-4 rounded-lg border transition-all ${
+                  selectedCommissions.has(commission.id)
+                    ? 'bg-[rgba(37,99,235,0.12)] border-[rgba(37,99,235,0.35)]'
+                    : 'border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.02)]'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -423,7 +426,7 @@ export default function Commissions() {
                         Level {commission.referralLevel} • {commission.commissionPercentage}% • {fDate(commission.createdAt)}
                       </div>
                       {commission.order && (
-                        <div className="text-xs opacity-50 mt-1">
+                        <div className="text-xs opacity-60 mt-1">
                           Order: {commission.order.orderNumber || 'N/A'} • Amount: {fINR(commission.order.totalAmount || 0)}
                         </div>
                       )}
@@ -441,7 +444,7 @@ export default function Commissions() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => confirmCommissionAction(commission, 'PAID')}
-                        className="p-2 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                        className="p-2 rounded-lg bg-[rgba(22,163,74,0.12)] text-green-700 hover:bg-[rgba(22,163,74,0.2)] transition-colors"
                         title="Approve & Pay"
                         disabled={actionLoading}
                       >
@@ -449,7 +452,7 @@ export default function Commissions() {
                       </button>
                       <button
                         onClick={() => confirmCommissionAction(commission, 'CANCELLED')}
-                        className="p-2 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                        className="p-2 rounded-lg bg-[rgba(220,38,38,0.12)] text-red-700 hover:bg-[rgba(220,38,38,0.2)] transition-colors"
                         title="Cancel"
                         disabled={actionLoading}
                       >
@@ -480,7 +483,7 @@ export default function Commissions() {
             {paidCommissions.slice(0, 10).map((commission) => (
               <div
                 key={commission.id}
-                className="p-4 rounded-lg border border-[rgb(var(--border))] bg-green-50"
+                className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(22,163,74,0.12)]"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -494,7 +497,7 @@ export default function Commissions() {
                       Level {commission.referralLevel} • {commission.commissionPercentage}% • {fDate(commission.createdAt)}
                     </div>
                     {commission.order && (
-                      <div className="text-xs opacity-50 mt-1">
+                      <div className="text-xs opacity-60 mt-1">
                         Order: {commission.order.orderNumber || 'N/A'} • Amount: {fINR(commission.order.totalAmount || 0)}
                       </div>
                     )}
@@ -524,13 +527,13 @@ export default function Commissions() {
               <h3 className="mb-4 text-xl font-semibold">
                 {confirmAction.isBulk ? 'Confirm Bulk Action' : 'Confirm Commission Action'}
               </h3>
-              <p className="mb-2 text-gray-600">{confirmAction.message}</p>
-              <p className="mb-6 text-sm font-medium text-gray-800">{confirmAction.details}</p>
+              <p className="mb-2 text-[rgba(var(--fg),0.7)]">{confirmAction.message}</p>
+              <p className="mb-6 text-sm font-medium text-[rgb(var(--fg))]">{confirmAction.details}</p>
               
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setConfirmAction(null)}
-                  className="px-6 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+                  className="px-6 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.12)] hover:bg-[rgba(var(--fg),0.18)] text-[rgb(var(--fg))] transition-colors"
                   disabled={actionLoading}
                 >
                   Cancel

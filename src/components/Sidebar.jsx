@@ -1,7 +1,6 @@
 // Sidebar.jsx
-import React, { useState } from "react";
-import { NavLink, Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import React from "react";
+import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   BarChart3,
@@ -11,18 +10,17 @@ import {
   Package,
   CreditCard,
   DollarSign,
-  UserPen,
-  Settings,
+  Wallet,
   Activity,
   Award,
-  Wallet,
   Shield,
+  Settings,
 } from "lucide-react";
 
 const links = [
   { to: "/",         label: "Overview",        Icon: LayoutDashboard, exact: true },
   { to: "/analytics", label: "Analytics",      Icon: BarChart3 },
-  { to: "/products", label: "Products",         Icon: Package2 },
+  { to: "/products", label: "Products",        Icon: Package2 },
   { to: "/users",    label: "User Management", Icon: Users },
   { to: "/referral", label: "Referral Tree",   Icon: Network },
   { to: "/orders",   label: "Orders",          Icon: Package },
@@ -36,13 +34,6 @@ const links = [
 ];
 
 export default function Sidebar({ open = true, onNavigate = () => {} }) {
-  const { user, logout } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const navigate = useNavigate();
-
-  const onSignOut = () => { logout(); navigate('/login'); };
-
-  // Close the sidebar on mobile after clicking a nav link
   const handleNavClick = () => {
     if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches) {
       onNavigate(); // collapse on mobile
@@ -57,79 +48,93 @@ export default function Sidebar({ open = true, onNavigate = () => {} }) {
         "border-r border-[rgb(var(--border))] bg-[rgb(var(--card))]",
         "px-3 pb-4 pt-3 z-30",
         "transition-transform duration-300 ease-out",
+        "flex flex-col",
         open ? "translate-x-0" : "-translate-x-full",
       ].join(" ")}
       aria-hidden={!open}
       role="dialog"
       aria-modal="true"
     >
-      {/* Sidebar header: brand + profile (Theme toggle stays in Header) */}
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h1 className="text-lg font-bold tracking-wide">CQ WEALTH ADMIN</h1>
-
-        {/* Profile dropdown with solid background & ring */}
-        <div className="relative">
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            aria-label="Open profile menu"
-            className="rounded-full w-9 h-9 flex items-center justify-center bg-[rgb(var(--card))] border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-            title={user?.email || 'Profile'}
-          >
-            <UserPen size={18} strokeWidth={2} aria-hidden="true" />
-          </button>
-
-          {menuOpen && (
-            <div
-              className="
-                absolute right-0 mt-2 w-44 rounded-lg
-                bg-[rgb(var(--card))] shadow-xl
-                ring-1 ring-[rgb(var(--border))]
-                z-50
-              "
-            >
-              <Link
-                to="/profile"
-                className="block px-4 py-2 hover:bg-[rgba(var(--fg),0.05)]"
-                onClick={() => { setMenuOpen(false); handleNavClick(); }}
-              >
-                Profile
-              </Link>
-              <button
-                onClick={onSignOut}
-                className="block w-full text-left px-4 py-2 hover:bg-[rgba(var(--fg),0.05)]"
-              >
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
+      {/* Brand header (fixed) */}
+      <div className="mb-3 flex items-center justify-center">
+        <img
+          src="/Logo-300-x-300-px-150-x-150-px.png"
+          alt="CAMGO ADMIN"
+          className="h-24 w-auto"
+          draggable="false"
+        />
       </div>
 
-      {/* Navigation */}
-      <nav className="space-y-1">
+      {/* Scrollable nav list */}
+      <nav className="flex-1 overflow-y-auto overscroll-contain pr-1 space-y-1">
         {links.map(({ to, label, Icon, exact }) => (
           <NavLink
-            key={to}
-            to={to}
-            end={!!exact}
-            className="group block focus:outline-none"
-            onClick={handleNavClick} // <-- collapse on mobile tap
-          >
-            {({ isActive }) => (
-              <div
-                className={[
-                  "relative flex items-center gap-3 px-3 py-2 rounded-lg transition-colors",
-                  "text-base",
-                  isActive
-                    ? "text-[rgb(var(--accent-1))] bg-[rgba(var(--accent-1),0.12)] border border-[rgba(var(--accent-1),0.35)]"
-                    : "text-[rgb(var(--fg))] hover:bg-[rgba(var(--fg),0.05)] border border-transparent",
-                ].join(" ")}
-              >
-                <Icon className="shrink-0" size={20} strokeWidth={1.9} aria-hidden="true" />
-                <span className="whitespace-nowrap">{label}</span>
-              </div>
-            )}
-          </NavLink>
+  key={to}
+  to={to}
+  end={!!exact}
+  className="group block focus:outline-none focus-visible:outline-none"
+  onClick={handleNavClick}
+>
+  {({ isActive }) => (
+    <div
+      className={[
+        "relative flex items-center gap-3 px-3 py-2 rounded-lg border transition-all duration-300 ease-out",
+        isActive
+          ? "text-[rgb(var(--accent-1))] bg-[rgba(var(--accent-1),0.12)] border-[rgba(var(--accent-1),0.35)]"
+          : "text-[rgb(var(--fg))] border-transparent",
+      ].join(" ")}
+    >
+      {/* Left accent bar — disabled for active state */}
+      {!isActive && (
+        <span
+          className={[
+            "absolute left-0 top-0 h-full w-[3px] rounded-r",
+            "bg-[rgb(var(--accent-1))]",
+            "origin-top transition-transform duration-300",
+            "scale-y-0 group-hover:scale-y-100",
+          ].join(" ")}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Soft radial sweep on hover */}
+      <span
+        className={[
+          "pointer-events-none absolute inset-0 rounded-lg opacity-0",
+          "transition-opacity duration-300",
+          "group-hover:opacity-100",
+          "bg-[radial-gradient(120px_80px_at_left,var(--tw-gradient-from),transparent_70%)]",
+          "from-[rgba(var(--accent-1),0.18)]",
+        ].join(" ")}
+        aria-hidden="true"
+      />
+
+      <Icon
+        size={20}
+        strokeWidth={1.9}
+        className={[
+          "shrink-0 transition-transform duration-300 ease-out",
+          isActive
+            ? "translate-x-0.5 scale-[1.05]"
+            : "group-hover:translate-x-0.5 group-hover:scale-[1.05]",
+        ].join(" ")}
+        aria-hidden="true"
+      />
+
+      <span
+        className={[
+          "relative z-[1] whitespace-nowrap transition-all duration-300 ease-out",
+          isActive
+            ? "translate-x-0.5 tracking-wide"
+            : "group-hover:translate-x-0.5 group-hover:tracking-wide",
+        ].join(" ")}
+      >
+        {label}
+      </span>
+    </div>
+  )}
+</NavLink>
+
         ))}
       </nav>
     </aside>
