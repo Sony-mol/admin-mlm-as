@@ -153,7 +153,7 @@ export default function Commissions() {
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
       
       console.log(`🔄 Updating commission ${commissionId} to ${newStatus}`);
-      const response = await fetch(`${UPDATE_COMMISSION_API}/${commissionId}/status`, {
+      const response = await fetch(`${API_ENDPOINTS.UPDATE_COMMISSION}/${commissionId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
