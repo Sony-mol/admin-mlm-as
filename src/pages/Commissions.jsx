@@ -222,7 +222,7 @@ export default function Commissions() {
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
       
       console.log(`🔄 Bulk updating ${selectedCommissions.size} commissions to ${bulkAction}`);
-      const response = await fetch(BULK_UPDATE_API, {
+      const response = await fetch(API_ENDPOINTS.BULK_UPDATE, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
