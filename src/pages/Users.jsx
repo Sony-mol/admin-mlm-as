@@ -1012,7 +1012,8 @@ export default function Users() {
         </div>
         <button
           onClick={() => handleExport(filtered)}
-          className="rounded-lg px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.08)] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--accent-1),0.35)] active:scale-[0.98] transition"
+          className="rounded-lg px-3 py-2 bg-[#217346] text-white hover:bg-[#1e6a3f] shadow-sm focus-visible:outline-none focus-visible:ring-2 
+         focus-visible:ring-[#217346]/40 active:scale-[0.98] transition"          
           title="Export current users to Excel"
           aria-label="Export users to Excel"
         >

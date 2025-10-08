@@ -93,26 +93,30 @@ export default function Payments() {
         const realPayments = response.payments || [];
         
         // Transform backend payment data to match frontend format
-        const transformedPayments = realPayments.map(payment => ({
-          id: payment.id,
-          code: `PAY${payment.id}`,
+        const transformedPayments = (response.payments || []).map(p => ({
+          id: p.id,
+          code: `PAY${p.id}`,
+          // 👇 Map top-level fields into a flat user object your UI expects
           user: {
-            name: payment.user ? payment.user.name : null,
-            code: payment.user ? payment.user.referenceCode : null,
-            tier: payment.user && payment.user.tier ? payment.user.tier.name : null,
-            level: payment.user && payment.user.level ? `Level ${payment.user.level.levelNumber}` : null
+            name: p.userName || null,
+            code: p.userId != null ? String(p.userId) : null,
           },
-          type: 'Payment',
-          amount: parseFloat(payment.amount) || 0,
-          status: payment.status === 'SUCCESS' ? 'Completed' : payment.status === 'COMPLETED' ? 'Completed' : payment.status === 'PENDING' ? 'Pending' : payment.status === 'FAILED' ? 'Failed' : payment.status || 'Unknown',
+          type: p.type === 'DEPOSIT' ? 'Payment' : (p.type || 'Payment'),
+          amount: Number(p.amount) || 0,
+          status:
+            p.status === 'SUCCESS' || p.status === 'COMPLETED' ? 'Completed' :
+            p.status === 'PENDING' ? 'Pending' :
+            p.status === 'FAILED' ? 'Failed' :
+            (p.status || 'Unknown'),
           method: {
-            channel: payment.paymentMethod ? payment.paymentMethod.toString() : null,
-            account: payment.razorpayPaymentId || payment.razorpayOrderId || null
+            channel: p.paymentMethod || null,
+            account: p.razorpayPaymentId || p.razorpayOrderId || null,
           },
-          requestedAt: payment.createdAt || null,
-          processedAt: payment.updatedAt || payment.createdAt || null,
-          description: `Payment for Order ${payment.order ? payment.order.orderNumber : 'N/A'}`
+          requestedAt: p.createdAt || null,
+          processedAt: p.updatedAt || p.createdAt || null,
+          description: p.description || `Payment ${p.id}`,
         }));
+
         
         setPayments(transformedPayments);
         setErr(null);
@@ -244,12 +248,10 @@ export default function Payments() {
                   <td className="py-3 px-4">
                     <div>
                       <div className="font-medium">{payment.user.name || '--'}</div>
-                      <div className="text-sm opacity-70">{payment.user.code || '--'}</div>
-                      <div className="text-xs opacity-50">
-                        {payment.user.tier || '--'} • {payment.user.level || '--'}
-                      </div>
+                      <div className="text-sm opacity-70">ID: {payment.user.code || '--'}</div>
                     </div>
                   </td>
+
                   <td className="py-3 px-4">
                     <div className="font-medium">{payment.type}</div>
                   </td>

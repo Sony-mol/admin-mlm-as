@@ -1,19 +1,16 @@
 // src/pages/Withdrawals.jsx
 import React, { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '../config/api';
-import { 
-  Users, 
-  DollarSign, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  DollarSign,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
-  Filter,
   Search,
-  Download,
   Eye,
   Check,
-  X
+  X,
 } from 'lucide-react';
 
 const Withdrawals = () => {
@@ -22,7 +19,6 @@ const Withdrawals = () => {
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWithdrawals, setSelectedWithdrawals] = useState([]);
-  const [showBulkActions, setShowBulkActions] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [statistics, setStatistics] = useState({});
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
@@ -32,45 +28,70 @@ const Withdrawals = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [error, setError] = useState(null);
 
-  // Error boundary effect
+  // API endpoints
+  const WITHDRAWALS_API = API_ENDPOINTS.WITHDRAWALS;
+  const STATISTICS_API = `${API_ENDPOINTS.WITHDRAWALS}/statistics`;
+
+  // Error boundary
   useEffect(() => {
-    const handleError = (error) => {
-      console.error('Withdrawals component error:', error);
-      setError(error.message);
+    const handleError = (e) => {
+      console.error('Withdrawals component error:', e);
+      setError(e.message);
     };
     window.addEventListener('error', handleError);
     return () => window.removeEventListener('error', handleError);
   }, []);
 
-  // API endpoints
-  const WITHDRAWALS_API = API_ENDPOINTS.WITHDRAWALS;
-  const STATISTICS_API = API_ENDPOINTS.WITHDRAWALS + '/statistics';
-
   useEffect(() => {
-    console.log('Withdrawals component mounted');
     fetchWithdrawals();
     fetchStatistics();
   }, []);
 
-  // Debug log for component state
   useEffect(() => {
-    console.log('Withdrawals state updated:', { 
-      loading, 
-      withdrawalsCount: withdrawals.length, 
-      statistics 
+    console.log('Withdrawals state updated:', {
+      loading,
+      withdrawalsCount: withdrawals.length,
+      statistics,
     });
   }, [loading, withdrawals, statistics]);
+
+  const fmtDMY = (iso) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
 
   const fetchWithdrawals = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('auth')
+        ? JSON.parse(localStorage.getItem('auth')).accessToken
+        : '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       console.log('Fetching withdrawals from:', WITHDRAWALS_API);
-      const response = await fetch(WITHDRAWALS_API);
+      const response = await fetch(WITHDRAWALS_API, { headers });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
       const responseData = await response.json();
       console.log('Withdrawals data received:', responseData);
-      const withdrawalsData = responseData.withdrawals || responseData;
-      setWithdrawals(Array.isArray(withdrawalsData) ? withdrawalsData : []);
+
+      const raw = responseData.withdrawals || responseData || [];
+      const mapped = (Array.isArray(raw) ? raw : []).map((w) => ({
+        ...w,
+        // Normalize user object from top-level fields
+        user: {
+          name: w.userName || 'Unknown User',
+          email: w.userEmail || 'No email',
+          id: w.userId ?? null,
+        },
+        description: w.paymentMethod || w.description || '',
+      }));
+
+      setWithdrawals(mapped);
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
       // Demo fallback
@@ -82,8 +103,8 @@ const Withdrawals = () => {
           paymentMethod: 'UPI',
           upiId: 'test@upi',
           status: 'PENDING',
-          createdAt: new Date().toISOString()
-        }
+          createdAt: new Date().toISOString(),
+        },
       ]);
     } finally {
       setLoading(false);
@@ -92,69 +113,89 @@ const Withdrawals = () => {
 
   const fetchStatistics = async () => {
     try {
+      const token = localStorage.getItem('auth')
+        ? JSON.parse(localStorage.getItem('auth')).accessToken
+        : '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       console.log('Fetching statistics from:', STATISTICS_API);
-      const response = await fetch(STATISTICS_API);
+      const response = await fetch(STATISTICS_API, { headers });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      console.log('Statistics data received:', data);
-      setStatistics(data || {});
+
+      const s = await response.json();
+      console.log('Statistics data received:', s);
+
+      // Map backend keys -> UI keys
+      setStatistics({
+        // Cards
+        totalAmount:
+          Number(s.totalApprovedAmount ?? 0) + Number(s.totalPendingAmount ?? 0),
+        pendingCount: Number(s.pendingWithdrawals ?? 0),
+        approvedCount: Number(s.approvedWithdrawals ?? 0),
+        completedCount: Number(s.approvedWithdrawals ?? 0), // UI label "Completed"
+        rejectedCount: Number(s.rejectedWithdrawals ?? 0),
+
+        // Optional extras (not directly displayed but useful)
+        totalCount: Number(s.totalWithdrawals ?? 0),
+        totalApprovedAmount: Number(s.totalApprovedAmount ?? 0),
+        totalPendingAmount: Number(s.totalPendingAmount ?? 0),
+      });
     } catch (error) {
       console.error('Error fetching statistics:', error);
       // Demo fallback
       setStatistics({
         totalAmount: 1000,
         pendingCount: 1,
+        approvedCount: 0,
         completedCount: 0,
-        rejectedCount: 0
+        rejectedCount: 0,
       });
     }
   };
 
-  const handleStatusFilter = async (status) => {
-    try {
-      setLoading(true);
-      let url = WITHDRAWALS_API;
-      if (status !== 'ALL') url = `${WITHDRAWALS_API}/status/${status}`;
-      console.log('Filtering withdrawals with URL:', url);
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      console.log('Filtered withdrawals data:', data);
-      setWithdrawals(Array.isArray(data) ? data : []);
-      setSelectedStatus(status);
-    } catch (error) {
-      console.error('Error filtering withdrawals:', error);
-      setWithdrawals([]);
-    } finally {
-      setLoading(false);
-    }
+  // Client-side status filter (avoid calling /status/:status)
+  const handleStatusFilter = (status) => {
+    setSelectedStatus(status);
   };
 
   const handleWithdrawalAction = async (withdrawalId, action, notes = '') => {
     try {
       setActionLoading(true);
-      // If using demo row, block action
-      const isMockData = withdrawals.some(w => w.id === withdrawalId && w.user?.name === 'Test User');
+
+      // Prevent actions on demo row
+      const isMockData = withdrawals.some(
+        (w) => w.id === withdrawalId && w.user?.name === 'Test User'
+      );
       if (isMockData) {
         alert('This is test data. Please create a real withdrawal request first.');
         setShowActionModal(false);
         setAdminNotes('');
         return;
       }
+
+      const token = localStorage.getItem('auth')
+        ? JSON.parse(localStorage.getItem('auth')).accessToken
+        : '';
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
       const response = await fetch(`${WITHDRAWALS_API}/${withdrawalId}/${action}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ adminId: 1, adminNotes: notes }),
       });
+
       if (response.ok) {
-        await response.json();
+        await response.json().catch(() => ({}));
         alert(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)} successful!`);
         await fetchWithdrawals();
         await fetchStatistics();
         setShowActionModal(false);
         setAdminNotes('');
       } else {
-        const err = await response.json();
+        const err = await response.json().catch(() => ({}));
         alert(`Error: ${err.error || 'Action failed'}`);
       }
     } catch (error) {
@@ -174,12 +215,12 @@ const Withdrawals = () => {
 
     try {
       setActionLoading(true);
-      const promises = selectedWithdrawals.map(id => 
-        handleWithdrawalAction(id, action, 'Bulk action')
-      );
-      await Promise.all(promises);
+      // Sequential to keep alerts sane; could be parallel with Promise.all if desired
+      for (const id of selectedWithdrawals) {
+        // eslint-disable-next-line no-await-in-loop
+        await handleWithdrawalAction(id, action, 'Bulk action');
+      }
       setSelectedWithdrawals([]);
-      setShowBulkActions(false);
     } catch (error) {
       console.error('Error processing bulk action:', error);
     } finally {
@@ -189,45 +230,65 @@ const Withdrawals = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'PENDING': return <Clock className="w-4 h-4 text-yellow-500" />;
-      case 'APPROVED': return <CheckCircle className="w-4 h-4 text-blue-500" />;
-      case 'PROCESSING': return <AlertCircle className="w-4 h-4 text-orange-500" />;
-      case 'COMPLETED': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'REJECTED': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'FAILED': return <XCircle className="w-4 h-4 text-red-500" />;
-      case 'CANCELLED': return <XCircle className="w-4 h-4 text-gray-500" />;
-      default: return <Clock className="w-4 h-4 text-gray-500" />;
+      case 'PENDING':
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'APPROVED':
+        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+      case 'PROCESSING':
+        return <AlertCircle className="w-4 h-4 text-orange-500" />;
+      case 'COMPLETED':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'REJECTED':
+      case 'FAILED':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      case 'CANCELLED':
+        return <XCircle className="w-4 h-4 text-gray-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const getStatusColor = (status) => {
-    // Keep accent chips (work in both themes)
     switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'APPROVED': return 'bg-blue-100 text-blue-800';
-      case 'PROCESSING': return 'bg-orange-100 text-orange-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'REJECTED': return 'bg-red-100 text-red-800';
-      case 'FAILED': return 'bg-red-100 text-red-800';
-      case 'CANCELLED': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'APPROVED':
+        return 'bg-blue-100 text-blue-800';
+      case 'PROCESSING':
+        return 'bg-orange-100 text-orange-800';
+      case 'COMPLETED':
+        return 'bg-green-100 text-green-800';
+      case 'REJECTED':
+      case 'FAILED':
+        return 'bg-red-100 text-red-800';
+      case 'CANCELLED':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const filteredWithdrawals = withdrawals.filter(withdrawal => {
+  // Apply text & status filters client-side
+  const filteredWithdrawals = withdrawals.filter((w) => {
     const q = searchTerm.toLowerCase();
-    return (
-      withdrawal.user?.name?.toLowerCase().includes(q) ||
-      withdrawal.user?.email?.toLowerCase().includes(q) ||
-      withdrawal.id.toString().includes(searchTerm)
-    );
+    const matchesText =
+      (w.user?.name || '').toLowerCase().includes(q) ||
+      (w.user?.email || '').toLowerCase().includes(q) ||
+      String(w.id).includes(searchTerm);
+
+    const matchesStatus =
+      selectedStatus === 'ALL'
+        ? true
+        : String(w.status).toUpperCase() === selectedStatus;
+
+    return matchesText && matchesStatus;
   });
 
   const statusOptions = [
     { value: 'ALL', label: 'All Withdrawals', count: withdrawals.length },
     { value: 'PENDING', label: 'Pending', count: statistics.pendingCount || 0 },
     { value: 'APPROVED', label: 'Approved', count: statistics.approvedCount || 0 },
-    { value: 'PROCESSING', label: 'Processing', count: statistics.processingCount || 0 },
+    { value: 'PROCESSING', label: 'Processing', count: statistics.processingCount || 0 }, // may be 0 if not provided
     { value: 'COMPLETED', label: 'Completed', count: statistics.completedCount || 0 },
     { value: 'REJECTED', label: 'Rejected', count: statistics.rejectedCount || 0 },
   ];
@@ -239,7 +300,7 @@ const Withdrawals = () => {
         <div className="rounded-lg p-4 border border-red-200 bg-red-50">
           <h3 className="text-lg font-medium text-red-800">Component Error</h3>
           <p className="text-red-700 mt-2">{error}</p>
-          <button 
+          <button
             onClick={() => setError(null)}
             className="mt-3 px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
           >
@@ -254,7 +315,9 @@ const Withdrawals = () => {
     <div className="p-6 text-[rgb(var(--fg))]">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[rgb(var(--fg))] mb-2">Withdrawal Management</h1>
+        <h1 className="text-3xl font-bold text-[rgb(var(--fg))] mb-2">
+          Withdrawal Management
+        </h1>
         <p className="opacity-70">Manage user withdrawal requests and payments</p>
       </div>
 
@@ -264,10 +327,12 @@ const Withdrawals = () => {
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
             <div>
-              <h3 className="text-sm font-medium text-yellow-800">API Not Available</h3>
+              <h3 className="text-sm font-medium text-yellow-800">
+                API Not Available
+              </h3>
               <p className="text-sm text-yellow-700 mt-1">
-                The withdrawal API endpoints are not yet deployed or accessible. 
-                This is normal if the backend hasn't been deployed yet.
+                The withdrawal API endpoints are not yet deployed or accessible.
+                This is normal if the backend hasn&apos;t been deployed yet.
               </p>
             </div>
           </div>
@@ -275,15 +340,15 @@ const Withdrawals = () => {
       )}
 
       {/* Demo warning */}
-      {withdrawals.some(w => w.user?.name === 'Test User') && (
+      {withdrawals.some((w) => w.user?.name === 'Test User') && (
         <div className="mb-6 p-4 rounded-lg border border-orange-200 bg-orange-50">
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-orange-600 mr-2" />
             <div>
               <h3 className="text-sm font-medium text-orange-800">⚠️ Demo Mode</h3>
               <p className="text-sm text-orange-700 mt-1">
-                Showing test data. Create real withdrawal requests to test the approval workflow.
-                Test data cannot be approved/rejected.
+                Showing test data. Create real withdrawal requests to test the
+                approval workflow. Test data cannot be approved/rejected.
               </p>
             </div>
           </div>
@@ -299,7 +364,9 @@ const Withdrawals = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Total Withdrawals</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">₹{statistics.totalAmount || 0}</p>
+              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+                ₹{statistics.totalAmount || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -311,7 +378,9 @@ const Withdrawals = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Pending</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">{statistics.pendingCount || 0}</p>
+              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+                {statistics.pendingCount || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -323,7 +392,9 @@ const Withdrawals = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Completed</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">{statistics.completedCount || 0}</p>
+              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+                {statistics.completedCount || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -335,7 +406,9 @@ const Withdrawals = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Rejected</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">{statistics.rejectedCount || 0}</p>
+              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+                {statistics.rejectedCount || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -421,10 +494,13 @@ const Withdrawals = () => {
                 <th className="px-6 py-3 text-left">
                   <input
                     type="checkbox"
-                    checked={selectedWithdrawals.length === filteredWithdrawals.length && filteredWithdrawals.length > 0}
+                    checked={
+                      selectedWithdrawals.length === filteredWithdrawals.length &&
+                      filteredWithdrawals.length > 0
+                    }
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedWithdrawals(filteredWithdrawals.map(w => w.id));
+                        setSelectedWithdrawals(filteredWithdrawals.map((w) => w.id));
                       } else {
                         setSelectedWithdrawals([]);
                       }
@@ -474,9 +550,14 @@ const Withdrawals = () => {
                         checked={selectedWithdrawals.includes(withdrawal.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedWithdrawals([...selectedWithdrawals, withdrawal.id]);
+                            setSelectedWithdrawals([
+                              ...selectedWithdrawals,
+                              withdrawal.id,
+                            ]);
                           } else {
-                            setSelectedWithdrawals(selectedWithdrawals.filter(id => id !== withdrawal.id));
+                            setSelectedWithdrawals(
+                              selectedWithdrawals.filter((id) => id !== withdrawal.id)
+                            );
                           }
                         }}
                         className="rounded border-[rgb(var(--border))]"
@@ -498,9 +579,12 @@ const Withdrawals = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-[rgb(var(--fg))]">
-                        {withdrawal.paymentMethod}
-                      </div>
+                      
+                      {withdrawal.description && (
+                        <div className="text-sm opacity-70">
+                          {withdrawal.description}
+                        </div>
+                      )}
                       {withdrawal.upiId && (
                         <div className="text-sm opacity-70">
                           UPI: {withdrawal.upiId}
@@ -512,14 +596,19 @@ const Withdrawals = () => {
                         </div>
                       )}
                     </td>
+
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(withdrawal.status)}`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                          withdrawal.status
+                        )}`}
+                      >
                         {getStatusIcon(withdrawal.status)}
                         <span className="ml-1">{withdrawal.status}</span>
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm opacity-70">
-                      {new Date(withdrawal.createdAt).toLocaleDateString()}
+                      {fmtDMY(withdrawal.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
@@ -529,10 +618,11 @@ const Withdrawals = () => {
                             setShowDetailsModal(true);
                           }}
                           className="text-blue-600 hover:text-blue-900"
+                          title="View details"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        
+
                         {withdrawal.status === 'PENDING' && (
                           <>
                             <button
@@ -542,6 +632,7 @@ const Withdrawals = () => {
                                 setShowActionModal(true);
                               }}
                               className="text-green-600 hover:text-green-900"
+                              title="Approve"
                             >
                               <Check className="w-4 h-4" />
                             </button>
@@ -552,12 +643,13 @@ const Withdrawals = () => {
                                 setShowActionModal(true);
                               }}
                               className="text-red-600 hover:text-red-900"
+                              title="Reject"
                             >
                               <X className="w-4 h-4" />
                             </button>
                           </>
                         )}
-                        
+
                         {withdrawal.status === 'APPROVED' && (
                           <button
                             onClick={() => {
@@ -593,7 +685,7 @@ const Withdrawals = () => {
                 ✕
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -606,24 +698,28 @@ const Withdrawals = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium opacity-70">Status</label>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedWithdrawal.status)}`}>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                      selectedWithdrawal.status
+                    )}`}
+                  >
                     {getStatusIcon(selectedWithdrawal.status)}
                     <span className="ml-1">{selectedWithdrawal.status}</span>
                   </span>
                 </div>
                 <div>
                   <label className="text-sm font-medium opacity-70">Payment Method</label>
-                  <p className="text-sm">{selectedWithdrawal.paymentMethod}</p>
+                  <p className="text-sm">{selectedWithdrawal.paymentMethod || '—'}</p>
                 </div>
               </div>
-              
+
               {selectedWithdrawal.upiId && (
                 <div>
                   <label className="text-sm font-medium opacity-70">UPI ID</label>
                   <p className="text-sm">{selectedWithdrawal.upiId}</p>
                 </div>
               )}
-              
+
               {selectedWithdrawal.accountNumber && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -636,41 +732,37 @@ const Withdrawals = () => {
                   </div>
                 </div>
               )}
-              
+
               {selectedWithdrawal.accountHolderName && (
                 <div>
                   <label className="text-sm font-medium opacity-70">Account Holder</label>
                   <p className="text-sm">{selectedWithdrawal.accountHolderName}</p>
                 </div>
               )}
-              
+
               {selectedWithdrawal.bankName && (
                 <div>
                   <label className="text-sm font-medium opacity-70">Bank Name</label>
                   <p className="text-sm">{selectedWithdrawal.bankName}</p>
                 </div>
               )}
-              
+
               {selectedWithdrawal.adminNotes && (
                 <div>
                   <label className="text-sm font-medium opacity-70">Admin Notes</label>
                   <p className="text-sm">{selectedWithdrawal.adminNotes}</p>
                 </div>
               )}
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium opacity-70">Requested At</label>
-                  <p className="text-sm">
-                    {new Date(selectedWithdrawal.createdAt).toLocaleString()}
-                  </p>
+                  <p className="text-sm">{fmtDMY(selectedWithdrawal.createdAt)}</p>
                 </div>
                 {selectedWithdrawal.processedAt && (
                   <div>
                     <label className="text-sm font-medium opacity-70">Processed At</label>
-                    <p className="text-sm">
-                      {new Date(selectedWithdrawal.processedAt).toLocaleString()}
-                    </p>
+                    <p className="text-sm">{fmtDMY(selectedWithdrawal.processedAt)}</p>
                   </div>
                 )}
               </div>
@@ -685,7 +777,12 @@ const Withdrawals = () => {
           <div className="rounded-lg p-6 max-w-md w-full mx-4 border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
-                {actionType === 'approve' ? 'Approve' : actionType === 'reject' ? 'Reject' : 'Process'} Withdrawal
+                {actionType === 'approve'
+                  ? 'Approve'
+                  : actionType === 'reject'
+                  ? 'Reject'
+                  : 'Process'}{' '}
+                Withdrawal
               </h3>
               <button
                 onClick={() => setShowActionModal(false)}
@@ -694,7 +791,7 @@ const Withdrawals = () => {
                 ✕
               </button>
             </div>
-            
+
             <div className="mb-4">
               <p className="text-sm opacity-70 mb-2">
                 Withdrawal #{selectedWithdrawal.id} - ₹{selectedWithdrawal.amount}
@@ -703,7 +800,7 @@ const Withdrawals = () => {
                 User: {selectedWithdrawal.user?.name} ({selectedWithdrawal.user?.email})
               </p>
             </div>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium opacity-70 mb-2">
                 Admin Notes
@@ -716,7 +813,7 @@ const Withdrawals = () => {
                 placeholder="Add notes for this action..."
               />
             </div>
-            
+
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowActionModal(false)}
@@ -725,16 +822,25 @@ const Withdrawals = () => {
                 Cancel
               </button>
               <button
-                onClick={() => handleWithdrawalAction(selectedWithdrawal.id, actionType, adminNotes)}
+                onClick={() =>
+                  handleWithdrawalAction(selectedWithdrawal.id, actionType, adminNotes)
+                }
                 disabled={actionLoading}
                 className={`px-4 py-2 text-white rounded-md hover:opacity-90 disabled:opacity-50 ${
-                  actionType === 'approve' ? 'bg-green-600' : 
-                  actionType === 'reject' ? 'bg-red-600' : 'bg-blue-600'
+                  actionType === 'approve'
+                    ? 'bg-green-600'
+                    : actionType === 'reject'
+                    ? 'bg-red-600'
+                    : 'bg-blue-600'
                 }`}
               >
-                {actionLoading ? 'Processing...' : 
-                 actionType === 'approve' ? 'Approve' : 
-                 actionType === 'reject' ? 'Reject' : 'Process'}
+                {actionLoading
+                  ? 'Processing...'
+                  : actionType === 'approve'
+                  ? 'Approve'
+                  : actionType === 'reject'
+                  ? 'Reject'
+                  : 'Process'}
               </button>
             </div>
           </div>

@@ -10,7 +10,7 @@ const SYSTEM_STATS_API = API_ENDPOINTS.SYSTEM_STATS;
 
 /* ---------- Small UI helpers ---------- */
 const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] transition-colors hover:bg-[rgba(var(--fg),0.02)] ${className}`}>
+  <div className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] transition-colors ${className}`}>
     {children}
   </div>
 );

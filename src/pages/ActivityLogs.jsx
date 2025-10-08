@@ -215,7 +215,8 @@ export default function ActivityLogs() {
           </button>
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] hover:bg-[rgba(var(--fg),0.05)]"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#217346] text-white hover:bg-[#1e6a3f] shadow-sm focus-visible:outline-none focus-visible:ring-2 
+         focus-visible:ring-[#217346]/40 active:scale-[0.98] transition"
           >
             <Download className="w-4 h-4" />
             Export

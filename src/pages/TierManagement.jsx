@@ -1,5 +1,5 @@
 // src/pages/TierManagement.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 import { Plus, Trash2, Save, RotateCcw, Loader2, Users, Layers, BarChart3 } from 'lucide-react';
 
@@ -14,11 +14,17 @@ export default function TierManagement() {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Toast popup (viewport-level)
   const [showPopup, setShowPopup] = useState(false);
+  const popupTimerRef = useRef(null);
 
   // Load structure + stats
   useEffect(() => {
     loadData();
+    return () => {
+      if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -161,6 +167,13 @@ export default function TierManagement() {
     });
   };
 
+  // Show toast helper
+  const showToast = () => {
+    setShowPopup(true);
+    if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
+    popupTimerRef.current = setTimeout(() => setShowPopup(false), 2500);
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -190,6 +203,21 @@ export default function TierManagement() {
 
   return (
     <div className="p-6 space-y-6 text-[rgb(var(--fg))]">
+      {/* Viewport Toast */}
+      {showPopup && (
+        <div
+          className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999]
+                     bg-[rgb(var(--card))] text-[rgb(var(--fg))]
+                     border border-[rgb(var(--border))]
+                     rounded-xl shadow-2xl px-6 py-3 text-base font-semibold
+                     transition-all duration-300 ease-out"
+          role="status"
+          aria-live="polite"
+        >
+          ✅ Level added!
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -257,19 +285,13 @@ export default function TierManagement() {
               <button
                 onClick={() => {
                   addLevel(tierName);
-                  setShowPopup(true);
-                  setTimeout(() => setShowPopup(false), 2000);
+                  showToast(); // <- show viewport toast
                 }}
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-white"
               >
                 <Plus className="w-4 h-4" />
                 Add Level
               </button>
-              {showPopup && (
-                <div className="absolute left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap bg-[rgb(var(--card))] text-[rgb(var(--fg))] border border-[rgb(var(--border))] text-sm px-3 py-1 rounded-lg shadow-md">
-                  ✅ Level added!
-                </div>
-              )}
             </div>
 
             <div className="space-y-3">

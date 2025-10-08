@@ -5,7 +5,14 @@ import { API_ENDPOINTS } from '../config/api';
 
 const fmtINR = (n) =>
   Number(n || 0).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
-const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString("en-US") : "");
+const fmtDate = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+};
 
 /* ---------- Shared: status pill ---------- */
 function StatusPill({ value }) {
@@ -145,19 +152,21 @@ export default function Orders() {
         
         // Transform backend order data to match frontend format
         const transformedOrders = realOrders.map(order => ({
-          id: order.orderId,
-          orderNo: order.orderNumber,
-          customerName: order.customerName || `User ${order.userId}`,
-          customerCode: order.customerCode || `REF${order.userId}`,
-          products: order.orderItems ? order.orderItems.map(item => item.productName) : ['MLM Package'],
-          amount: parseFloat(order.totalAmount) || 0,
-          status: order.status || 'Pending',
-          orderDate: order.orderDate || new Date().toISOString(),
-          deliveryDate: order.deliveryDate || null,
-          paymentMethod: order.paymentMethod || 'Razorpay',
-          shippingAddress: order.shippingAddress || 'MLM System - Digital Delivery',
-          notes: order.notes || 'MLM System Order'
-        }));
+        id: order.id || order.orderId,
+        orderNo: order.orderNumber,
+        customerName: order.userName || `User ${order.userId}`,
+        customerCode: order.userId ? `REF${order.userId}` : order.userEmail || "",
+        products: order.orderItems ? order.orderItems.map(item => item.productName) : [order.description || "MLM Package"],
+        amount: Number(order.totalAmount) || 0,
+        status: order.status || 'Pending',
+
+        // 🔴 key fix: the UI reads "o.date", so populate "date"
+        date: order.createdAt,                   // <- use API createdAt
+        deliveryDate: order.deliveryDate || null,
+        paymentMethod: order.paymentMethod || 'Razorpay',
+        shippingAddress: order.shippingAddress || 'MLM System - Digital Delivery',
+        notes: order.notes || order.description || 'MLM System Order'
+      }));
         
         setOrders(transformedOrders);
         setErr(null);
