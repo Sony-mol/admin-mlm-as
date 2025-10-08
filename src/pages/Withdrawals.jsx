@@ -181,10 +181,13 @@ const Withdrawals = () => {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const response = await fetch(`${WITHDRAWALS_API}/${withdrawalId}/${action}`, {
-        method: 'POST',
+      // Map UI actions to backend status API
+      // Backend expects: PUT /api/withdrawals/{id}/status with body { status: 'SUCCESS' | 'FAILED', reason }
+      const status = action === 'approve' ? 'SUCCESS' : action === 'reject' ? 'FAILED' : 'SUCCESS';
+      const response = await fetch(`${WITHDRAWALS_API}/${withdrawalId}/status`, {
+        method: 'PUT',
         headers,
-        body: JSON.stringify({ adminId: 1, adminNotes: notes }),
+        body: JSON.stringify({ status, reason: notes || 'Admin action' }),
       });
 
       if (response.ok) {
