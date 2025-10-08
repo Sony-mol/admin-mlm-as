@@ -145,14 +145,14 @@ export default function Orders() {
         
         // Transform backend order data to match frontend format
         const transformedOrders = realOrders.map(order => ({
-          id: order.id,
+          id: order.orderId,
           orderNo: order.orderNumber,
-          customerName: order.userName || `User ${order.userId}`,
+          customerName: order.customerName || `User ${order.userId}`,
           customerCode: order.customerCode || `REF${order.userId}`,
           products: order.orderItems ? order.orderItems.map(item => item.productName) : ['MLM Package'],
           amount: parseFloat(order.totalAmount) || 0,
           status: order.status || 'Pending',
-          orderDate: order.createdAt || new Date().toISOString(),
+          orderDate: order.orderDate || new Date().toISOString(),
           deliveryDate: order.deliveryDate || null,
           paymentMethod: order.paymentMethod || 'Razorpay',
           shippingAddress: order.shippingAddress || 'MLM System - Digital Delivery',
@@ -220,20 +220,15 @@ export default function Orders() {
     setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
     setView((v) => (v?.id === order.id ? updated : v));
     try {
-      const res = await fetch(`${API_ENDPOINTS.ORDERS}/${order.id}`, {
+      const res = await fetch(`${API_ORDERS}/${order.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
+        body: JSON.stringify(updated),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      
-      // Show success confirmation
-      alert(`✅ Order status updated successfully to "${nextStatus}"!`);
-      console.log(`✅ Order ${order.id} status updated to: ${nextStatus}`);
-      
     } catch (e) {
       await load();
-      alert("❌ Could not update status: " + (e.message || "unknown error"));
+      alert("Could not update status: " + (e.message || "unknown error"));
     }
   }
 

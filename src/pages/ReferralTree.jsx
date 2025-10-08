@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-// Import API configuration
-import { API_ENDPOINTS } from '../config/api';
+/** 🔁 REAL API (production) */
+const API_USERS = 'https://asmlmbackend-production.up.railway.app/api/users';
+
 const fmtINR = (n) =>
   Number(n || 0).toLocaleString('en-IN', {
     style: 'currency',
@@ -21,13 +22,48 @@ const tierKey = (label = '') => {
 /* badges */
 function Badge({ children, className = '', tier = '' }) {
   return (
-    <span data-tier={tier} className={`px-2 py-0.5 text-xs rounded-full border border-[rgb(var(--border))] ${className}`}>
+    <span
+      data-tier={tier}
+      className={`px-2 py-0.5 text-xs rounded-full border border-[rgb(var(--border))] ${className}`}
+    >
       {children}
     </span>
   );
 }
 
 /* ---------------- Data helpers ---------------- */
+
+/**
+ * Normalize server user -> UI user
+ * Maps:
+ * - referenceCode -> code
+ * - referredByCode -> sponsorCode
+ * - referralCount -> referrals
+ * - earnings -> earnings (placeholder 0 until backend adds it)
+ */
+function normalizeUsers(arr) {
+  return (Array.isArray(arr) ? arr : []).map((u) => ({
+    // core identifiers
+    id: u.id ?? u._id ?? u.referenceCode,
+    code: u.referenceCode ?? u.code ?? '',
+    sponsorCode: u.referredByCode ?? u.sponsorCode ?? '',
+    sponsorOrder: u.sponsorOrder ?? 0,
+
+    // display
+    name: u.name ?? '',
+    email: u.email ?? '',
+    phone: u.phoneNumber ?? u.phone ?? '',
+
+    // business fields
+    tier: u.tier ?? '',                    // e.g. "BRONZE" — your tierKey() lowercases anyway
+    level: u.level ?? '',                  // e.g. "Level 1"
+    referrals: u.referralCount ?? u.referrals ?? 0,
+    earnings: u.earnings ?? 0,             // 🔸 placeholder; will auto-use real value when backend sends it
+    status: u.status ?? '',
+    joinDate: u.createdAt ?? u.joinDate ?? null,
+  }));
+}
+
 function buildTreeFromUsers(users) {
   const nodes = new Map(
     users.map((u) => [
@@ -60,7 +96,9 @@ function buildTreeFromUsers(users) {
 }
 
 function computeStats(roots) {
-  let cnt = 0, sum = 0, depth = 0;
+  let cnt = 0,
+    sum = 0,
+    depth = 0;
   const walk = (n, d = 1) => {
     cnt++;
     sum += Number(n.user.earnings || 0);
@@ -79,7 +117,10 @@ function spotlightSearch(roots, q) {
   const highlight = new Set();
   const walk = (n) => {
     const hay = `${n.user.name} ${n.user.email || ''} ${n.user.code || ''}`.toLowerCase();
-    if (hay.includes(ql)) { out.push(n); highlight.add(n.key); }
+    if (hay.includes(ql)) {
+      out.push(n);
+      highlight.add(n.key);
+    }
     n.children.forEach(walk);
   };
   roots.forEach(walk);
@@ -101,143 +142,22 @@ export default function ReferralTree() {
   async function load() {
     try {
       setLoading(true);
-      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
-      // Fetch real referral tree data from backend
-      const users = [];
-      
-      try {
-        console.log('🔍 REFERRAL TREE PAGE - Starting API calls...');
-        console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-        console.log('📡 Headers:', headers);
-        
-        // Fetch referral tree from backend API
-        console.log('🌳 Fetching referral tree from: /api/users/referral-tree');
-        const usersRes = await fetch(API_ENDPOINTS.USERS + '/referral-tree', { headers });
-        console.log('🌳 Users Response Status:', usersRes.status);
-        console.log('🌳 Users Response Headers:', Object.fromEntries(usersRes.headers.entries()));
-        
-        if (usersRes.ok) {
-          const treeData = await usersRes.json();
-          console.log('✅ Referral Tree Data Received:', treeData);
-          console.log('📊 Total Users Found:', treeData.totalUsers);
-          console.log('🌳 Root Nodes:', treeData.rootNodes);
-          
-          // The backend now returns a tree structure, so we need to flatten it for the frontend
-          const flattenTree = (nodes) => {
-            const result = [];
-            const processNode = (node) => {
-              result.push({
-                id: node.id,
-                name: node.name,
-                email: node.email,
-                code: node.code,
-                tier: node.tier,
-                level: node.level,
-                referrals: node.referrals,
-                earnings: node.earnings,
-                status: node.status,
-                joinDate: node.joinDate,
-                referredBy: node.referredBy,
-                referredUsers: node.children ? node.children.map(child => child.id) : []
-              });
-              
-              // Process children recursively
-              if (node.children && node.children.length > 0) {
-                node.children.forEach(child => processNode(child));
-              }
-            };
-            
-            nodes.forEach(node => processNode(node));
-            return result;
-          };
-          
-          const transformedUsers = flattenTree(treeData.tree);
-          setUsers(transformedUsers);
-          console.log('✅ Referral tree loaded successfully:', transformedUsers.length);
-        } else {
-          console.log('❌ Users API Failed:', usersRes.status, await usersRes.text());
-          // Fallback to mock data if API fails
-          const mockUsers = [
-            {
-              id: 38,
-              name: 'Test User 1',
-              email: 'testuser1@example.com',
-              code: 'REF209825',
-              tier: 'Gold',
-              level: 'G1',
-              referrals: 1,
-              earnings: 475.00,
-              status: 'ACTIVE',
-              joinDate: '2024-01-15T10:30:00Z',
-              referredBy: null,
-              referredUsers: [96]
-            },
-            {
-              id: 96,
-              name: 'Test User 2',
-              email: 'testuser11@example.com',
-              code: 'REF209826',
-              tier: 'Silver',
-              level: 'S1',
-              referrals: 0,
-              earnings: 250.00,
-              status: 'ACTIVE',
-              joinDate: '2024-01-20T14:45:00Z',
-              referredBy: 38,
-              referredUsers: []
-            }
-          ];
-          setUsers(mockUsers);
-        }
-        
-        setErr(null);
-        
-      } catch (apiError) {
-        console.error('💥 Error fetching referral tree from backend:', apiError);
-        // Fallback to mock data
-        const mockUsers = [
-          {
-            id: 38,
-            name: 'Test User 1',
-            email: 'testuser1@example.com',
-            code: 'REF209825',
-            tier: 'Gold',
-            level: 'G1',
-            referrals: 1,
-            earnings: 475.00,
-            status: 'ACTIVE',
-            joinDate: '2024-01-15T10:30:00Z',
-            referredBy: null,
-            referredUsers: [96]
-          },
-          {
-            id: 96,
-            name: 'Test User 2',
-            email: 'testuser11@example.com',
-            code: 'REF209826',
-            tier: 'Silver',
-            level: 'S1',
-            referrals: 0,
-            earnings: 250.00,
-            status: 'ACTIVE',
-            joinDate: '2024-01-20T14:45:00Z',
-            referredBy: 38,
-            referredUsers: []
-          }
-        ];
-        setUsers(mockUsers);
-        setErr(null);
-      }
-      
+      const res = await fetch(API_USERS, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const normalized = normalizeUsers(json);
+      setUsers(normalized);
+      setErr(null);
     } catch (e) {
+      console.error(e);
       setErr('Failed to load users');
     } finally {
       setLoading(false);
     }
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const { roots: allRoots } = useMemo(() => buildTreeFromUsers(users), [users]);
 
@@ -271,7 +191,10 @@ export default function ReferralTree() {
 
   const expandAll = () => {
     const s = new Set();
-    const walk = (n) => { s.add(n.key); n.children.forEach(walk); };
+    const walk = (n) => {
+      s.add(n.key);
+      n.children.forEach(walk);
+    };
     topLevel.forEach(walk);
     setManualExpanded(s);
   };
@@ -302,11 +225,13 @@ export default function ReferralTree() {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Referral Tree</h2>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* KPI CARDS — tablet now 2-up, desktop 3-up */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
           <div className="text-sm opacity-80">Total Network Users</div>
-          <div className="text-3xl font-semibold mt-2">{stats.totalUsers.toLocaleString('en-IN')}</div>
+          <div className="text-3xl font-semibold mt-2">
+            {stats.totalUsers.toLocaleString('en-IN')}
+          </div>
           <div className="text-xs opacity-70">Across all levels</div>
         </div>
         <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
@@ -321,11 +246,12 @@ export default function ReferralTree() {
         </div>
       </div>
 
-      {/* Controls */}
+      {/* CONTROLS — tablet gets its own grid rows; desktop stays neat */}
       <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
-        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
-          <div className="flex-1 flex items-center gap-2">
-            <span>🔎</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+          {/* Search (full width on tablet) */}
+          <div className="flex items-center gap-2 md:col-span-2 lg:col-span-1 min-w-0">
+            <span aria-hidden>🔎</span>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
@@ -333,7 +259,9 @@ export default function ReferralTree() {
               className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] transition-colors hover:border-[rgba(var(--accent-1),0.5)]"
             />
           </div>
-          <div className="flex gap-2">
+
+          {/* Buttons (wrap if needed) */}
+          <div className="flex gap-2 flex-wrap md:col-span-1 lg:col-span-1 justify-center">
             <button
               onClick={expandAll}
               className="rounded-lg px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
@@ -341,34 +269,41 @@ export default function ReferralTree() {
               Expand All
             </button>
             <button
-              onClick={() => {
-                setManualExpanded(new Set());
-              }}
+              onClick={collapseAll}
               className="rounded-lg px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
             >
               Collapse All
             </button>
           </div>
-          <select
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
-          >
-            <option>All</option>
-            <option>Beginner</option>
-            <option>B1</option><option>B2</option><option>B3</option><option>B4</option>
-            <option>S1</option><option>S2</option><option>S3</option>
-            <option>G1</option><option>G2</option>
-          </select>
-        </div>
-        {q.trim() && (
-          <div className="mt-2 text-xs opacity-70">
-            Tap a row to expand/collapse.
+
+          {/* Level filter (full-width on its cell) */}
+          <div className="md:col-span-1 lg:col-span-1">
+            <select
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+            >
+              <option>All</option>
+              <option>Beginner</option>
+              <option>B1</option>
+              <option>B2</option>
+              <option>B3</option>
+              <option>B4</option>
+              <option>S1</option>
+              <option>S2</option>
+              <option>S3</option>
+              <option>G1</option>
+              <option>G2</option>
+            </select>
           </div>
+        </div>
+
+        {q.trim() && (
+          <div className="mt-2 text-xs opacity-70">Tap a row to expand/collapse.</div>
         )}
       </div>
 
-      {/* Tree */}
+      {/* TREE */}
       <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
         {topLevel.length === 0 && (
           <div className="p-6 text-center opacity-70">
@@ -402,12 +337,10 @@ function Node({ node, depth, expanded, toggle, highlight }) {
   const hasKids = node.children.length > 0;
   const isMatch = highlight.has(node.key);
 
-  // Right-side metrics block (desktop/tablet)
+  // Right-side metrics block
   const Metrics = () => (
     <>
-      {node.user.tier && (
-        <Badge tier={tierKey(node.user.tier)}>{node.user.tier}</Badge>
-      )}
+      {node.user.tier && <Badge tier={tierKey(node.user.tier)}>{node.user.tier}</Badge>}
       {node.user.level && <Badge>{node.user.level}</Badge>}
       <Badge>{Number(node.user.referrals || 0).toLocaleString('en-IN')} referrals</Badge>
       <Badge>{fmtINR(node.user.earnings)}</Badge>
@@ -432,39 +365,43 @@ function Node({ node, depth, expanded, toggle, highlight }) {
         style={{ paddingLeft: 12 + depth * 20 }}
       >
         <span
-          className={`w-6 text-base md:text-lg select-none ${hasKids ? 'opacity-90' : 'opacity-30'} mt-0.5`}
+          className={`w-6 text-base lg:text-lg select-none ${
+            hasKids ? 'opacity-90' : 'opacity-30'
+          } mt-0.5`}
           aria-hidden="true"
         >
           {hasKids ? (isOpen ? '▾' : '▸') : '·'}
         </span>
 
-        {/* Name + code (full width; let it wrap on mobile) */}
+        {/* Name + code (full width; let it wrap on phone/tablet) */}
         <div className="min-w-0 flex-1">
           <div className="font-medium break-words">{node.user.name}</div>
           <div className="text-xs opacity-70 break-all">{node.user.code}</div>
 
-          {/* On mobile, put metrics BELOW the name so it has full width */}
-          <div className="mt-2 flex flex-wrap items-center gap-2 md:hidden">
+          {/* On phone & tablet, put metrics BELOW the name so it has full width */}
+          <div className="mt-2 flex flex-wrap items-center gap-2 lg:hidden">
             <Metrics />
           </div>
         </div>
 
-        {/* On md+ keep metrics on the right, aligned */}
-        <div className="ml-auto hidden md:flex flex-wrap items-center gap-2">
+        {/* On desktop/laptop (lg+), keep metrics on the right */}
+        <div className="ml-auto hidden lg:flex flex-wrap items-center gap-2">
           <Metrics />
         </div>
       </div>
 
-      {hasKids && isOpen && node.children.map((c) => (
-        <Node
-          key={c.key}
-          node={c}
-          depth={depth + 1}
-          expanded={expanded}
-          toggle={toggle}
-          highlight={highlight}
-        />
-      ))}
+      {hasKids &&
+        isOpen &&
+        node.children.map((c) => (
+          <Node
+            key={c.key}
+            node={c}
+            depth={depth + 1}
+            expanded={expanded}
+            toggle={toggle}
+            highlight={highlight}
+          />
+        ))}
     </>
   );
 }

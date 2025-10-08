@@ -1,3 +1,4 @@
+// src/pages/Analytics.jsx
 import React, { useEffect, useState } from 'react';
 import { 
   TrendingUp, 
@@ -22,15 +23,15 @@ import { API_ENDPOINTS } from '../config/api';
 
 // Enhanced Analytics Components
 const StatCard = ({ title, value, change, icon: Icon, trend, loading = false, color = "blue" }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300">
+  <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 hover:shadow-lg transition-all duration-300">
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-3">
         <div className={`p-3 rounded-lg bg-${color}-50`}>
           <Icon className={`w-6 h-6 text-${color}-600`} />
         </div>
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="text-sm font-medium text-[rgba(var(--fg),0.7)]">{title}</p>
+          <p className="text-2xl font-bold text-[rgb(var(--fg))]">
             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : value}
           </p>
         </div>
@@ -46,14 +47,14 @@ const StatCard = ({ title, value, change, icon: Icon, trend, loading = false, co
 );
 
 const AnalyticsChart = ({ title, data, type = "line", loading = false }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-6">
+  <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
     <div className="flex items-center justify-between mb-6">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">{title}</h3>
       <div className="flex items-center space-x-2">
-        <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+        <button className="p-2 text-[rgba(var(--fg),0.6)] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
           <Download className="w-4 h-4" />
         </button>
-        <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+        <button className="p-2 text-[rgba(var(--fg),0.6)] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
           <Filter className="w-4 h-4" />
         </button>
       </div>
@@ -63,10 +64,10 @@ const AnalyticsChart = ({ title, data, type = "line", loading = false }) => (
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     ) : (
-      <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+      <div className="h-64 flex items-center justify-center rounded-lg bg-[rgba(var(--fg),0.05)]">
         <div className="text-center">
-          <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <div className="text-sm text-gray-500">Chart visualization coming soon</div>
+          <BarChart3 className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
+          <div className="text-sm text-[rgba(var(--fg),0.6)]">Chart visualization coming soon</div>
         </div>
       </div>
     )}
@@ -74,9 +75,9 @@ const AnalyticsChart = ({ title, data, type = "line", loading = false }) => (
 );
 
 const PerformanceTable = ({ data, loading = false }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-6">
+  <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
     <div className="flex items-center justify-between mb-6">
-      <h3 className="text-lg font-semibold text-gray-900">Top Performers</h3>
+      <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">Top Performers</h3>
       <button className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700">
         <Eye className="w-4 h-4" />
         <span>View All</span>
@@ -90,21 +91,21 @@ const PerformanceTable = ({ data, loading = false }) => (
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-3 px-4 font-medium text-gray-600">Rank</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">User</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">Tier</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">Referrals</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">Earnings</th>
-              <th className="text-left py-3 px-4 font-medium text-gray-600">Growth</th>
+            <tr className="border-b border-[rgb(var(--border))]">
+              <th className="text-left py-3 px-4 font-medium text-[rgba(var(--fg),0.7)]">Rank</th>
+              <th className="text-left py-3 px-4 font-medium text-[rgba(var(--fg),0.7)]">User</th>
+              <th className="text-left py-3 px-4 font-medium text-[rgba(var(--fg),0.7)]">Tier</th>
+              <th className="text-left py-3 px-4 font-medium text-[rgba(var(--fg),0.7)]">Referrals</th>
+              <th className="text-left py-3 px-4 font-medium text-[rgba(var(--fg),0.7)]">Earnings</th>
+              <th className="text-left py-3 px-4 font-medium text-[rgba(var(--fg),0.7)]">Growth</th>
             </tr>
           </thead>
           <tbody>
             {data.map((performer, index) => (
-              <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+              <tr key={index} className="border-b border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]">
                 <td className="py-3 px-4">
                   <div className="flex items-center space-x-2">
-                    <span className="text-sm font-medium text-gray-900">#{index + 1}</span>
+                    <span className="text-sm font-medium text-[rgb(var(--fg))]">#{index + 1}</span>
                     {index < 3 && <Award className="w-4 h-4 text-yellow-500" />}
                   </div>
                 </td>
@@ -115,7 +116,7 @@ const PerformanceTable = ({ data, loading = false }) => (
                         {performer.name?.charAt(0) || 'U'}
                       </span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">{performer.name}</span>
+                    <span className="text-sm font-medium text-[rgb(var(--fg))]">{performer.name}</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">
@@ -128,7 +129,7 @@ const PerformanceTable = ({ data, loading = false }) => (
                   </span>
                 </td>
                 <td className="py-3 px-4">
-                  <span className="text-sm font-medium text-gray-900">{performer.referrals}</span>
+                  <span className="text-sm font-medium text-[rgb(var(--fg))]">{performer.referrals}</span>
                 </td>
                 <td className="py-3 px-4">
                   <span className="text-sm font-medium text-green-600">₹{performer.amount}</span>
@@ -254,20 +255,20 @@ export default function Analytics() {
   ] : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Advanced Analytics</h1>
-              <p className="text-gray-600 mt-2">Comprehensive insights and performance metrics</p>
+              <h1 className="text-3xl font-bold text-[rgb(var(--fg))]">Advanced Analytics</h1>
+              <p className="text-[rgba(var(--fg),0.7)] mt-2">Comprehensive insights and performance metrics</p>
             </div>
             <div className="flex items-center space-x-4">
               <select 
                 value={dateRange} 
                 onChange={(e) => setDateRange(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-[rgb(var(--border))] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
               >
                 <option value="7d">Last 7 days</option>
                 <option value="30d">Last 30 days</option>
@@ -315,52 +316,52 @@ export default function Analytics() {
 
         {/* Additional Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Key Insights</h3>
+          <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
+            <h3 className="text-lg font-semibold text-[rgb(var(--fg))] mb-4">Key Insights</h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Zap className="w-5 h-5 text-yellow-500" />
-                <span className="text-sm text-gray-600">Peak performance hours: 2-4 PM</span>
+                <span className="text-sm text-[rgba(var(--fg),0.7)]">Peak performance hours: 2-4 PM</span>
               </div>
               <div className="flex items-center space-x-3">
                 <TrendingUp className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-gray-600">Revenue growth: +12.5% this month</span>
+                <span className="text-sm text-[rgba(var(--fg),0.7)]">Revenue growth: +12.5% this month</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Users className="w-5 h-5 text-blue-500" />
-                <span className="text-sm text-gray-600">User engagement: 85% active</span>
+                <span className="text-sm text-[rgba(var(--fg),0.7)]">User engagement: 85% active</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
+            <h3 className="text-lg font-semibold text-[rgb(var(--fg))] mb-4">Quick Actions</h3>
             <div className="space-y-2">
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+              <button className="w-full text-left px-3 py-2 text-sm text-[rgba(var(--fg),0.7)] hover:bg-[rgba(var(--fg),0.05)] rounded-lg">
                 Export Performance Report
               </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+              <button className="w-full text-left px-3 py-2 text-sm text-[rgba(var(--fg),0.7)] hover:bg-[rgba(var(--fg),0.05)] rounded-lg">
                 Send Performance Alerts
               </button>
-              <button className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg">
+              <button className="w-full text-left px-3 py-2 text-sm text-[rgba(var(--fg),0.7)] hover:bg-[rgba(var(--fg),0.05)] rounded-lg">
                 Schedule Analytics Review
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">System Health</h3>
+          <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
+            <h3 className="text-lg font-semibold text-[rgb(var(--fg))] mb-4">System Health</h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">API Response Time</span>
+                <span className="text-sm text-[rgba(var(--fg),0.7)]">API Response Time</span>
                 <span className="text-sm font-medium text-green-600">45ms</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Database Status</span>
+                <span className="text-sm text-[rgba(var(--fg),0.7)]">Database Status</span>
                 <span className="text-sm font-medium text-green-600">Healthy</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Uptime</span>
+                <span className="text-sm text-[rgba(var(--fg),0.7)]">Uptime</span>
                 <span className="text-sm font-medium text-green-600">99.9%</span>
               </div>
             </div>

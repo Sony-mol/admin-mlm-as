@@ -56,6 +56,8 @@
   border-color: rgb(var(--tier-gold)) !important;
 }
 
+
+
 /* (Optional) micro-contrast boost for silver on light backgrounds */
 .theme[data-theme="light"] [data-tier="silver"] {
   text-shadow: 0 0 1px rgba(0,0,0,.35);

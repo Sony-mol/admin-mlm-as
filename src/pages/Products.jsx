@@ -1,3 +1,4 @@
+// src/pages/Products.jsx
 import React, { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '../config/api';
 import { 
@@ -31,9 +32,9 @@ import {
 
 // Product Card Component
 const ProductCard = ({ product, onEdit, onDelete, onView }) => (
-  <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 group">
+  <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 hover:shadow-lg transition-all duration-300 group">
     <div className="relative">
-      <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+      <div className="aspect-square rounded-lg overflow-hidden mb-4 bg-[rgba(var(--fg),0.06)]">
         {product.image ? (
           <img 
             src={product.image} 
@@ -42,16 +43,16 @@ const ProductCard = ({ product, onEdit, onDelete, onView }) => (
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="w-12 h-12 text-gray-400" />
+            <ImageIcon className="w-12 h-12 opacity-40" />
           </div>
         )}
       </div>
       
-      {/* Product Status Badge */}
+      {/* Product Status Badge (kept accent colors) */}
       <div className="absolute top-2 right-2">
         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
           product.status === 'active' ? 'bg-green-100 text-green-800' :
-          product.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
+          product.status === 'inactive' ? 'bg-gray-200 text-gray-900' :
           'bg-red-100 text-red-800'
         }`}>
           {product.status}
@@ -61,43 +62,43 @@ const ProductCard = ({ product, onEdit, onDelete, onView }) => (
 
     <div className="space-y-3">
       <div>
-        <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
-        <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+        <h3 className="font-semibold text-lg text-[rgb(var(--fg))]">{product.name}</h3>
+        <p className="text-sm text-[rgba(var(--fg),0.7)] line-clamp-2">{product.description}</p>
       </div>
 
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-2xl font-bold text-gray-900">₹{product.price}</div>
-          <div className="text-sm text-gray-500">Stock: {product.stock}</div>
+          <div className="text-2xl font-bold text-[rgb(var(--fg))]">₹{product.price}</div>
+          <div className="text-sm text-[rgba(var(--fg),0.6)]">Stock: {product.stock}</div>
         </div>
         <div className="flex items-center space-x-1">
           <Star className="w-4 h-4 text-yellow-400 fill-current" />
-          <span className="text-sm text-gray-600">{product.rating || '4.5'}</span>
+          <span className="text-sm text-[rgba(var(--fg),0.7)]">{product.rating || '4.5'}</span>
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-3 border-t border-[rgb(var(--border))]">
         <div className="flex items-center space-x-2">
           <button
             onClick={() => onView(product)}
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="p-2 rounded-lg transition-colors text-[rgba(var(--fg),0.6)] hover:text-blue-600 hover:bg-[rgba(37,99,235,0.12)]"
           >
             <Eye className="w-4 h-4" />
           </button>
           <button
             onClick={() => onEdit(product)}
-            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+            className="p-2 rounded-lg transition-colors text-[rgba(var(--fg),0.6)] hover:text-green-600 hover:bg-[rgba(22,163,74,0.12)]"
           >
             <Edit className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(product)}
-            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 rounded-lg transition-colors text-[rgba(var(--fg),0.6)] hover:text-red-600 hover:bg-[rgba(220,38,38,0.12)]"
           >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex items-center space-x-1 text-sm text-gray-500">
+        <div className="flex items-center space-x-1 text-sm text-[rgba(var(--fg),0.6)]">
           <ShoppingCart className="w-4 h-4" />
           <span>{product.sales || 0}</span>
         </div>
@@ -148,10 +149,10 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-900">Photo Editor</h3>
+          <h3 className="text-xl font-semibold text-[rgb(var(--fg))]">Photo Editor</h3>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => onSave(editedImage)}
@@ -161,7 +162,7 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
             </button>
             <button
               onClick={onCancel}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-4 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)] text-[rgb(var(--fg))]"
             >
               Cancel
             </button>
@@ -171,7 +172,7 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Image Preview */}
           <div className="space-y-4">
-            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            <div className="aspect-square rounded-lg overflow-hidden bg-[rgba(var(--fg),0.06)]">
               <img 
                 src={editedImage} 
                 alt="Edited"
@@ -181,15 +182,15 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
             
             {/* Quick Actions */}
             <div className="flex items-center space-x-2">
-              <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button className="flex items-center space-x-2 px-3 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
                 <Crop className="w-4 h-4" />
                 <span>Crop</span>
               </button>
-              <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button className="flex items-center space-x-2 px-3 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
                 <RotateCw className="w-4 h-4" />
                 <span>Rotate</span>
               </button>
-              <button className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <button className="flex items-center space-x-2 px-3 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
                 <Download className="w-4 h-4" />
                 <span>Download</span>
               </button>
@@ -199,7 +200,7 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
           {/* Filters Panel */}
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Brightness</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Brightness</label>
               <input
                 type="range"
                 min="0"
@@ -208,11 +209,11 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
                 onChange={(e) => handleFilterChange('brightness', e.target.value)}
                 className="w-full"
               />
-              <div className="text-xs text-gray-500">{filters.brightness}%</div>
+              <div className="text-xs text-[rgba(var(--fg),0.6)]">{filters.brightness}%</div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Contrast</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Contrast</label>
               <input
                 type="range"
                 min="0"
@@ -221,11 +222,11 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
                 onChange={(e) => handleFilterChange('contrast', e.target.value)}
                 className="w-full"
               />
-              <div className="text-xs text-gray-500">{filters.contrast}%</div>
+              <div className="text-xs text-[rgba(var(--fg),0.6)]">{filters.contrast}%</div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Saturation</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Saturation</label>
               <input
                 type="range"
                 min="0"
@@ -234,11 +235,11 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
                 onChange={(e) => handleFilterChange('saturation', e.target.value)}
                 className="w-full"
               />
-              <div className="text-xs text-gray-500">{filters.saturation}%</div>
+              <div className="text-xs text-[rgba(var(--fg),0.6)]">{filters.saturation}%</div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Blur</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Blur</label>
               <input
                 type="range"
                 min="0"
@@ -247,11 +248,11 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
                 onChange={(e) => handleFilterChange('blur', e.target.value)}
                 className="w-full"
               />
-              <div className="text-xs text-gray-500">{filters.blur}px</div>
+              <div className="text-xs text-[rgba(var(--fg),0.6)]">{filters.blur}px</div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Sepia</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Sepia</label>
               <input
                 type="range"
                 min="0"
@@ -260,12 +261,12 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
                 onChange={(e) => handleFilterChange('sepia', e.target.value)}
                 className="w-full"
               />
-              <div className="text-xs text-gray-500">{filters.sepia}%</div>
+              <div className="text-xs text-[rgba(var(--fg),0.6)]">{filters.sepia}%</div>
             </div>
 
             {/* Preset Filters */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Preset Filters</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Preset Filters</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { name: 'Original', filters: { brightness: 100, contrast: 100, saturation: 100, blur: 0, sepia: 0 }},
@@ -279,7 +280,7 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
                       setFilters(preset.filters);
                       applyFilters(image, preset.filters);
                     }}
-                    className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-3 py-2 text-sm border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]"
                   >
                     {preset.name}
                   </button>
@@ -324,15 +325,15 @@ const ProductForm = ({ product, onSave, onCancel }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-xl font-semibold text-[rgb(var(--fg))]">
             {product ? 'Edit Product' : 'Add New Product'}
           </h3>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600"
+            className="rounded-lg px-2 py-1 text-[rgba(var(--fg),0.6)] hover:bg-[rgba(var(--fg),0.05)]"
           >
             ✕
           </button>
@@ -341,14 +342,14 @@ const ProductForm = ({ product, onSave, onCancel }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Product Image */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
+            <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Product Image</label>
             <div className="flex items-center space-x-4">
-              <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
+              <div className="w-24 h-24 rounded-lg overflow-hidden bg-[rgba(var(--fg),0.06)]">
                 {formData.image ? (
                   <img src={formData.image} alt="Product" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-gray-400" />
+                    <ImageIcon className="w-8 h-8 opacity-40" />
                   </div>
                 )}
               </div>
@@ -362,7 +363,7 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                 />
                 <label
                   htmlFor="image-upload"
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center space-x-2 px-4 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)] cursor-pointer"
                 >
                   <Upload className="w-4 h-4" />
                   <span>Upload Image</span>
@@ -371,7 +372,7 @@ const ProductForm = ({ product, onSave, onCancel }) => {
                   <button
                     type="button"
                     onClick={() => setShowPhotoEditor(true)}
-                    className="flex items-center space-x-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50"
+                    className="flex items-center space-x-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-[rgba(37,99,235,0.12)]"
                   >
                     <Crop className="w-4 h-4" />
                     <span>Edit Image</span>
@@ -384,54 +385,54 @@ const ProductForm = ({ product, onSave, onCancel }) => {
           {/* Product Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Product Name</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹)</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Price (₹)</label>
               <input
                 type="number"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+            <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Stock</label>
               <input
                 type="number"
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Category</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
               >
                 <option value="">Select Category</option>
                 <option value="electronics">Electronics</option>
@@ -442,11 +443,11 @@ const ProductForm = ({ product, onSave, onCancel }) => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Status</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -455,11 +456,11 @@ const ProductForm = ({ product, onSave, onCancel }) => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-[rgb(var(--border))]">
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              className="px-6 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)] text-[rgb(var(--fg))]"
             >
               Cancel
             </button>
@@ -741,14 +742,14 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--fg))] p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Product Management</h1>
-              <p className="text-gray-600 mt-2">Manage your product catalog with photos and details</p>
+              <h1 className="text-3xl font-bold text-[rgb(var(--fg))]">Product Management</h1>
+              <p className="text-[rgba(var(--fg),0.7)] mt-2">Manage your product catalog with photos and details</p>
             </div>
             <button
               onClick={() => setShowForm(true)}
@@ -761,23 +762,23 @@ export default function Products() {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
+        <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
                 <input
                   type="text"
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="pl-10 pr-4 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 />
               </div>
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
               >
                 <option value="">All Categories</option>
                 <option value="electronics">Electronics</option>
@@ -790,13 +791,21 @@ export default function Products() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`p-2 rounded-lg ${
+                  viewMode === 'grid' 
+                    ? 'bg-[rgba(37,99,235,0.12)] text-blue-600' 
+                    : 'text-[rgba(var(--fg),0.6)] hover:bg-[rgba(var(--fg),0.05)]'
+                }`}
               >
                 <Grid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                className={`p-2 rounded-lg ${
+                  viewMode === 'list' 
+                    ? 'bg-[rgba(37,99,235,0.12)] text-blue-600' 
+                    : 'text-[rgba(var(--fg),0.6)] hover:bg-[rgba(var(--fg),0.05)]'
+                }`}
               >
                 <List className="w-4 h-4" />
               </button>
@@ -829,9 +838,9 @@ export default function Products() {
 
         {filteredProducts.length === 0 && !loading && (
           <div className="text-center py-12">
-            <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-500">Try adjusting your search or filter criteria</p>
+            <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
+            <h3 className="text-lg font-medium text-[rgb(var(--fg))] mb-2">No products found</h3>
+            <p className="text-[rgba(var(--fg),0.6)]">Try adjusting your search or filter criteria</p>
           </div>
         )}
 

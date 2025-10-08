@@ -40,7 +40,7 @@ const Card = ({ children, className = "", loading = false }) => (
     {loading ? (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-        <span className="ml-2 text-sm text-gray-600">Loading...</span>
+        <span className="ml-2 text-sm text-[rgba(var(--fg),0.7)]">Loading...</span>
       </div>
     ) : (
       children
@@ -52,16 +52,16 @@ const StatCard = ({ title, value, change, icon: Icon, trend, loading = false }) 
   <Card className="p-6 hover:shadow-xl transition-all duration-300">
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+        <p className="text-sm font-medium text-[rgba(var(--fg),0.7)] mb-1">{title}</p>
         <div className="flex items-center gap-2">
           {loading ? (
-            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-20 rounded animate-pulse bg-[rgba(var(--fg),0.15)]"></div>
           ) : (
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl font-bold text-[rgb(var(--fg))]">{value}</p>
           )}
           {!loading && change && (
             <div className={`flex items-center gap-1 text-sm ${
-              trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-600'
+              trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-[rgba(var(--fg),0.7)]'
             }`}>
               {trend === 'up' ? <ArrowUpRight className="w-4 h-4" /> : 
                trend === 'down' ? <ArrowDownRight className="w-4 h-4" /> : null}
@@ -420,7 +420,6 @@ export default function Overview() {
         
         if (performersRes.ok) {
           const performersJson = await performersRes.json();
-          console.log('✅ Top performers data received:', performersJson);
           if (mounted) {
             setDashboardData(prev => ({
               ...prev,
@@ -509,7 +508,7 @@ export default function Overview() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 text-[rgb(var(--fg))]">
         <Header title="Overview" subtitle="Loading dashboard data..." />
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
@@ -523,7 +522,7 @@ export default function Overview() {
 
   if (!dashboardData) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 text-[rgb(var(--fg))]">
         <Header title="Overview" />
         <Card className="p-8 text-center">
           <div className="flex flex-col items-center gap-4">
@@ -532,25 +531,25 @@ export default function Overview() {
             </div>
             <div>
               <div className="font-semibold text-lg mb-2">Couldn't load overview</div>
-              <div className="text-sm text-gray-600 mb-4">Please check your authentication and try again.</div>
+              <div className="text-sm text-[rgba(var(--fg),0.7)] mb-4">Please check your authentication and try again.</div>
             </div>
-        <button
-          onClick={() => location.reload()}
+            <button
+              onClick={() => location.reload()}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
+            >
               <RefreshCw className="w-4 h-4" />
-          Retry
-        </button>
+              Retry
+            </button>
           </div>
-      </Card>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-[rgb(var(--fg))]">
       <div className="flex items-center justify-between">
-      <Header title="Overview" />
+        <Header title="Overview" />
         <button
           onClick={() => window.location.reload()}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -603,45 +602,27 @@ export default function Overview() {
                 <PieChart className="w-5 h-5 text-blue-600" />
                 <div className="font-semibold text-lg">User Level Distribution</div>
               </div>
-              <div className="text-sm text-gray-600">Choose a tier to view detailed breakdown</div>
-            </div>
-
-            {/* Edit Tier (no-op for now) */}
-            <button
-              type="button"
-              aria-label="Edit Tier (coming soon)"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
-              onClick={() => {}}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Edit Tier
-            </button>
+              <div className="text-sm text-[rgba(var(--fg),0.7)]">Choose a tier to view detailed breakdown</div>
+            </div>            
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {["bronze", "silver", "gold"].map((t) => {
-              const tierColors = {
-                bronze: "from-amber-50 to-amber-100 border-amber-200 text-amber-800",
-                silver: "from-gray-50 to-gray-100 border-gray-200 text-gray-800", 
-                gold: "from-yellow-50 to-yellow-100 border-yellow-200 text-yellow-800"
-              };
-              
-              return (
+            {["bronze", "silver", "gold"].map((t) => (
               <button
                 key={t}
                 onClick={() => openTier(t)}
                 data-tier={t}
-                  className={`rounded-xl border-2 bg-gradient-to-br ${tierColors[t]} py-6 px-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-105 group`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs font-medium opacity-70">TIER</div>
-                    <div className="w-2 h-2 rounded-full bg-current opacity-60 group-hover:opacity-100 transition-opacity"></div>
-                  </div>
-                  <div className="text-2xl font-bold mb-1">{t.toUpperCase()}</div>
-                  <div className="text-xs opacity-70 group-hover:opacity-90 transition-opacity">Tap to view levels</div>
+                className={`rounded-xl border-2 py-6 px-5 bg-[rgb(var(--card))] hover:bg-[rgba(var(--fg),0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-105 group`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-medium opacity-70">TIER</div>
+                  <div className="w-2 h-2 rounded-full bg-current opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                </div>
+                <div className="text-2xl font-bold mb-1">{t.toUpperCase()}</div>
+                <div className="text-xs opacity-70 group-hover:opacity-90 transition-opacity">Tap to view levels</div>
               </button>
-              );
-            })}
+            ))}
+
           </div>
 
           <TierModal
@@ -662,7 +643,7 @@ export default function Overview() {
               <TrendingUp className="w-5 h-5 text-green-600" />
               <div className="font-semibold text-lg">Monthly Revenue</div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-[rgba(var(--fg),0.7)]">
               <Calendar className="w-4 h-4" />
               Last 6 months
             </div>
@@ -670,14 +651,14 @@ export default function Overview() {
           
           {revenue.length > 0 ? (
             <div className="h-64">
-          <LineChartMini points={revenue} />
+              <LineChartMini points={revenue} />
             </div>
           ) : (
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+            <div className="h-64 flex items-center justify-center rounded-lg bg-[rgba(var(--fg),0.05)]">
               <div className="text-center">
-                <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <div className="text-sm text-gray-500">No revenue data available</div>
-                <div className="text-xs text-gray-400 mt-1">Revenue data will appear here</div>
+                <TrendingUp className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
+                <div className="text-sm text-[rgba(var(--fg),0.7)]">No revenue data available</div>
+                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">Revenue data will appear here</div>
               </div>
             </div>
           )}
@@ -690,22 +671,22 @@ export default function Overview() {
               <Users className="w-5 h-5 text-blue-600" />
               <div className="font-semibold text-lg">Top Performers</div>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-[rgba(var(--fg),0.7)]">
               {top.length} {top.length === 1 ? 'performer' : 'performers'}
             </div>
           </div>
           
           <div className="space-y-3">
             {top.map((t, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+              <div key={i} className="flex items-center gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors">
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
                     {i + 1}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 truncate">{t.name}</div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="font-medium text-[rgb(var(--fg))] truncate">{t.name}</div>
+                  <div className="flex items-center gap-2 text-sm text-[rgba(var(--fg),0.7)]">
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                       tierKey(t.level) === 'gold' ? 'bg-yellow-100 text-yellow-800' :
                       tierKey(t.level) === 'silver' ? 'bg-gray-100 text-gray-800' :
@@ -720,17 +701,17 @@ export default function Overview() {
                 </div>
                 <div className="flex-shrink-0 text-right">
                   <div className="font-semibold text-green-600">
-                  {t.currency === "INR" ? INR(Number(t.amount || 0)) : Number(t.amount || 0).toLocaleString("en-IN")}
-                </div>
-                  <div className="text-xs text-gray-500">earnings</div>
+                    {t.currency === "INR" ? INR(Number(t.amount || 0)) : Number(t.amount || 0).toLocaleString("en-IN")}
+                  </div>
+                  <div className="text-xs text-[rgba(var(--fg),0.6)]">earnings</div>
                 </div>
               </div>
             ))}
             {top.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <div className="text-center py-8 text-[rgba(var(--fg),0.7)]">
+                <Users className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
                 <div className="text-sm">No performers yet</div>
-                <div className="text-xs text-gray-400 mt-1">Top performers will appear here</div>
+                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">Top performers will appear here</div>
               </div>
             )}
           </div>
@@ -746,30 +727,30 @@ export default function Overview() {
           </div>
           <div className="space-y-3">
             {activities.map((a, i) => (
-              <div key={i} className="flex items-start gap-4 p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+              <div key={i} className="flex items-start gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                   <Activity className="w-4 h-4 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-gray-900">{a.user}</span>
+                    <span className="font-medium text-[rgb(var(--fg))]">{a.user}</span>
                     {(a.tier || a.level) && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         {a.tier || a.level}
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-gray-600 mb-1">{a.action}</div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">{a.action}</div>
+                  <div className="flex items-center gap-2 text-xs text-[rgba(var(--fg),0.6)]">
                     <Clock className="w-3 h-3" />
                     {relTime(a.timestamp)}
                   </div>
-                  </div>
                 </div>
+              </div>
             ))}
             {activities.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <Activity className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <div className="text-center py-8 text-[rgba(var(--fg),0.7)]">
+                <Activity className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
                 <div className="text-sm">No recent activities</div>
               </div>
             )}
