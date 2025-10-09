@@ -1,7 +1,9 @@
 // src/pages/TierManagement.jsx
 import React, { useEffect, useState, useRef } from 'react';
 import { API_ENDPOINTS } from '../config/api';
-import { Plus, Trash2, Save, RotateCcw, Loader2, Users, Layers, BarChart3 } from 'lucide-react';
+import { Plus, Trash2, Save, RotateCcw, Loader2, Users, Layers, BarChart3, Crown } from 'lucide-react';
+import AddTierModal from '../components/AddTierModal';
+import AddLevelModal from '../components/AddLevelModal';
 
 // API endpoints
 const TIER_STRUCTURE_API = API_ENDPOINTS.TIER_STRUCTURE;
@@ -15,8 +17,14 @@ export default function TierManagement() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Modal states
+  const [showAddTierModal, setShowAddTierModal] = useState(false);
+  const [showAddLevelModal, setShowAddLevelModal] = useState(false);
+  const [selectedTierForLevel, setSelectedTierForLevel] = useState(null);
+
   // Toast popup (viewport-level)
   const [showPopup, setShowPopup] = useState(false);
+  const [popupMessage, setPopupMessage] = useState('');
   const popupTimerRef = useRef(null);
 
   // Load structure + stats
@@ -168,10 +176,29 @@ export default function TierManagement() {
   };
 
   // Show toast helper
-  const showToast = () => {
+  const showToast = (message = '✅ Level added!') => {
+    setPopupMessage(message);
     setShowPopup(true);
     if (popupTimerRef.current) clearTimeout(popupTimerRef.current);
     popupTimerRef.current = setTimeout(() => setShowPopup(false), 2500);
+  };
+
+  // Handle tier creation success
+  const handleTierCreated = (newTier) => {
+    showToast(`✅ ${newTier.name} tier created!`);
+    loadData(); // Reload data to show new tier
+  };
+
+  // Handle level creation success
+  const handleLevelCreated = (newLevel) => {
+    showToast(`✅ Level ${newLevel.levelNumber} created!`);
+    loadData(); // Reload data to show new level
+  };
+
+  // Open add level modal for specific tier
+  const openAddLevelModal = (tierName) => {
+    setSelectedTierForLevel(tierName);
+    setShowAddLevelModal(true);
   };
 
   if (loading) {
@@ -214,7 +241,7 @@ export default function TierManagement() {
           role="status"
           aria-live="polite"
         >
-          ✅ Level added!
+          {popupMessage}
         </div>
       )}
 
@@ -225,6 +252,13 @@ export default function TierManagement() {
           <p className="text-sm opacity-70">Manage referral rewards structure and tier levels</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAddTierModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
+          >
+            <Crown className="w-4 h-4" />
+            Add Tier
+          </button>
           <button
             onClick={resetToDefault}
             disabled={saving}
@@ -283,11 +317,8 @@ export default function TierManagement() {
                 {tierEmoji(tierName)} {tierName} Tier
               </h3>
               <button
-                onClick={() => {
-                  addLevel(tierName);
-                  showToast(); // <- show viewport toast
-                }}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-white"
+                onClick={() => openAddLevelModal(tierName)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
               >
                 <Plus className="w-4 h-4" />
                 Add Level
@@ -378,6 +409,23 @@ export default function TierManagement() {
           </div>
         </div>
       )}
+
+      {/* Modals */}
+      <AddTierModal
+        isOpen={showAddTierModal}
+        onClose={() => setShowAddTierModal(false)}
+        onSuccess={handleTierCreated}
+      />
+
+      <AddLevelModal
+        isOpen={showAddLevelModal}
+        onClose={() => {
+          setShowAddLevelModal(false);
+          setSelectedTierForLevel(null);
+        }}
+        onSuccess={handleLevelCreated}
+        tierName={selectedTierForLevel}
+      />
     </div>
   );
 }

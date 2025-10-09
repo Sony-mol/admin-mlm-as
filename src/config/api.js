@@ -40,6 +40,24 @@ export const API_ENDPOINTS = {
   RESET_DEFAULT: getApiUrl('/api/admin/tier-management/reset'),
   INITIALIZE: getApiUrl('/api/settings/commission-configs/initialize'),
   BULK_UPDATE_CONFIGS: getApiUrl('/api/settings/commission-configs/bulk'),
+  
+  // Tier Management APIs
+  CREATE_TIER: getApiUrl('/api/tiers'),
+  GET_ALL_TIERS: getApiUrl('/api/tiers'),
+  UPDATE_TIER: getApiUrl('/api/tiers'),
+  DELETE_TIER: getApiUrl('/api/tiers'),
+  
+  // Level Management APIs
+  CREATE_LEVEL: getApiUrl('/api/levels'),
+  GET_ALL_LEVELS: getApiUrl('/api/levels'),
+  UPDATE_LEVEL: getApiUrl('/api/levels'),
+  DELETE_LEVEL: getApiUrl('/api/levels'),
+  
+  // Reward Management APIs
+  CREATE_REWARD: getApiUrl('/api/rewards'),
+  GET_ALL_REWARDS: getApiUrl('/api/rewards'),
+  UPDATE_REWARD: getApiUrl('/api/rewards'),
+  DELETE_REWARD: getApiUrl('/api/rewards'),
 };
 
 export default API_BASE_URL;
