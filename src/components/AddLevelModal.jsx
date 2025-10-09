@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Loader2, Plus } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
+import ConfirmationDialog from './ConfirmationDialog';
 
 export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) {
   const [formData, setFormData] = useState({
@@ -10,10 +11,11 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
     rewardType: 'GIFT'
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [tiers, setTiers] = useState([]);
   const [rewards, setRewards] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationData, setConfirmationData] = useState({});
 
   // Load tiers and rewards when modal opens
   useEffect(() => {
@@ -67,21 +69,38 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.tierId) {
-      setError('Please select a tier');
+      setConfirmationData({
+        type: 'warning',
+        title: 'Validation Error',
+        message: 'Please select a tier before creating a level.',
+        onConfirm: () => setShowConfirmation(false)
+      });
+      setShowConfirmation(true);
       return;
     }
     if (!formData.levelNumber || formData.levelNumber < 1) {
-      setError('Level number must be at least 1');
+      setConfirmationData({
+        type: 'warning',
+        title: 'Validation Error',
+        message: 'Level number must be at least 1.',
+        onConfirm: () => setShowConfirmation(false)
+      });
+      setShowConfirmation(true);
       return;
     }
     if (!formData.requiredReferrals || formData.requiredReferrals < 0) {
-      setError('Required referrals must be 0 or greater');
+      setConfirmationData({
+        type: 'warning',
+        title: 'Validation Error',
+        message: 'Required referrals must be 0 or greater.',
+        onConfirm: () => setShowConfirmation(false)
+      });
+      setShowConfirmation(true);
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
 
       const token = localStorage.getItem('auth')
         ? JSON.parse(localStorage.getItem('auth')).accessToken
@@ -98,22 +117,50 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
           rewardId = existingReward.id;
         } else {
           // Create new reward
-          const rewardRes = await fetch(API_ENDPOINTS.CREATE_REWARD, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              rewardName: formData.rewardName.trim(),
-              rewardType: formData.rewardType,
-              description: `Reward for ${tierName} tier level ${formData.levelNumber}`
-            }),
-          });
-          
-          if (rewardRes.ok) {
-            const newReward = await rewardRes.json();
-            rewardId = newReward.id;
+          try {
+            const rewardRes = await fetch(API_ENDPOINTS.CREATE_REWARD, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                rewardName: formData.rewardName.trim(),
+                rewardType: formData.rewardType,
+                rewardValue: 0.0, // Default value
+                description: `Reward for ${tierName} tier level ${formData.levelNumber}`
+              }),
+            });
+            
+            if (rewardRes.ok) {
+              const newReward = await rewardRes.json();
+              rewardId = newReward.id;
+            } else {
+              const errorData = await rewardRes.json().catch(() => ({}));
+              console.error('Reward creation failed:', errorData);
+              
+              // Show error confirmation for reward creation failure
+              setConfirmationData({
+                type: 'error',
+                title: 'Failed to Create Reward',
+                message: `Failed to create reward: ${errorData.error || 'Unknown error'}. The level will not be created.`,
+                onConfirm: () => setShowConfirmation(false)
+              });
+              setShowConfirmation(true);
+              return;
+            }
+          } catch (err) {
+            console.error('Network error creating reward:', err);
+            
+            // Show error confirmation for network error
+            setConfirmationData({
+              type: 'error',
+              title: 'Network Error',
+              message: `Network error creating reward: ${err.message}. Please check your connection and try again.`,
+              onConfirm: () => setShowConfirmation(false)
+            });
+            setShowConfirmation(true);
+            return;
           }
         }
       }
@@ -121,7 +168,14 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
       // Get the selected tier
       const selectedTier = tiers.find(tier => tier.id === formData.tierId);
       if (!selectedTier) {
-        setError('Selected tier not found');
+        // Show error confirmation for missing tier
+        setConfirmationData({
+          type: 'error',
+          title: 'Invalid Selection',
+          message: 'Selected tier not found. Please refresh the page and try again.',
+          onConfirm: () => setShowConfirmation(false)
+        });
+        setShowConfirmation(true);
         return;
       }
 
@@ -142,14 +196,40 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
 
       if (levelRes.ok) {
         const newLevel = await levelRes.json();
-        onSuccess(newLevel);
-        handleClose();
+        
+        // Show success confirmation
+        setConfirmationData({
+          type: 'success',
+          title: 'Level Created Successfully!',
+          message: `Level ${newLevel.levelNumber} has been added to ${selectedTier.name} tier successfully.`,
+          onConfirm: () => {
+            setShowConfirmation(false);
+            onSuccess(newLevel);
+            handleClose();
+          }
+        });
+        setShowConfirmation(true);
       } else {
         const errorData = await levelRes.json().catch(() => ({}));
-        setError(errorData.error || 'Failed to create level');
+        
+        // Show error confirmation
+        setConfirmationData({
+          type: 'error',
+          title: 'Failed to Create Level',
+          message: errorData.error || 'Failed to create level. Please try again.',
+          onConfirm: () => setShowConfirmation(false)
+        });
+        setShowConfirmation(true);
       }
     } catch (err) {
-      setError('Error creating level: ' + err.message);
+      // Show error confirmation
+      setConfirmationData({
+        type: 'error',
+        title: 'Network Error',
+        message: `Error creating level: ${err.message}. Please check your connection and try again.`,
+        onConfirm: () => setShowConfirmation(false)
+      });
+      setShowConfirmation(true);
     } finally {
       setLoading(false);
     }
@@ -162,13 +242,11 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
       rewardName: '',
       rewardType: 'GIFT'
     });
-    setError('');
     onClose();
   };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (error) setError('');
   };
 
   if (!isOpen) return null;
@@ -288,11 +366,6 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
               </select>
             </div>
 
-            {error && (
-              <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-200">
-                {error}
-              </div>
-            )}
 
             <div className="flex items-center gap-3 pt-4">
               <button
@@ -324,6 +397,13 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
           </form>
         )}
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        {...confirmationData}
+      />
     </div>
   );
 }

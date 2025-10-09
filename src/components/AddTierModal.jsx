@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Save, Loader2 } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
+import ConfirmationDialog from './ConfirmationDialog';
 
 export default function AddTierModal({ isOpen, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -8,18 +9,24 @@ export default function AddTierModal({ isOpen, onClose, onSuccess }) {
     description: ''
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [confirmationData, setConfirmationData] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      setError('Tier name is required');
+      setConfirmationData({
+        type: 'warning',
+        title: 'Validation Error',
+        message: 'Tier name is required. Please enter a tier name.',
+        onConfirm: () => setShowConfirmation(false)
+      });
+      setShowConfirmation(true);
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
       
       const token = localStorage.getItem('auth')
         ? JSON.parse(localStorage.getItem('auth')).accessToken
@@ -39,14 +46,40 @@ export default function AddTierModal({ isOpen, onClose, onSuccess }) {
 
       if (response.ok) {
         const newTier = await response.json();
-        onSuccess(newTier);
-        handleClose();
+        
+        // Show success confirmation
+        setConfirmationData({
+          type: 'success',
+          title: 'Tier Created Successfully!',
+          message: `The "${newTier.name}" tier has been created successfully.`,
+          onConfirm: () => {
+            setShowConfirmation(false);
+            onSuccess(newTier);
+            handleClose();
+          }
+        });
+        setShowConfirmation(true);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        setError(errorData.error || 'Failed to create tier');
+        
+        // Show error confirmation
+        setConfirmationData({
+          type: 'error',
+          title: 'Failed to Create Tier',
+          message: errorData.error || 'Failed to create tier. Please try again.',
+          onConfirm: () => setShowConfirmation(false)
+        });
+        setShowConfirmation(true);
       }
     } catch (err) {
-      setError('Error creating tier: ' + err.message);
+      // Show error confirmation
+      setConfirmationData({
+        type: 'error',
+        title: 'Network Error',
+        message: `Error creating tier: ${err.message}. Please check your connection and try again.`,
+        onConfirm: () => setShowConfirmation(false)
+      });
+      setShowConfirmation(true);
     } finally {
       setLoading(false);
     }
@@ -54,13 +87,11 @@ export default function AddTierModal({ isOpen, onClose, onSuccess }) {
 
   const handleClose = () => {
     setFormData({ name: '', description: '' });
-    setError('');
     onClose();
   };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (error) setError('');
   };
 
   if (!isOpen) return null;
@@ -109,11 +140,6 @@ export default function AddTierModal({ isOpen, onClose, onSuccess }) {
             />
           </div>
 
-          {error && (
-            <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-200">
-              {error}
-            </div>
-          )}
 
           <div className="flex items-center gap-3 pt-4">
             <button
@@ -144,6 +170,13 @@ export default function AddTierModal({ isOpen, onClose, onSuccess }) {
           </div>
         </form>
       </div>
+
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        {...confirmationData}
+      />
     </div>
   );
 }
