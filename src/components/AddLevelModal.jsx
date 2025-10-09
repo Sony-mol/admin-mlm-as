@@ -120,6 +120,10 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
 
       // Get the selected tier
       const selectedTier = tiers.find(tier => tier.id === formData.tierId);
+      if (!selectedTier) {
+        setError('Selected tier not found');
+        return;
+      }
 
       // Create the level
       const levelRes = await fetch(API_ENDPOINTS.CREATE_LEVEL, {
@@ -198,7 +202,10 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
               </label>
               <select
                 value={formData.tierId || ''}
-                onChange={(e) => handleInputChange('tierId', parseInt(e.target.value))}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleInputChange('tierId', value ? parseInt(value) : null);
+                }}
                 className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={loading}
                 required
@@ -221,7 +228,10 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
                   type="number"
                   min="1"
                   value={formData.levelNumber}
-                  onChange={(e) => handleInputChange('levelNumber', parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleInputChange('levelNumber', value ? parseInt(value) : 1);
+                  }}
                   className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={loading}
                   required
@@ -236,7 +246,10 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
                   type="number"
                   min="0"
                   value={formData.requiredReferrals}
-                  onChange={(e) => handleInputChange('requiredReferrals', parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleInputChange('requiredReferrals', value ? parseInt(value) : 0);
+                  }}
                   className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={loading}
                   required

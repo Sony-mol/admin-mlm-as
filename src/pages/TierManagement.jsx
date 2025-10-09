@@ -349,9 +349,10 @@ export default function TierManagement() {
                       type="number"
                       min={0}
                       value={level.referrals || 0}
-                      onChange={(v) =>
-                        updateLevel(tierName, index, 'referrals', Number(v || 0))
-                      }
+                      onChange={(v) => {
+                        const numValue = v ? Number(v) : 0;
+                        updateLevel(tierName, index, 'referrals', isNaN(numValue) ? 0 : numValue);
+                      }}
                     />
                     <Field
                       label="Reward"
