@@ -109,37 +109,52 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
       // First, create or find the reward if provided
       let rewardId = null;
       if (formData.rewardName.trim()) {
-        const existingReward = rewards.find(r => 
-          r.rewardName.toLowerCase() === formData.rewardName.trim().toLowerCase()
-        );
-        
-        if (existingReward) {
-          rewardId = existingReward.id;
-        } else {
-          // Create new reward
-          try {
-            const rewardRes = await fetch(API_ENDPOINTS.CREATE_REWARD, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                rewardName: formData.rewardName.trim(),
-                rewardType: formData.rewardType,
-                rewardValue: 0.0, // Default value
-                description: `Reward for ${tierName} tier level ${formData.levelNumber}`
-              }),
-            });
+        // Always try to create the reward - let the backend handle duplicates
+        try {
+          const rewardRes = await fetch(API_ENDPOINTS.CREATE_REWARD, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              rewardName: formData.rewardName.trim(),
+              rewardType: formData.rewardType,
+              rewardValue: 0.0, // Default value
+              description: `Reward for ${tierName} tier level ${formData.levelNumber}`
+            }),
+          });
+          
+          if (rewardRes.ok) {
+            const newReward = await rewardRes.json();
+            rewardId = newReward.id;
+          } else {
+            const errorData = await rewardRes.json().catch(() => ({}));
+            console.error('Reward creation failed:', errorData);
             
-            if (rewardRes.ok) {
-              const newReward = await rewardRes.json();
-              rewardId = newReward.id;
-            } else {
-              const errorData = await rewardRes.json().catch(() => ({}));
-              console.error('Reward creation failed:', errorData);
+            // Check if it's a duplicate error and try to find existing reward
+            if (errorData.error && errorData.error.includes('already exists')) {
+              // Try to find the existing reward
+              const existingReward = rewards.find(r => 
+                r.rewardName.toLowerCase() === formData.rewardName.trim().toLowerCase()
+              );
               
-              // Show error confirmation for reward creation failure
+              if (existingReward) {
+                rewardId = existingReward.id;
+                console.log('Using existing reward:', existingReward);
+              } else {
+                // Show error if we can't find the existing reward
+                setConfirmationData({
+                  type: 'error',
+                  title: 'Duplicate Reward',
+                  message: `Reward with name '${formData.rewardName}' already exists, but we couldn't find it in the list. Please refresh the page and try again.`,
+                  onConfirm: () => setShowConfirmation(false)
+                });
+                setShowConfirmation(true);
+                return;
+              }
+            } else {
+              // Show error for other reward creation failures
               setConfirmationData({
                 type: 'error',
                 title: 'Failed to Create Reward',
@@ -149,19 +164,19 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
               setShowConfirmation(true);
               return;
             }
-          } catch (err) {
-            console.error('Network error creating reward:', err);
-            
-            // Show error confirmation for network error
-            setConfirmationData({
-              type: 'error',
-              title: 'Network Error',
-              message: `Network error creating reward: ${err.message}. Please check your connection and try again.`,
-              onConfirm: () => setShowConfirmation(false)
-            });
-            setShowConfirmation(true);
-            return;
           }
+        } catch (err) {
+          console.error('Network error creating reward:', err);
+          
+          // Show error confirmation for network error
+          setConfirmationData({
+            type: 'error',
+            title: 'Network Error',
+            message: `Network error creating reward: ${err.message}. Please check your connection and try again.`,
+            onConfirm: () => setShowConfirmation(false)
+          });
+          setShowConfirmation(true);
+          return;
         }
       }
 
