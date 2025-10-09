@@ -135,8 +135,8 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
         body: JSON.stringify({
           levelNumber: formData.levelNumber,
           requiredReferrals: formData.requiredReferrals,
-          tier: selectedTier,
-          reward: rewardId ? { id: rewardId } : null
+          tierId: selectedTier.id,
+          rewardId: rewardId
         }),
       });
 
