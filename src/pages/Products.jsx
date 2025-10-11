@@ -1,6 +1,7 @@
 // src/pages/Products.jsx
 import React, { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '../config/api';
+import { useAuth } from '../context/AuthContext';
 import { 
   Package, 
   Plus, 
@@ -489,6 +490,7 @@ const ProductForm = ({ product, onSave, onCancel }) => {
 };
 
 export default function Products() {
+  const { authFetch } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -503,15 +505,10 @@ export default function Products() {
       try {
         setLoading(true);
         
-        const authData = localStorage.getItem('auth');
-        const token = authData ? JSON.parse(authData).accessToken : '';
-        
         console.log('🛍️ Fetching products from backend...');
-        console.log('🔑 Using token for authentication:', token ? token.substring(0, 20) + '...' : 'No token');
         
-        const response = await fetch(API_ENDPOINTS.PRODUCTS, {
+        const response = await authFetch(API_ENDPOINTS.PRODUCTS, {
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -588,21 +585,10 @@ export default function Products() {
   const handleDelete = async (product) => {
     if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
       try {
-        const authData = localStorage.getItem('auth');
-        const token = authData ? JSON.parse(authData).accessToken : '';
-        
-        if (!token) {
-          console.error('❌ No authentication token found');
-          alert('Please login to delete products');
-          return;
-        }
-        
-        console.log('🔑 Using token for authentication:', token.substring(0, 20) + '...');
         console.log('🗑️ Deleting product:', product.id);
-        const response = await fetch(`${API_ENDPOINTS.PRODUCTS}/${product.id}`, {
+        const response = await authFetch(`${API_ENDPOINTS.PRODUCTS}/${product.id}`, {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
@@ -625,16 +611,7 @@ export default function Products() {
 
   const handleSave = async (productData) => {
     try {
-      const authData = localStorage.getItem('auth');
-      const token = authData ? JSON.parse(authData).accessToken : '';
-      
-      if (!token) {
-        console.error('❌ No authentication token found');
-        alert('Please login to edit products');
-        return;
-      }
-      
-      console.log('🔑 Using token for authentication:', token.substring(0, 20) + '...');
+      console.log('💾 Saving product...');
       
       if (editingProduct) {
         // Update existing product
@@ -651,10 +628,9 @@ export default function Products() {
         
         console.log('📝 Sending to backend:', backendData);
         
-        const response = await fetch(`${API_ENDPOINTS.PRODUCTS}/${editingProduct.id}`, {
+        const response = await authFetch(`${API_ENDPOINTS.PRODUCTS}/${editingProduct.id}`, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(backendData)
@@ -689,10 +665,9 @@ export default function Products() {
         
         console.log('➕ Sending to backend:', backendData);
         
-        const response = await fetch(API_ENDPOINTS.PRODUCTS, {
+        const response = await authFetch(API_ENDPOINTS.PRODUCTS, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(backendData)

@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
       
       const data = await response.json();
       
-      if (response.ok && data.token) {
+      if (response.ok && (data.token || data.accessToken)) {
         console.log('✅ Login successful');
         
         // Construct user object from individual fields returned by backend
@@ -59,10 +59,13 @@ export function AuthProvider({ children }) {
         
         console.log('👤 User object:', user);
         
-        const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+        // Use accessToken if available, fallback to token for backward compatibility
+        const accessToken = data.accessToken || data.token;
+        const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour (backend sets this)
+        
         setAuth({ 
           user: user, 
-          accessToken: data.token, 
+          accessToken: accessToken, 
           refreshToken: data.refreshToken || null, 
           expiresAt 
         });
@@ -83,16 +86,92 @@ export function AuthProvider({ children }) {
     try { localStorage.removeItem('auth'); } catch {}
   }
 
+  async function refreshToken() {
+    if (!auth?.refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      console.log('🔄 Refreshing access token...');
+      const response = await fetch(getApiUrl('/api/users/refresh-token'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: auth.refreshToken }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.accessToken) {
+        console.log('✅ Token refreshed successfully');
+        const expiresAt = Date.now() + (60 * 60 * 1000); // 1 hour
+        setAuth(prev => ({
+          ...prev,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken || prev.refreshToken,
+          expiresAt
+        }));
+        return data.accessToken;
+      } else {
+        console.error('❌ Token refresh failed:', data.error);
+        throw new Error(data.error || 'Token refresh failed');
+      }
+    } catch (error) {
+      console.error('💥 Token refresh error:', error);
+      logout();
+      throw error;
+    }
+  }
+
   async function authFetch(path, init = {}) {
     const headers = new Headers(init.headers || {});
-    if (auth?.accessToken && !isExpired) {
-      headers.set('Authorization', `Bearer ${auth.accessToken}`);
+    
+    try {
+      // Add authorization header if we have a valid token
+      if (auth?.accessToken && !isExpired) {
+        headers.set('Authorization', `Bearer ${auth.accessToken}`);
+      }
+      
+      // Use getApiUrl to ensure correct backend URL
+      const fullPath = path.startsWith('http') ? path : getApiUrl(path);
+      const res = await fetch(fullPath, { ...init, headers });
+      
+      // Handle 401 - try to refresh token first
+      if (res.status === 401 && auth?.refreshToken && !isExpired) {
+        console.log('🔄 Access token expired, attempting refresh...');
+        
+        try {
+          const newAccessToken = await refreshToken();
+          
+          // Retry the original request with new token
+          headers.set('Authorization', `Bearer ${newAccessToken}`);
+          const retryRes = await fetch(fullPath, { ...init, headers });
+          
+          if (retryRes.status === 401) {
+            logout();
+            throw new Error('Session expired. Please sign in again.');
+          }
+          
+          return retryRes;
+        } catch (refreshError) {
+          console.error('❌ Token refresh failed:', refreshError);
+          logout();
+          throw new Error('Session expired. Please sign in again.');
+        }
+      }
+      
+      // If still 401 after refresh attempt or no refresh token
+      if (res.status === 401) {
+        logout();
+        throw new Error('Session expired. Please sign in again.');
+      }
+      
+      return res;
+    } catch (error) {
+      console.error('💥 Auth fetch error:', error);
+      throw error;
     }
-    // Use getApiUrl to ensure correct backend URL
-    const fullPath = path.startsWith('http') ? path : getApiUrl(path);
-    const res = await fetch(fullPath, { ...init, headers });
-    if (res.status === 401) { logout(); throw new Error('Session expired. Please sign in again.'); }
-    return res;
   }
 
   const value = useMemo(() => ({
@@ -101,7 +180,7 @@ export function AuthProvider({ children }) {
     refreshToken: auth?.refreshToken || null,
     expiresAt: auth?.expiresAt || null,
     isExpired,
-    login, logout, authFetch,
+    login, logout, authFetch, refreshToken,
   }), [auth, isExpired]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
