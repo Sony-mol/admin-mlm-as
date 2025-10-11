@@ -129,16 +129,17 @@ const Withdrawals = () => {
       setStatistics({
         // Cards
         totalAmount:
-          Number(s.totalApprovedAmount ?? 0) + Number(s.totalPendingAmount ?? 0),
+          Number(s.totalCompletedAmount ?? 0) + Number(s.totalPendingAmount ?? 0) + Number(s.totalProcessingAmount ?? 0),
         pendingCount: Number(s.pendingWithdrawals ?? 0),
-        approvedCount: Number(s.approvedWithdrawals ?? 0),
-        completedCount: Number(s.approvedWithdrawals ?? 0), // UI label "Completed"
+        processingCount: Number(s.processingWithdrawals ?? 0),
+        completedCount: Number(s.completedWithdrawals ?? 0),
         rejectedCount: Number(s.rejectedWithdrawals ?? 0),
 
         // Optional extras (not directly displayed but useful)
         totalCount: Number(s.totalWithdrawals ?? 0),
-        totalApprovedAmount: Number(s.totalApprovedAmount ?? 0),
+        totalCompletedAmount: Number(s.totalCompletedAmount ?? 0),
         totalPendingAmount: Number(s.totalPendingAmount ?? 0),
+        totalProcessingAmount: Number(s.totalProcessingAmount ?? 0),
       });
     } catch (error) {
       console.error('Error fetching statistics:', error);
@@ -158,7 +159,7 @@ const Withdrawals = () => {
     setSelectedStatus(status);
   };
 
-  const handleWithdrawalAction = async (withdrawalId, action, notes = '') => {
+  const handleWithdrawalAction = async (withdrawalId, newStatus, notes = '') => {
     try {
       setActionLoading(true);
 
@@ -181,38 +182,37 @@ const Withdrawals = () => {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      // Map UI actions to backend status API
-      // Backend expects: PUT /api/withdrawals/{id}/status with body { status: 'SUCCESS' | 'FAILED', reason }
-      const status = action === 'approve' ? 'SUCCESS' : action === 'reject' ? 'FAILED' : 'SUCCESS';
+      // Send status update to backend
+      // Backend expects: PUT /api/withdrawals/{id}/status with body { status: 'PENDING'|'PROCESSING'|'COMPLETED'|'REJECTED', reason }
       const response = await fetch(`${WITHDRAWALS_API}/${withdrawalId}/status`, {
         method: 'PUT',
         headers,
-        body: JSON.stringify({ status, reason: notes || 'Admin action' }),
+        body: JSON.stringify({ status: newStatus, reason: notes || 'Admin status update' }),
       });
 
       if (response.ok) {
-        await response.json().catch(() => ({}));
-        alert(`✅ ${action.charAt(0).toUpperCase() + action.slice(1)} successful!`);
+        const result = await response.json().catch(() => ({}));
+        alert(`✅ Status updated to ${newStatus} successfully!`);
         await fetchWithdrawals();
         await fetchStatistics();
         setShowActionModal(false);
         setAdminNotes('');
       } else {
         const err = await response.json().catch(() => ({}));
-        alert(`Error: ${err.error || 'Action failed'}`);
+        alert(`Error: ${err.error || 'Status update failed'}`);
       }
     } catch (error) {
-      console.error('Error processing withdrawal:', error);
-      alert('Error processing withdrawal');
+      console.error('Error updating withdrawal status:', error);
+      alert('Error updating withdrawal status');
     } finally {
       setActionLoading(false);
     }
   };
 
-  const handleBulkAction = async (action) => {
+  const handleBulkAction = async (newStatus) => {
     if (selectedWithdrawals.length === 0) return;
     const confirmed = window.confirm(
-      `Are you sure you want to ${action.toLowerCase()} ${selectedWithdrawals.length} withdrawal(s)?`
+      `Are you sure you want to set status to ${newStatus} for ${selectedWithdrawals.length} withdrawal(s)?`
     );
     if (!confirmed) return;
 
@@ -221,7 +221,7 @@ const Withdrawals = () => {
       // Sequential to keep alerts sane; could be parallel with Promise.all if desired
       for (const id of selectedWithdrawals) {
         // eslint-disable-next-line no-await-in-loop
-        await handleWithdrawalAction(id, action, 'Bulk action');
+        await handleWithdrawalAction(id, newStatus, 'Bulk status update');
       }
       setSelectedWithdrawals([]);
     } catch (error) {
@@ -290,8 +290,7 @@ const Withdrawals = () => {
   const statusOptions = [
     { value: 'ALL', label: 'All Withdrawals', count: withdrawals.length },
     { value: 'PENDING', label: 'Pending', count: statistics.pendingCount || 0 },
-    { value: 'APPROVED', label: 'Approved', count: statistics.approvedCount || 0 },
-    { value: 'PROCESSING', label: 'Processing', count: statistics.processingCount || 0 }, // may be 0 if not provided
+    { value: 'PROCESSING', label: 'Processing', count: statistics.processingCount || 0 },
     { value: 'COMPLETED', label: 'Completed', count: statistics.completedCount || 0 },
     { value: 'REJECTED', label: 'Rejected', count: statistics.rejectedCount || 0 },
   ];
@@ -359,14 +358,14 @@ const Withdrawals = () => {
       )}
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
           <div className="flex items-center">
             <div className="p-2 rounded-lg bg-blue-100">
               <DollarSign className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium opacity-70">Total Withdrawals</p>
+              <p className="text-sm font-medium opacity-70">Total Amount</p>
               <p className="text-2xl font-bold text-[rgb(var(--fg))]">
                 ₹{statistics.totalAmount || 0}
               </p>
@@ -383,6 +382,20 @@ const Withdrawals = () => {
               <p className="text-sm font-medium opacity-70">Pending</p>
               <p className="text-2xl font-bold text-[rgb(var(--fg))]">
                 {statistics.pendingCount || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="flex items-center">
+            <div className="p-2 rounded-lg bg-orange-100">
+              <AlertCircle className="w-6 h-6 text-orange-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium opacity-70">Processing</p>
+              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+                {statistics.processingCount || 0}
               </p>
             </div>
           </div>
@@ -461,22 +474,22 @@ const Withdrawals = () => {
                   {selectedWithdrawals.length} withdrawal(s) selected
                 </span>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => handleBulkAction('approve')}
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleBulkAction(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
                     disabled={actionLoading}
-                    className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <Check className="w-4 h-4" />
-                    Approve All
-                  </button>
-                  <button
-                    onClick={() => handleBulkAction('reject')}
-                    disabled={actionLoading}
-                    className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Reject All
-                  </button>
+                    <option value="">Select Status...</option>
+                    <option value="PENDING">Set to Pending</option>
+                    <option value="PROCESSING">Set to Processing</option>
+                    <option value="COMPLETED">Set to Completed</option>
+                    <option value="REJECTED">Set to Rejected</option>
+                  </select>
                   <button
                     onClick={() => setSelectedWithdrawals([])}
                     className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700"
@@ -626,45 +639,22 @@ const Withdrawals = () => {
                           <Eye className="w-4 h-4" />
                         </button>
 
-                        {withdrawal.status === 'PENDING' && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setSelectedWithdrawal(withdrawal);
-                                setActionType('approve');
-                                setShowActionModal(true);
-                              }}
-                              className="text-green-600 hover:text-green-900"
-                              title="Approve"
-                            >
-                              <Check className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedWithdrawal(withdrawal);
-                                setActionType('reject');
-                                setShowActionModal(true);
-                              }}
-                              className="text-red-600 hover:text-red-900"
-                              title="Reject"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-
-                        {withdrawal.status === 'APPROVED' && (
-                          <button
-                            onClick={() => {
+                        <select
+                          value={withdrawal.status}
+                          onChange={(e) => {
+                            if (e.target.value !== withdrawal.status) {
                               setSelectedWithdrawal(withdrawal);
-                              setActionType('process');
+                              setActionType(e.target.value);
                               setShowActionModal(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Process
-                          </button>
-                        )}
+                            }
+                          }}
+                          className="px-2 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value="PENDING">Pending</option>
+                          <option value="PROCESSING">Processing</option>
+                          <option value="COMPLETED">Completed</option>
+                          <option value="REJECTED">Rejected</option>
+                        </select>
                       </div>
                     </td>
                   </tr>
@@ -780,12 +770,7 @@ const Withdrawals = () => {
           <div className="rounded-lg p-6 max-w-md w-full mx-4 border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
-                {actionType === 'approve'
-                  ? 'Approve'
-                  : actionType === 'reject'
-                  ? 'Reject'
-                  : 'Process'}{' '}
-                Withdrawal
+                Update Withdrawal Status
               </h3>
               <button
                 onClick={() => setShowActionModal(false)}
@@ -799,8 +784,14 @@ const Withdrawals = () => {
               <p className="text-sm opacity-70 mb-2">
                 Withdrawal #{selectedWithdrawal.id} - ₹{selectedWithdrawal.amount}
               </p>
-              <p className="text-sm opacity-70">
+              <p className="text-sm opacity-70 mb-2">
                 User: {selectedWithdrawal.user?.name} ({selectedWithdrawal.user?.email})
+              </p>
+              <p className="text-sm opacity-70">
+                Current Status: <span className="font-medium">{selectedWithdrawal.status}</span>
+              </p>
+              <p className="text-sm opacity-70">
+                New Status: <span className="font-medium">{actionType}</span>
               </p>
             </div>
 
@@ -813,7 +804,7 @@ const Withdrawals = () => {
                 onChange={(e) => setAdminNotes(e.target.value)}
                 className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 rows="3"
-                placeholder="Add notes for this action..."
+                placeholder="Add notes for this status change..."
               />
             </div>
 
@@ -830,20 +821,16 @@ const Withdrawals = () => {
                 }
                 disabled={actionLoading}
                 className={`px-4 py-2 text-white rounded-md hover:opacity-90 disabled:opacity-50 ${
-                  actionType === 'approve'
+                  actionType === 'COMPLETED'
                     ? 'bg-green-600'
-                    : actionType === 'reject'
+                    : actionType === 'REJECTED'
                     ? 'bg-red-600'
+                    : actionType === 'PROCESSING'
+                    ? 'bg-orange-600'
                     : 'bg-blue-600'
                 }`}
               >
-                {actionLoading
-                  ? 'Processing...'
-                  : actionType === 'approve'
-                  ? 'Approve'
-                  : actionType === 'reject'
-                  ? 'Reject'
-                  : 'Process'}
+                {actionLoading ? 'Updating...' : `Update to ${actionType}`}
               </button>
             </div>
           </div>
