@@ -8,7 +8,9 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
     levelNumber: 1,
     requiredReferrals: 0,
     rewardName: '',
-    rewardType: 'GIFT'
+    rewardType: 'GIFT',
+    rewardValue: 0,
+    description: ''
   });
   const [loading, setLoading] = useState(false);
   const [tiers, setTiers] = useState([]);
@@ -120,8 +122,8 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
             body: JSON.stringify({
               rewardName: formData.rewardName.trim(),
               rewardType: formData.rewardType,
-              rewardValue: 0.0, // Default value
-              description: `Reward for ${tierName} tier level ${formData.levelNumber}`
+              rewardValue: formData.rewardValue || 0.0,
+              description: formData.description.trim() || `Reward for ${tierName} tier level ${formData.levelNumber}`
             }),
           });
           
@@ -213,10 +215,11 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
         const newLevel = await levelRes.json();
         
         // Show success confirmation
+        const rewardMessage = rewardId ? ' and reward have been created' : ' has been created';
         setConfirmationData({
           type: 'success',
           title: 'Level Created Successfully!',
-          message: `Level ${newLevel.levelNumber} has been added to ${selectedTier.name} tier successfully.`,
+          message: `Level ${newLevel.levelNumber}${rewardMessage} for ${selectedTier.name} tier successfully.`,
           onConfirm: () => {
             setShowConfirmation(false);
             onSuccess(newLevel);
@@ -255,7 +258,9 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
       levelNumber: 1,
       requiredReferrals: 0,
       rewardName: '',
-      rewardType: 'GIFT'
+      rewardType: 'GIFT',
+      rewardValue: 0,
+      description: ''
     });
     onClose();
   };
@@ -350,6 +355,19 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
               </div>
             </div>
 
+            {/* Reward Creation Section */}
+            <div className="border-t border-[rgb(var(--border))] pt-4">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">
+                  Create Reward (Optional)
+                </h3>
+              </div>
+              <p className="text-sm text-[rgb(var(--muted-foreground))] mb-4">
+                Create a new reward for this level. If left empty, the level will be created without a reward.
+              </p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">
                 Reward Name
@@ -364,21 +382,56 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
               />
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">
+                  Reward Type
+                </label>
+                <select
+                  value={formData.rewardType}
+                  onChange={(e) => handleInputChange('rewardType', e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                >
+                  <option value="GIFT">Gift</option>
+                  <option value="CASH">Cash</option>
+                  <option value="DISCOUNT">Discount</option>
+                  <option value="POINTS">Points</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">
+                  Reward Value
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.rewardValue}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    handleInputChange('rewardValue', value ? parseFloat(value) : 0);
+                  }}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">
-                Reward Type
+                Reward Description
               </label>
-              <select
-                value={formData.rewardType}
-                onChange={(e) => handleInputChange('rewardType', e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleInputChange('description', e.target.value)}
+                placeholder="Optional description for the reward..."
+                rows="3"
+                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 disabled={loading}
-              >
-                <option value="GIFT">Gift</option>
-                <option value="CASH">Cash</option>
-                <option value="DISCOUNT">Discount</option>
-                <option value="POINTS">Points</option>
-              </select>
+              />
             </div>
 
 
@@ -399,12 +452,12 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating...
+                    {formData.rewardName.trim() ? 'Creating Level & Reward...' : 'Creating Level...'}
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4" />
-                    Create Level
+                    {formData.rewardName.trim() ? 'Create Level & Reward' : 'Create Level'}
                   </>
                 )}
               </button>
