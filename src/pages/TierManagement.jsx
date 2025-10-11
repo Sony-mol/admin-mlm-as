@@ -137,14 +137,52 @@ export default function TierManagement() {
   }
 
   // Update helpers
-  const updateLevel = (tierName, levelIndex, field, value) => {
-    setTierStructure((prev) => {
-      const next = { ...prev };
-      const levels = [...(next[tierName] || [])];
-      levels[levelIndex] = { ...levels[levelIndex], [field]: value };
-      next[tierName] = levels;
-      return next;
-    });
+  const updateLevel = async (tierName, levelIndex, field, value) => {
+    const level = tierStructure[tierName][levelIndex];
+    if (!level.levelId) {
+      console.warn('Level ID not found, cannot update individual level');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('auth')
+        ? JSON.parse(localStorage.getItem('auth')).accessToken
+        : '';
+
+      const updateData = {};
+      if (field === 'referrals') {
+        updateData.requiredReferrals = value;
+      } else if (field === 'reward') {
+        updateData.rewardName = value;
+      }
+
+      const response = await fetch(`${API_ENDPOINTS.UPDATE_LEVEL_PROPERTIES}/${level.levelId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setTierStructure((prev) => {
+          const next = { ...prev };
+          const levels = [...(next[tierName] || [])];
+          levels[levelIndex] = { ...levels[levelIndex], [field]: value };
+          next[tierName] = levels;
+          return next;
+        });
+        showToast(`✅ Level ${level.level} updated!`);
+      } else {
+        const error = await response.json().catch(() => ({}));
+        alert(`Failed to update level: ${error.error || response.status}`);
+      }
+    } catch (error) {
+      console.error('Error updating level:', error);
+      alert(`Error updating level: ${error.message}`);
+    }
   };
 
   const addLevel = (tierName) => {
@@ -162,17 +200,47 @@ export default function TierManagement() {
     });
   };
 
-  const removeLevel = (tierName, levelIndex) => {
+  const removeLevel = async (tierName, levelIndex) => {
+    const level = tierStructure[tierName][levelIndex];
+    if (!level.levelId) {
+      console.warn('Level ID not found, cannot delete level');
+      return;
+    }
+
     if (!window.confirm('Remove this level?')) return;
-    setTierStructure((prev) => {
-      const next = { ...prev };
-      const levels = [...(next[tierName] || [])];
-      levels.splice(levelIndex, 1);
-      // Renumber
-      levels.forEach((lvl, i) => (lvl.level = i + 1));
-      next[tierName] = levels;
-      return next;
-    });
+
+    try {
+      const token = localStorage.getItem('auth')
+        ? JSON.parse(localStorage.getItem('auth')).accessToken
+        : '';
+
+      const response = await fetch(`${API_ENDPOINTS.DELETE_LEVEL}/${level.levelId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        // Update local state
+        setTierStructure((prev) => {
+          const next = { ...prev };
+          const levels = [...(next[tierName] || [])];
+          levels.splice(levelIndex, 1);
+          // Renumber
+          levels.forEach((lvl, i) => (lvl.level = i + 1));
+          next[tierName] = levels;
+          return next;
+        });
+        showToast(`✅ Level ${level.level} removed!`);
+      } else {
+        const error = await response.json().catch(() => ({}));
+        alert(`Failed to delete level: ${error.error || response.status}`);
+      }
+    } catch (error) {
+      console.error('Error deleting level:', error);
+      alert(`Error deleting level: ${error.message}`);
+    }
   };
 
   // Show toast helper
@@ -349,16 +417,16 @@ export default function TierManagement() {
                       type="number"
                       min={0}
                       value={level.referrals || 0}
-                      onChange={(v) => {
+                      onChange={async (v) => {
                         const numValue = v ? Number(v) : 0;
-                        updateLevel(tierName, index, 'referrals', isNaN(numValue) ? 0 : numValue);
+                        await updateLevel(tierName, index, 'referrals', isNaN(numValue) ? 0 : numValue);
                       }}
                     />
                     <Field
                       label="Reward"
                       type="text"
                       value={level.reward || ''}
-                      onChange={(v) => updateLevel(tierName, index, 'reward', v)}
+                      onChange={async (v) => await updateLevel(tierName, index, 'reward', v)}
                     />
                   </div>
 

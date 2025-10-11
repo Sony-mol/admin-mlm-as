@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
   CREATE_LEVEL: getApiUrl('/api/levels'),
   GET_ALL_LEVELS: getApiUrl('/api/levels'),
   UPDATE_LEVEL: getApiUrl('/api/levels'),
+  UPDATE_LEVEL_PROPERTIES: getApiUrl('/api/levels'),
   DELETE_LEVEL: getApiUrl('/api/levels'),
   
   // Reward Management APIs
