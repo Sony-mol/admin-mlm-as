@@ -193,7 +193,7 @@ export default function TierManagement() {
       levels.push({
         level: newLevelNumber,
         referrals: 0,
-        reward: 'New Reward',
+        reward: 'Custom Reward',
       });
       next[tierName] = levels;
       return next;
@@ -426,7 +426,14 @@ export default function TierManagement() {
                       label="Reward"
                       type="text"
                       value={level.reward || ''}
-                      onChange={async (v) => await updateLevel(tierName, index, 'reward', v)}
+                      onChange={async (v) => {
+                        // Don't send empty or whitespace-only reward names
+                        if (!v || v.trim() === '') {
+                          await updateLevel(tierName, index, 'reward', 'No Reward');
+                        } else {
+                          await updateLevel(tierName, index, 'reward', v.trim());
+                        }
+                      }}
                     />
                   </div>
 
