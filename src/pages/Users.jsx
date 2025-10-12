@@ -403,6 +403,54 @@ export default function Users() {
   // calendar filters
   const [selectedDates, setSelectedDates] = useState(() => new Set()); // local YYYY-MM-DD strings
   const [calOpen, setCalOpen] = useState(false);
+  
+  // Sync referral counts state
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+
+  // Sync referral counts function
+  async function syncReferralCounts() {
+    try {
+      setSyncing(true);
+      setSyncResult(null);
+      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
+      console.log('🔄 Starting referral count synchronization...');
+      
+      const response = await fetch(`${API_ENDPOINTS.USERS}/sync-referral-counts`, {
+        method: 'POST',
+        headers
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Sync failed with status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Sync completed:', result);
+      
+      setSyncResult({
+        success: true,
+        message: result.message,
+        discrepanciesFound: result.discrepanciesFound,
+        usersUpdated: result.usersUpdated,
+        totalUsers: result.totalUsers
+      });
+      
+      // Refresh the user list to show updated counts
+      await load();
+      
+    } catch (error) {
+      console.error('❌ Sync failed:', error);
+      setSyncResult({
+        success: false,
+        message: 'Failed to sync referral counts: ' + error.message
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   async function load() {
     try {
@@ -994,7 +1042,45 @@ export default function Users() {
 
   return (
     <div className="space-y-4">
-      {/* Header row with Export at extreme right */}
+      {/* Sync Result Notification */}
+      {syncResult && (
+        <div className={`rounded-2xl border p-4 ${syncResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className={`font-semibold mb-1 ${syncResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                {syncResult.success ? '✅ Synchronization Complete!' : '❌ Synchronization Failed'}
+              </div>
+              <div className={`text-sm ${syncResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                {syncResult.message}
+              </div>
+              {syncResult.success && (
+                <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <div className="font-medium text-green-800">Total Users</div>
+                    <div className="text-green-700">{syncResult.totalUsers}</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-green-800">Discrepancies Found</div>
+                    <div className="text-green-700">{syncResult.discrepanciesFound}</div>
+                  </div>
+                  <div>
+                    <div className="font-medium text-green-800">Users Updated</div>
+                    <div className="text-green-700">{syncResult.usersUpdated}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={() => setSyncResult(null)} 
+              className={`ml-4 px-3 py-1 rounded-lg ${syncResult.success ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white text-sm`}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Header row with Sync and Export buttons */}
       <div className="flex items-center gap-3">
         <h2 className="text-2xl font-semibold flex-1">User Management</h2>
         <div className="flex items-center gap-2">
@@ -1010,6 +1096,28 @@ export default function Users() {
             </button>
           )}
         </div>
+        <button
+          onClick={syncReferralCounts}
+          disabled={syncing}
+          className="rounded-lg px-3 py-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 
+         focus-visible:ring-blue-600/40 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"          
+          title="Sync referral counts with actual database records"
+          aria-label="Sync referral counts"
+        >
+          {syncing ? (
+            <>
+              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Syncing...
+            </>
+          ) : (
+            <>
+              🔄 Sync Referrals
+            </>
+          )}
+        </button>
         <button
           onClick={() => handleExport(filtered)}
           className="rounded-lg px-3 py-2 bg-[#217346] text-white hover:bg-[#1e6a3f] shadow-sm focus-visible:outline-none focus-visible:ring-2 
