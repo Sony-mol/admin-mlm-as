@@ -318,9 +318,17 @@ const ProductForm = ({ product, onSave, onCancel, authFetch }) => {
     const file = e.target.files[0];
     if (file) {
       try {
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-          alert('Please select an image file');
+        // Validate file type - support all common image formats
+        const supportedTypes = [
+          'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
+          'image/webp', 'image/bmp', 'image/svg+xml', 'image/tiff'
+        ];
+        
+        const isValidType = supportedTypes.includes(file.type.toLowerCase()) || 
+                           /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff)$/i.test(file.name);
+        
+        if (!isValidType) {
+          alert('Unsupported file type. Supported formats: JPG, JPEG, PNG, GIF, WebP, BMP, SVG, TIFF');
           return;
         }
         
@@ -396,7 +404,7 @@ const ProductForm = ({ product, onSave, onCancel, authFetch }) => {
               <div className="space-y-2">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/tiff,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.tiff"
                   onChange={handleImageUpload}
                   className="hidden"
                   id="image-upload"
