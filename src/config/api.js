@@ -59,6 +59,9 @@ export const API_ENDPOINTS = {
   GET_ALL_REWARDS: getApiUrl('/api/rewards'),
   UPDATE_REWARD: getApiUrl('/api/rewards'),
   DELETE_REWARD: getApiUrl('/api/rewards'),
+  
+  // Product Image Upload API
+  UPLOAD_PRODUCT_IMAGE: getApiUrl('/api/products/upload-image'),
 };
 
 export default API_BASE_URL;

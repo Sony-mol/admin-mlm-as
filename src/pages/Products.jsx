@@ -38,7 +38,7 @@ const ProductCard = ({ product, onEdit, onDelete, onView }) => (
       <div className="aspect-square rounded-lg overflow-hidden mb-4 bg-[rgba(var(--fg),0.06)]">
         {product.image ? (
           <img 
-            src={product.image} 
+            src={product.image.startsWith('http') ? product.image : `https://asmlmbackend-production.up.railway.app${product.image}`} 
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -314,14 +314,53 @@ const ProductForm = ({ product, onSave, onCancel }) => {
     onSave(formData);
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData({ ...formData, image: event.target.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          alert('Please select an image file');
+          return;
+        }
+        
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Image size must be less than 5MB');
+          return;
+        }
+        
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('image', file);
+        
+        // Upload image to backend
+        const response = await authFetch(API_ENDPOINTS.UPLOAD_PRODUCT_IMAGE, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Image uploaded successfully:', result);
+          
+          // Update form data with the uploaded image URL
+          setFormData(prev => ({ 
+            ...prev, 
+            image: result.imageUrl 
+          }));
+          
+          // Show success message
+          alert('Image uploaded successfully!');
+        } else {
+          const errorData = await response.json();
+          console.error('❌ Image upload failed:', errorData);
+          alert('Failed to upload image: ' + (errorData.error || 'Unknown error'));
+        }
+      } catch (error) {
+        console.error('❌ Error uploading image:', error);
+        alert('Failed to upload image: ' + error.message);
+      }
     }
   };
 
@@ -523,7 +562,8 @@ export default function Products() {
           const transformedProducts = productsData.map(product => ({
             ...product,
             stock: product.stockQuantity, // Map 'stockQuantity' to 'stock'
-            status: product.isActive ? 'active' : 'inactive' // Map 'isActive' to 'status'
+            status: product.isActive ? 'active' : 'inactive', // Map 'isActive' to 'status'
+            image: product.imageUrl // Map 'imageUrl' to 'image'
           }));
           
           setProducts(transformedProducts);
