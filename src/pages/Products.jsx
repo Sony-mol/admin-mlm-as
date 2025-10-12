@@ -296,7 +296,7 @@ const PhotoEditor = ({ image, onSave, onCancel }) => {
 };
 
 // Product Form Component
-const ProductForm = ({ product, onSave, onCancel }) => {
+const ProductForm = ({ product, onSave, onCancel, authFetch }) => {
   const [formData, setFormData] = useState({
     name: product?.name || '',
     description: product?.description || '',
@@ -868,6 +868,7 @@ export default function Products() {
               setShowForm(false);
               setEditingProduct(null);
             }}
+            authFetch={authFetch}
           />
         )}
       </div>
