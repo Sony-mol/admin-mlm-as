@@ -110,21 +110,32 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
 
       // First, create or find the reward if provided
       let rewardId = null;
-      if (formData.rewardName.trim()) {
+      const rewardName = formData.rewardName ? formData.rewardName.trim() : '';
+      console.log('🔍 Reward creation debug:', { 
+        originalRewardName: formData.rewardName, 
+        trimmedRewardName: rewardName, 
+        hasRewardName: !!rewardName && rewardName.length > 0 
+      });
+      
+      if (rewardName && rewardName.length > 0) {
         // Always try to create the reward - let the backend handle duplicates
         try {
+          const rewardPayload = {
+            rewardName: rewardName,
+            rewardType: formData.rewardType,
+            rewardValue: formData.rewardValue || 0.0,
+            description: (formData.description ? formData.description.trim() : '') || `Reward for ${tierName} tier level ${formData.levelNumber}`
+          };
+          
+          console.log('🚀 Sending reward creation request:', rewardPayload);
+          
           const rewardRes = await fetch(API_ENDPOINTS.CREATE_REWARD, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({
-              rewardName: formData.rewardName.trim(),
-              rewardType: formData.rewardType,
-              rewardValue: formData.rewardValue || 0.0,
-              description: formData.description.trim() || `Reward for ${tierName} tier level ${formData.levelNumber}`
-            }),
+            body: JSON.stringify(rewardPayload),
           });
           
           if (rewardRes.ok) {
@@ -138,7 +149,7 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
             if (errorData.error && errorData.error.includes('already exists')) {
               // Try to find the existing reward
               const existingReward = rewards.find(r => 
-                r.rewardName.toLowerCase() === formData.rewardName.trim().toLowerCase()
+                r.rewardName.toLowerCase() === rewardName.toLowerCase()
               );
               
               if (existingReward) {
@@ -149,7 +160,7 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
                 setConfirmationData({
                   type: 'error',
                   title: 'Duplicate Reward',
-                  message: `Reward with name '${formData.rewardName}' already exists, but we couldn't find it in the list. Please refresh the page and try again.`,
+                  message: `Reward with name '${rewardName}' already exists, but we couldn't find it in the list. Please refresh the page and try again.`,
                   onConfirm: () => setShowConfirmation(false)
                 });
                 setShowConfirmation(true);
@@ -180,6 +191,8 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
           setShowConfirmation(true);
           return;
         }
+      } else {
+        console.log('⏭️ Skipping reward creation - no reward name provided');
       }
 
       // Get the selected tier
@@ -452,12 +465,12 @@ export default function AddLevelModal({ isOpen, onClose, onSuccess, tierName }) 
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    {formData.rewardName.trim() ? 'Creating Level & Reward...' : 'Creating Level...'}
+                    {(formData.rewardName && formData.rewardName.trim()) ? 'Creating Level & Reward...' : 'Creating Level...'}
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4" />
-                    {formData.rewardName.trim() ? 'Create Level & Reward' : 'Create Level'}
+                    {(formData.rewardName && formData.rewardName.trim()) ? 'Create Level & Reward' : 'Create Level'}
                   </>
                 )}
               </button>
