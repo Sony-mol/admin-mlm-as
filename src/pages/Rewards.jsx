@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Edit, Plus, Search, RefreshCw } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
 const Rewards = () => {
   const [rewards, setRewards] = useState([]);
@@ -23,7 +24,7 @@ const Rewards = () => {
   const fetchRewards = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/rewards', {
+      const response = await fetch(API_ENDPOINTS.GET_ALL_REWARDS, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -55,7 +56,7 @@ const Rewards = () => {
     e.preventDefault();
     
     try {
-      const url = editingReward ? `/api/rewards/${editingReward.id}` : '/api/rewards';
+      const url = editingReward ? `${API_ENDPOINTS.UPDATE_REWARD}/${editingReward.id}` : API_ENDPOINTS.CREATE_REWARD;
       const method = editingReward ? 'PUT' : 'POST';
 
       const response = await fetch(url, {
@@ -106,7 +107,7 @@ const Rewards = () => {
     }
 
     try {
-      const response = await fetch(`/api/rewards/${rewardId}`, {
+      const response = await fetch(`${API_ENDPOINTS.DELETE_REWARD}/${rewardId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
