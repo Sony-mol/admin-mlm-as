@@ -31,6 +31,7 @@ const links = [
   { to: "/activity-logs", label: "Activity Logs", Icon: Activity },
   { to: "/tier-management", label: "Tier Management", Icon: Award },
   { to: "/rewards", label: "Rewards", Icon: Gift },
+  { to: "/user-rewards", label: "User Rewards", Icon: Award },
   { to: "/admin-management", label: "Admin Management", Icon: Shield },
   { to: "/settings", label: "Settings",        Icon: Settings },
 ];
