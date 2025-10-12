@@ -35,6 +35,7 @@ export const API_ENDPOINTS = {
   PENDING_COMMISSIONS: getApiUrl('/api/commissions/admin/status/PENDING'),
   PAID_COMMISSIONS: getApiUrl('/api/commissions/admin/status/PAID'),
   MONTHLY_REVENUE: getApiUrl('/api/commissions/monthly-revenue'),
+  UPDATE_COMMISSION: getApiUrl('/api/commissions/admin'),
   BULK_UPDATE: getApiUrl('/api/commissions/admin/bulk-status'),
   UPDATE_STRUCTURE: getApiUrl('/api/admin/tier-management/structure'),
   RESET_DEFAULT: getApiUrl('/api/admin/tier-management/reset'),
