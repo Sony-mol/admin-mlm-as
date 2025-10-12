@@ -13,6 +13,7 @@ import Withdrawals from './pages/Withdrawals';
 import ActivityLogs from './pages/ActivityLogs';
 import AdminManagement from './pages/AdminManagement';
 import TierManagement from './pages/TierManagement';
+import Rewards from './pages/Rewards';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="withdrawals" element={<Withdrawals />} />
         <Route path="activity-logs" element={<ActivityLogs />} />
         <Route path="tier-management" element={<TierManagement />} />
+        <Route path="rewards" element={<Rewards />} />
         <Route path="admin-management" element={<AdminManagement />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
