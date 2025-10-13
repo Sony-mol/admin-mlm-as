@@ -38,15 +38,29 @@ const ProductCard = ({ product, onEdit, onDelete, onView }) => (
       <div className="aspect-square rounded-lg overflow-hidden mb-4 bg-[rgba(var(--fg),0.06)]">
         {product.image ? (
           <img 
-            src={product.image.startsWith('http') ? product.image : `https://asmlmbackend-production.up.railway.app${product.image}`} 
+            src={(() => {
+              if (product.image.startsWith('http')) return product.image;
+              // Handle old format URLs (/uploads/products/...)
+              if (product.image.startsWith('/uploads/products/')) {
+                const filename = product.image.split('/').pop();
+                return `https://asmlmbackend-production.up.railway.app/api/products/image/${filename}`;
+              }
+              // Handle new format URLs (/api/products/image/...)
+              return `https://asmlmbackend-production.up.railway.app${product.image}`;
+            })()} 
             alt={product.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              console.error('Failed to load image:', product.image);
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'flex';
+            }}
+            onLoad={() => console.log('Image loaded successfully:', product.image)}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon className="w-12 h-12 opacity-40" />
-          </div>
-        )}
+        ) : null}
+        <div className={`w-full h-full flex items-center justify-center ${product.image ? 'hidden' : ''}`}>
+          <ImageIcon className="w-12 h-12 opacity-40" />
+        </div>
       </div>
       
       {/* Product Status Badge (kept accent colors) */}
