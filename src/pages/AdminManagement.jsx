@@ -1,17 +1,19 @@
+// src/pages/AdminManagement.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Shield, 
-  Key, 
-  UserPlus, 
-  Edit, 
-  Trash2, 
-  Eye, 
+import {
+  Users,
+  Shield,
+  Key,
+  UserPlus,
+  Edit,
+  Eye,
   EyeOff,
   CheckCircle,
   AlertCircle,
   Lock,
-  Unlock
+  Unlock,
+  Phone,
+  Trash2,
 } from 'lucide-react';
 
 import { API_ENDPOINTS } from '../config/api';
@@ -19,25 +21,30 @@ import { API_ENDPOINTS } from '../config/api';
 const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // include phoneNumber in form state
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phoneNumber: '',
     password: '',
     confirmPassword: '',
-    role: 'ADMIN'
+    role: 'ADMIN',
   });
 
   const [showPasswords, setShowPasswords] = useState({
     password: false,
-    confirmPassword: false
+    confirmPassword: false,
   });
 
   useEffect(() => {
@@ -47,24 +54,36 @@ const AdminManagement = () => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const response = await fetch(API_ENDPOINTS.ADMINS);
-      if (response.ok) {
-        const data = await response.json();
-        setAdmins(Array.isArray(data) ? data : []);
-      } else {
-        // mock fallback
-        setAdmins([{
-          id: 1,
-          name: 'Super Admin',
-          email: 'admin@camgo.com',
-          role: 'ADMIN',
-          status: 'ACTIVE',
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString()
-        }]);
-      }
-    } catch {
-      setAdmins([]);
+
+      const token = localStorage.getItem('auth')
+        ? JSON.parse(localStorage.getItem('auth')).accessToken
+        : '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      const res = await fetch(API_ENDPOINTS.ADMINS, { headers });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
+
+      // Accept common response shapes
+      let items =
+        Array.isArray(data) ? data :
+        Array.isArray(data.admins) ? data.admins :
+        Array.isArray(data.data?.items) ? data.data.items :
+        [];
+
+      // **Normalize IDs** so all actions (edit/status/delete) can rely on admin.id
+      items = items.map(u => ({
+        ...u,
+        id: u.id ?? u.userId ?? u.userID ?? u.user?.id, // pick first present
+      }));
+
+      setAdmins(items);
+      setError(null);
+    } catch (e) {
+      console.error('fetchAdmins failed:', e);
+      setError('Failed to load admins');
+      setAdmins([]); // no fake fallback
     } finally {
       setLoading(false);
     }
@@ -74,34 +93,42 @@ const AdminManagement = () => {
     try {
       setActionLoading(true);
       setError(null);
-      if (!formData.name || !formData.email || !formData.password) {
-        setError('All fields are required'); return;
+      setSuccess(null);
+
+      if (!formData.name || !formData.email || !formData.password || !formData.phoneNumber) {
+        setError('Name, email, phone number and password are required');
+        return;
       }
       if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match'); return;
+        setError('Passwords do not match');
+        return;
       }
       if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters'); return;
+        setError('Password must be at least 6 characters');
+        return;
       }
+
       const response = await fetch(API_ENDPOINTS.CREATE_ADMIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          phoneNumber: formData.phoneNumber, // <-- required by backend
           password: formData.password,
-          role: formData.role
+          role: formData.role,
         }),
       });
+
       if (response.ok) {
-        await response.json();
+        await response.json().catch(() => ({}));
         setSuccess('Admin created successfully!');
         setShowCreateModal(false);
         resetForm();
         await fetchAdmins();
       } else {
-        const error = await response.json();
-        setError(error.error || 'Failed to create admin');
+        const err = await response.json().catch(() => ({}));
+        setError(err.error || 'Failed to create admin');
       }
     } catch {
       setError('Failed to create admin');
@@ -112,25 +139,35 @@ const AdminManagement = () => {
 
   const handleUpdateAdmin = async () => {
     try {
+      if (!selectedAdmin) return;
       setActionLoading(true);
       setError(null);
+      setSuccess(null);
+
+      if (!formData.name || !formData.email || !formData.phoneNumber) {
+        setError('Name, email and phone number are required');
+        return;
+      }
+
       const response = await fetch(`${API_ENDPOINTS.USERS}/${selectedAdmin.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          role: formData.role
+          phoneNumber: formData.phoneNumber, // keep backend happy if not-null
+          role: formData.role,
         }),
       });
+
       if (response.ok) {
         setSuccess('Admin updated successfully!');
         setShowEditModal(false);
         resetForm();
         await fetchAdmins();
       } else {
-        const error = await response.json();
-        setError(error.error || 'Failed to update admin');
+        const err = await response.json().catch(() => ({}));
+        setError(err.error || 'Failed to update admin');
       }
     } catch {
       setError('Failed to update admin');
@@ -141,23 +178,32 @@ const AdminManagement = () => {
 
   const handleChangePassword = async () => {
     try {
+      if (!selectedAdmin) return;
       setActionLoading(true);
       setError(null);
+      setSuccess(null);
+
       if (!formData.password || formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match'); return;
+        setError('Passwords do not match');
+        return;
       }
-      const response = await fetch(`${API_ENDPOINTS.USERS}/${selectedAdmin.id}/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: formData.password }),
-      });
+
+      const response = await fetch(
+        `${API_ENDPOINTS.USERS}/${selectedAdmin.id}/change-password`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newPassword: formData.password }),
+        }
+      );
+
       if (response.ok) {
         setSuccess('Password changed successfully!');
         setShowPasswordModal(false);
         resetForm();
       } else {
-        const error = await response.json();
-        setError(error.error || 'Failed to change password');
+        const err = await response.json().catch(() => ({}));
+        setError(err.error || 'Failed to change password');
       }
     } catch {
       setError('Failed to change password');
@@ -169,18 +215,22 @@ const AdminManagement = () => {
   const handleToggleStatus = async (adminId, currentStatus) => {
     try {
       setActionLoading(true);
+      setError(null);
+      setSuccess(null);
+
       const newStatus = currentStatus === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
       const response = await fetch(`${API_ENDPOINTS.USERS}/${adminId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
+
       if (response.ok) {
         setSuccess(`Admin ${newStatus.toLowerCase()} successfully!`);
         await fetchAdmins();
       } else {
-        const error = await response.json();
-        setError(error.error || 'Failed to update status');
+        const err = await response.json().catch(() => ({}));
+        setError(err.error || 'Failed to update status');
       }
     } catch {
       setError('Failed to update status');
@@ -189,37 +239,133 @@ const AdminManagement = () => {
     }
   };
 
+  // ----------- DELETE ADMIN (hardened) -----------
+  const handleDeleteAdmin = async (admin) => {
+    // Prefer normalized id; fall back to any known field
+    const userId = Number(admin?.id ?? admin?.userId ?? admin?.userID ?? admin?.user?.id);
+    if (!Number.isFinite(userId)) {
+      setError('Invalid user id; cannot delete.');
+      return;
+    }
+
+    if (!window.confirm(`Delete ${admin?.name || 'this admin'}? This cannot be undone.`)) return;
+
+    try {
+      setActionLoading(true);
+      setError(null);
+      setSuccess(null);
+
+      const authRaw = localStorage.getItem('auth');
+      const token = authRaw ? JSON.parse(authRaw).accessToken : '';
+      const headers = token
+        ? { Authorization: `Bearer ${token}`, Accept: 'application/json' }
+        : { Accept: 'application/json' };
+
+      // Optional: block self-delete (support different auth shapes)
+      try {
+        const me = authRaw ? JSON.parse(authRaw) : null;
+        const myId = Number(me?.user?.id ?? me?.id);
+        if (Number.isFinite(myId) && myId === userId) {
+          setError('You cannot delete your own admin account.');
+          return;
+        }
+      } catch {}
+
+      const res = await fetch(`${API_ENDPOINTS.USERS}/${userId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if ([200, 202, 204].includes(res.status)) {
+        setSuccess('Admin deleted successfully!');
+        await fetchAdmins();
+        return;
+      }
+
+      // Try to read error details (JSON or text)
+      let errMsg = `Failed to delete admin (HTTP ${res.status})`;
+      try {
+        const ct = res.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const err = await res.json();
+          errMsg = err?.error || err?.message || errMsg;
+        } else {
+          const txt = await res.text();
+          if (txt) errMsg = txt;
+        }
+      } catch {}
+      setError(errMsg);
+    } catch (e) {
+      setError(e?.message || 'Failed to delete admin');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const resetForm = () => {
-    setFormData({ name: '', email: '', password: '', confirmPassword: '', role: 'ADMIN' });
+    setFormData({
+      name: '',
+      email: '',
+      phoneNumber: '',
+      password: '',
+      confirmPassword: '',
+      role: 'ADMIN',
+    });
     setSelectedAdmin(null);
     setError(null);
     setSuccess(null);
   };
 
-  const openCreateModal = () => { resetForm(); setShowCreateModal(true); };
+  const openCreateModal = () => {
+    resetForm();
+    setShowCreateModal(true);
+  };
+
   const openEditModal = (admin) => {
     setSelectedAdmin(admin);
-    setFormData({ name: admin.name, email: admin.email, password: '', confirmPassword: '', role: admin.role });
+    setFormData({
+      name: admin.name || '',
+      email: admin.email || '',
+      phoneNumber: admin.phoneNumber || '',
+      password: '',
+      confirmPassword: '',
+      role: admin.role || 'ADMIN',
+    });
     setShowEditModal(true);
   };
+
   const openPasswordModal = (admin) => {
     setSelectedAdmin(admin);
-    setFormData({ name: '', email: '', password: '', confirmPassword: '', role: '' });
+    setFormData({
+      name: '',
+      email: '',
+      phoneNumber: '',
+      password: '',
+      confirmPassword: '',
+      role: '',
+    });
     setShowPasswordModal(true);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'ACTIVE': return 'bg-green-100 text-green-800';
-      case 'SUSPENDED': return 'bg-red-100 text-red-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ACTIVE':
+        return 'bg-green-100 text-green-800';
+      case 'SUSPENDED':
+        return 'bg-red-100 text-red-800';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
+
   const getRoleColor = (role) => {
     switch (role) {
-      case 'ADMIN': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ADMIN':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -316,21 +462,37 @@ const AdminManagement = () => {
                         <div className="ml-4">
                           <div className="text-sm font-medium">{admin.name}</div>
                           <div className="text-sm opacity-70">{admin.email}</div>
+                          {admin.phoneNumber && (
+                            <div className="text-sm opacity-70 flex items-center gap-1">
+                              <Phone className="w-3.5 h-3.5 opacity-70" />
+                              <span>{admin.phoneNumber}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(admin.role)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(
+                          admin.role
+                        )}`}
+                      >
                         {admin.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(admin.status)}`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                          admin.status
+                        )}`}
+                      >
                         {admin.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm opacity-70">
-                      {admin.lastLogin ? new Date(admin.lastLogin).toLocaleDateString() : 'Never'}
+                      {admin.lastLogin
+                        ? new Date(admin.lastLogin).toLocaleDateString()
+                        : 'Never'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2">
@@ -350,11 +512,31 @@ const AdminManagement = () => {
                         </button>
                         <button
                           onClick={() => handleToggleStatus(admin.id, admin.status)}
-                          className={admin.status === 'ACTIVE' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'}
-                          title={admin.status === 'ACTIVE' ? 'Suspend Admin' : 'Activate Admin'}
+                          className={
+                            admin.status === 'ACTIVE'
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
+                          }
+                          title={
+                            admin.status === 'ACTIVE' ? 'Suspend Admin' : 'Activate Admin'
+                          }
                         >
-                          {admin.status === 'ACTIVE' ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                          {admin.status === 'ACTIVE' ? (
+                            <Lock className="w-4 h-4" />
+                          ) : (
+                            <Unlock className="w-4 h-4" />
+                          )}
                         </button>
+
+                        <button
+                          onClick={() => handleDeleteAdmin(admin)}
+                          disabled={actionLoading}
+                          className="text-rose-600 hover:text-rose-800 disabled:opacity-50"
+                          title="Delete Admin"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
                       </div>
                     </td>
                   </tr>
@@ -371,7 +553,12 @@ const AdminManagement = () => {
           <div className="rounded-lg p-6 max-w-md w-full mx-4 border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Create New Admin</h3>
-              <button onClick={() => setShowCreateModal(false)} className="opacity-60 hover:opacity-90">✕</button>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="opacity-60 hover:opacity-90"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -380,7 +567,7 @@ const AdminManagement = () => {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                   placeholder="Enter admin name"
                 />
@@ -391,9 +578,22 @@ const AdminManagement = () => {
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                   placeholder="Enter admin email"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium opacity-70 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phoneNumber: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
+                  placeholder="Enter phone number"
                 />
               </div>
 
@@ -401,38 +601,60 @@ const AdminManagement = () => {
                 <label className="block text-sm font-medium opacity-70 mb-1">Password</label>
                 <div className="relative">
                   <input
-                    type={showPasswords.password ? "text" : "password"}
+                    type={showPasswords.password ? 'text' : 'password'}
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-3 py-2 pr-10 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                     placeholder="Enter password"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswords({...showPasswords, password: !showPasswords.password})}
+                    onClick={() =>
+                      setShowPasswords({
+                        ...showPasswords,
+                        password: !showPasswords.password,
+                      })
+                    }
                     className="absolute inset-y-0 right-0 pr-3 flex items-center opacity-80"
                   >
-                    {showPasswords.password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPasswords.password ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium opacity-70 mb-1">Confirm Password</label>
+                <label className="block text-sm font-medium opacity-70 mb-1">
+                  Confirm Password
+                </label>
                 <div className="relative">
                   <input
-                    type={showPasswords.confirmPassword ? "text" : "password"}
+                    type={showPasswords.confirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, confirmPassword: e.target.value })
+                    }
                     className="w-full px-3 py-2 pr-10 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                     placeholder="Confirm password"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswords({...showPasswords, confirmPassword: !showPasswords.confirmPassword})}
+                    onClick={() =>
+                      setShowPasswords({
+                        ...showPasswords,
+                        confirmPassword: !showPasswords.confirmPassword,
+                      })
+                    }
                     className="absolute inset-y-0 right-0 pr-3 flex items-center opacity-80"
                   >
-                    {showPasswords.confirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPasswords.confirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -441,7 +663,7 @@ const AdminManagement = () => {
                 <label className="block text-sm font-medium opacity-70 mb-1">Role</label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 >
                   <option value="ADMIN">Admin</option>
@@ -450,8 +672,17 @@ const AdminManagement = () => {
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-md border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.06)] hover:bg-[rgba(var(--fg),0.1)]">Cancel</button>
-              <button onClick={handleCreateAdmin} disabled={actionLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:opacity-90 disabled:opacity-50">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 rounded-md border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.06)] hover:bg-[rgba(var(--fg),0.1)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateAdmin}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:opacity-90 disabled:opacity-50"
+              >
                 {actionLoading ? 'Creating...' : 'Create Admin'}
               </button>
             </div>
@@ -465,7 +696,12 @@ const AdminManagement = () => {
           <div className="rounded-lg p-6 max-w-md w-full mx-4 border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Edit Admin</h3>
-              <button onClick={() => setShowEditModal(false)} className="opacity-60 hover:opacity-90">✕</button>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="opacity-60 hover:opacity-90"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -474,7 +710,7 @@ const AdminManagement = () => {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 />
               </div>
@@ -484,7 +720,19 @@ const AdminManagement = () => {
                 <input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium opacity-70 mb-1">Phone Number</label>
+                <input
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, phoneNumber: e.target.value })
+                  }
                   className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 />
               </div>
@@ -493,7 +741,7 @@ const AdminManagement = () => {
                 <label className="block text-sm font-medium opacity-70 mb-1">Role</label>
                 <select
                   value={formData.role}
-                  onChange={(e) => setFormData({...formData, role: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   className="w-full px-3 py-2 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                 >
                   <option value="ADMIN">Admin</option>
@@ -502,8 +750,17 @@ const AdminManagement = () => {
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowEditModal(false)} className="px-4 py-2 rounded-md border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.06)] hover:bg-[rgba(var(--fg),0.1)]">Cancel</button>
-              <button onClick={handleUpdateAdmin} disabled={actionLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:opacity-90 disabled:opacity-50">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 rounded-md border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.06)] hover:bg-[rgba(var(--fg),0.1)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateAdmin}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:opacity-90 disabled:opacity-50"
+              >
                 {actionLoading ? 'Updating...' : 'Update Admin'}
               </button>
             </div>
@@ -517,7 +774,12 @@ const AdminManagement = () => {
           <div className="rounded-lg p-6 max-w-md w-full mx-4 border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Change Password</h3>
-              <button onClick={() => setShowPasswordModal(false)} className="opacity-60 hover:opacity-90">✕</button>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="opacity-60 hover:opacity-90"
+              >
+                ✕
+              </button>
             </div>
 
             <div className="mb-4">
@@ -528,51 +790,82 @@ const AdminManagement = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium opacity-70 mb-1">New Password</label>
+                <label className="block text-sm font-medium opacity-70 mb-1">
+                  New Password
+                </label>
                 <div className="relative">
                   <input
-                    type={showPasswords.password ? "text" : "password"}
+                    type={showPasswords.password ? 'text' : 'password'}
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full px-3 py-2 pr-10 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                     placeholder="Enter new password"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswords({...showPasswords, password: !showPasswords.password})}
+                    onClick={() =>
+                      setShowPasswords({
+                        ...showPasswords,
+                        password: !showPasswords.password,
+                      })
+                    }
                     className="absolute inset-y-0 right-0 pr-3 flex items-center opacity-80"
                   >
-                    {showPasswords.password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPasswords.password ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium opacity-70 mb-1">Confirm New Password</label>
+                <label className="block text-sm font-medium opacity-70 mb-1">
+                  Confirm New Password
+                </label>
                 <div className="relative">
                   <input
-                    type={showPasswords.confirmPassword ? "text" : "password"}
+                    type={showPasswords.confirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    onChange={(e) =>
+                      setFormData({ ...formData, confirmPassword: e.target.value })
+                    }
                     className="w-full px-3 py-2 pr-10 rounded-md border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
                     placeholder="Confirm new password"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswords({...showPasswords, confirmPassword: !showPasswords.confirmPassword})}
+                    onClick={() =>
+                      setShowPasswords({
+                        ...showPasswords,
+                        confirmPassword: !showPasswords.confirmPassword,
+                      })
+                    }
                     className="absolute inset-y-0 right-0 pr-3 flex items-center opacity-80"
                   >
-                    {showPasswords.confirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPasswords.confirmPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-              <button onClick={() => setShowPasswordModal(false)} className="px-4 py-2 rounded-md border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.06)] hover:bg-[rgba(var(--fg),0.1)]">
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="px-4 py-2 rounded-md border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.06)] hover:bg-[rgba(var(--fg),0.1)]"
+              >
                 Cancel
               </button>
-              <button onClick={handleChangePassword} disabled={actionLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:opacity-90 disabled:opacity-50">
+              <button
+                onClick={handleChangePassword}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:opacity-90 disabled:opacity-50"
+              >
                 {actionLoading ? 'Saving...' : 'Save Password'}
               </button>
             </div>

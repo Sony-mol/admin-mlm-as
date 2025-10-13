@@ -27,7 +27,7 @@ export const API_ENDPOINTS = {
   SYSTEM_STATS: getApiUrl('/api/settings/system-stats'),
   RECENT_ACTIVITIES: getApiUrl('/api/activity-logs/recent'),
   ACTIVITY_STATS: getApiUrl('/api/activity-logs/statistics'),
-  ADMINS: getApiUrl('/api/users'),
+  ADMINS: getApiUrl('/api/admin'),
   CREATE_ADMIN: getApiUrl('/api/users/create-admin'),
   TOP_PERFORMERS: getApiUrl('/api/users/top-performers'),
   TIER_LEVEL_BREAKDOWN: getApiUrl('/api/users/tier-level-breakdown'),
