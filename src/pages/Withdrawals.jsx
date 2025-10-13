@@ -587,6 +587,11 @@ const Withdrawals = () => {
                         <div className="text-sm opacity-70">
                           {withdrawal.user?.email || 'No email'}
                         </div>
+                        {withdrawal.phoneNumber && (
+                          <div className="text-sm opacity-70">
+                            📞 {withdrawal.phoneNumber}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -595,12 +600,9 @@ const Withdrawals = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      
-                      {withdrawal.description && (
-                        <div className="text-sm opacity-70">
-                          {withdrawal.description}
-                        </div>
-                      )}
+                      <div className="text-sm font-medium text-[rgb(var(--fg))]">
+                        {withdrawal.paymentMethod || withdrawal.description || 'Withdrawal via UPI Transfer'}
+                      </div>
                       {withdrawal.upiId && (
                         <div className="text-sm opacity-70">
                           UPI: {withdrawal.upiId}
@@ -609,6 +611,11 @@ const Withdrawals = () => {
                       {withdrawal.accountNumber && (
                         <div className="text-sm opacity-70">
                           A/C: {withdrawal.accountNumber}
+                        </div>
+                      )}
+                      {withdrawal.bankName && (
+                        <div className="text-sm opacity-70">
+                          Bank: {withdrawal.bankName}
                         </div>
                       )}
                     </td>
@@ -703,6 +710,33 @@ const Withdrawals = () => {
                 <div>
                   <label className="text-sm font-medium opacity-70">Payment Method</label>
                   <p className="text-sm">{selectedWithdrawal.paymentMethod || '—'}</p>
+                </div>
+              </div>
+
+              {/* User Information */}
+              <div className="border-t border-[rgb(var(--border))] pt-4">
+                <h4 className="text-sm font-medium opacity-70 mb-3">User Information</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium opacity-70">Name</label>
+                    <p className="text-sm">{selectedWithdrawal.user?.name || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium opacity-70">Email</label>
+                    <p className="text-sm">{selectedWithdrawal.user?.email || '—'}</p>
+                  </div>
+                  {selectedWithdrawal.phoneNumber && (
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Phone Number</label>
+                      <p className="text-sm">📞 {selectedWithdrawal.phoneNumber}</p>
+                    </div>
+                  )}
+                  {selectedWithdrawal.accountHolderName && (
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Account Holder</label>
+                      <p className="text-sm">{selectedWithdrawal.accountHolderName}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
