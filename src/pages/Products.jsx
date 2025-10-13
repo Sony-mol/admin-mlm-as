@@ -36,31 +36,41 @@ const ProductCard = ({ product, onEdit, onDelete, onView }) => (
   <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 hover:shadow-lg transition-all duration-300 group">
     <div className="relative">
       <div className="aspect-square rounded-lg overflow-hidden mb-4 bg-[rgba(var(--fg),0.06)]">
-        {product.image ? (
-          <img 
-            src={(() => {
-              if (product.image.startsWith('http')) return product.image;
-              // Handle old format URLs (/uploads/products/...)
-              if (product.image.startsWith('/uploads/products/')) {
-                const filename = product.image.split('/').pop();
-                return `https://asmlmbackend-production.up.railway.app/api/products/image/${filename}`;
-              }
-              // Handle new format URLs (/api/products/image/...)
-              return `https://asmlmbackend-production.up.railway.app${product.image}`;
-            })()} 
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              console.error('Failed to load image:', product.image);
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'flex';
-            }}
-            onLoad={() => console.log('Image loaded successfully:', product.image)}
-          />
-        ) : null}
-        <div className={`w-full h-full flex items-center justify-center ${product.image ? 'hidden' : ''}`}>
-          <ImageIcon className="w-12 h-12 opacity-40" />
-        </div>
+        {(() => {
+          // Get default image based on product name
+          const getDefaultImage = (productName) => {
+            const defaultImages = {
+              'Watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&crop=center',
+              'Growth Package': 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop&crop=center',
+              'Eliteeeee Package': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop&crop=center',
+              'Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&crop=center',
+              'car': 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=400&h=400&fit=crop&crop=center',
+              'Bag': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&crop=center',
+              'AC': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=400&fit=crop&crop=center'
+            };
+            return defaultImages[productName] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop&crop=center';
+          };
+
+          const imageUrl = product.image && product.image.trim() ? 
+            (product.image.startsWith('http') ? product.image :
+             product.image.startsWith('/uploads/products/') ? 
+               `https://asmlmbackend-production.up.railway.app/api/products/image/${product.image.split('/').pop()}` :
+               `https://asmlmbackend-production.up.railway.app${product.image}`) :
+            getDefaultImage(product.name);
+
+          return (
+            <img 
+              src={imageUrl}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={(e) => {
+                console.error('Failed to load image:', imageUrl);
+                e.target.src = getDefaultImage(product.name);
+              }}
+              onLoad={() => console.log('Image loaded successfully:', imageUrl)}
+            />
+          );
+        })()}
       </div>
       
       {/* Product Status Badge (kept accent colors) */}
