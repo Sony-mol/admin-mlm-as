@@ -1,23 +1,24 @@
+// src/pages/Overview.jsx
 import React, { useEffect, useRef, useState } from "react";
 import LineChartMini from "../components/charts/LineChartMini";
 import PieChartMini from "../components/charts/PieChartMini";
-import { 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  Activity, 
-  ArrowUpRight, 
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  Activity,
+  ArrowUpRight,
   ArrowDownRight,
   Loader2,
   RefreshCw,
   BarChart3,
   PieChart,
   Calendar,
-  Clock
+  Clock,
 } from "lucide-react";
 
 // Import API configuration
-import { API_ENDPOINTS } from '../config/api';
+import { API_ENDPOINTS } from "../config/api";
 
 // Real backend API endpoints
 const COMMISSION_DASHBOARD_API = API_ENDPOINTS.COMMISSION_DASHBOARD;
@@ -26,21 +27,29 @@ const RECENT_ACTIVITIES_API = API_ENDPOINTS.RECENT_ACTIVITIES;
 const TIER_LEVEL_BREAKDOWN_API = API_ENDPOINTS.TIER_LEVEL_BREAKDOWN;
 
 /* ---------- helpers for tier color ---------- */
-const tierKey = (label = '') => {
-  const s = String(label || '').toLowerCase();
-  if (s.startsWith('gold')) return 'gold';
-  if (s.startsWith('silver')) return 'silver';
-  if (s.startsWith('bronze')) return 'bronze';
-  return '';
+const tierKey = (label = "") => {
+  const s = String(label || "").toLowerCase();
+  if (s.startsWith("gold")) return "gold";
+  if (s.startsWith("silver")) return "silver";
+  if (s.startsWith("bronze")) return "bronze";
+  return "";
 };
+
+/* ---------- pretty name for buttons ---------- */
+const prettyTierName = (s = "") =>
+  String(s || "").replace(/(^|\s)\S/g, (c) => c.toUpperCase());
 
 /* ---------- Enhanced UI helpers ---------- */
 const Card = ({ children, className = "", loading = false }) => (
-  <div className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] transition-all duration-300 hover:shadow-lg ${className}`}>
+  <div
+    className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] transition-all duration-300 hover:shadow-lg ${className}`}
+  >
     {loading ? (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-        <span className="ml-2 text-sm text-[rgba(var(--fg),0.7)]">Loading...</span>
+        <span className="ml-2 text-sm text-[rgba(var(--fg),0.7)]">
+          Loading...
+        </span>
       </div>
     ) : (
       children
@@ -52,7 +61,9 @@ const StatCard = ({ title, value, change, icon: Icon, trend, loading = false }) 
   <Card className="p-6 hover:shadow-xl transition-all duration-300">
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <p className="text-sm font-medium text-[rgba(var(--fg),0.7)] mb-1">{title}</p>
+        <p className="text-sm font-medium text-[rgba(var(--fg),0.7)] mb-1">
+          {title}
+        </p>
         <div className="flex items-center gap-2">
           {loading ? (
             <div className="h-8 w-20 rounded animate-pulse bg-[rgba(var(--fg),0.15)]"></div>
@@ -60,11 +71,20 @@ const StatCard = ({ title, value, change, icon: Icon, trend, loading = false }) 
             <p className="text-2xl font-bold text-[rgb(var(--fg))]">{value}</p>
           )}
           {!loading && change && (
-            <div className={`flex items-center gap-1 text-sm ${
-              trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-[rgba(var(--fg),0.7)]'
-            }`}>
-              {trend === 'up' ? <ArrowUpRight className="w-4 h-4" /> : 
-               trend === 'down' ? <ArrowDownRight className="w-4 h-4" /> : null}
+            <div
+              className={`flex items-center gap-1 text-sm ${
+                trend === "up"
+                  ? "text-green-600"
+                  : trend === "down"
+                  ? "text-red-600"
+                  : "text-[rgba(var(--fg),0.7)]"
+              }`}
+            >
+              {trend === "up" ? (
+                <ArrowUpRight className="w-4 h-4" />
+              ) : trend === "down" ? (
+                <ArrowDownRight className="w-4 h-4" />
+              ) : null}
               <span>{change}</span>
             </div>
           )}
@@ -88,7 +108,11 @@ const Header = ({ title, subtitle }) => (
 
 const INR = (n) =>
   typeof n === "number"
-    ? n.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 })
+    ? n.toLocaleString("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+      })
     : n;
 
 const relTime = (iso) => {
@@ -98,12 +122,15 @@ const relTime = (iso) => {
   if (sec < 60) return "just now";
   if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
   if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
-  return d.toLocaleDateString("en-IN", { dateStyle: "medium" }) + " " + d.toLocaleTimeString("en-IN", { timeStyle: "short" });
+  return (
+    d.toLocaleDateString("en-IN", { dateStyle: "medium" }) +
+    " " +
+    d.toLocaleTimeString("en-IN", { timeStyle: "short" })
+  );
 };
 
 /* ---------- Modal (robust scroll lock + viewport-bounded) ---------- */
 function Modal({ open, onClose, children }) {
-  // Lock body scroll while open; restore exactly on close (prevents stuck scroll)
   useEffect(() => {
     if (!open) return;
 
@@ -138,7 +165,12 @@ function Modal({ open, onClose, children }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/40" />
       <div className="absolute inset-0 grid place-items-center p-4">
         <div
@@ -146,7 +178,7 @@ function Modal({ open, onClose, children }) {
             "w-full max-w-5xl",
             "max-h-[100svh] md:max-h-[85vh]",
             "rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] shadow-2xl",
-            "overflow-y-auto", // panel scrolls
+            "overflow-y-auto",
           ].join(" ")}
           style={{
             WebkitOverflowScrolling: "touch",
@@ -164,11 +196,11 @@ function Modal({ open, onClose, children }) {
 
 /* ---------- Tier Modal (responsive pie; no overflow on mobile) ---------- */
 function TierModal({ open, onClose, tierKeyProp, tierData }) {
-  const title = tierKeyProp ? tierKeyProp.toUpperCase() : "";
+  const title = tierKeyProp ? prettyTierName(tierKeyProp) : "";
   const pie = tierData?.pie ?? [];
   const levels = tierData?.levels ?? [];
 
-  // Responsive pie sizing based on available space
+  // Responsive pie sizing
   const chartBoxRef = useRef(null);
   const [chartSize, setChartSize] = useState(220);
 
@@ -180,7 +212,7 @@ function TierModal({ open, onClose, tierKeyProp, tierData }) {
     const ro = new ResizeObserver((entries) => {
       const rect = entries[0]?.contentRect;
       if (!rect) return;
-      const candidate = Math.min(rect.width, rect.height) - 24; // padding buffer
+      const candidate = Math.min(rect.width, rect.height) - 24;
       const size = Math.max(160, Math.min(260, Math.floor(candidate)));
       setChartSize(size);
     });
@@ -194,7 +226,9 @@ function TierModal({ open, onClose, tierKeyProp, tierData }) {
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 data-tier={tierKeyProp} className="text-xl font-semibold">{title} tier</h2>
+            <h2 data-tier={tierKeyProp} className="text-xl font-semibold">
+              {title} tier
+            </h2>
             <p className="text-sm opacity-70">Referrals per level</p>
           </div>
           <button
@@ -207,7 +241,7 @@ function TierModal({ open, onClose, tierKeyProp, tierData }) {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Distribution card: responsive & centered */}
+          {/* Distribution */}
           <Card className="p-4 min-h-[360px] sm:min-h-[420px] flex flex-col overflow-hidden">
             <div className="mb-3 font-medium">Distribution</div>
             <div
@@ -234,21 +268,33 @@ function TierModal({ open, onClose, tierKeyProp, tierData }) {
             <ul className="divide-y divide-[rgb(var(--border))]">
               {levels.map((lv, idx) => (
                 <li key={idx} className="py-3 flex items-center gap-3">
-                  <img
-                    src={lv.image}
-                    alt={lv.reward}
-                    className="h-20 w-20 md:h-24 md:w-24 object-cover rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
-                    loading="lazy"
-                  />
+                  {lv.image ? (
+                    <img
+                      src={lv.image}
+                      alt={lv.reward}
+                      className="h-20 w-20 md:h-24 md:w-24 object-cover rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="h-20 w-20 md:h-24 md:w-24 rounded-xl border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.05)] grid place-items-center text-xs opacity-60">
+                      No image
+                    </div>
+                  )}
                   <div className="flex-1">
-                    <div className="font-medium">Level {lv.level}: {lv.reward}</div>
+                    <div className="font-medium">
+                      Level {lv.level}: {lv.reward}
+                    </div>
                     <div className="text-sm opacity-70">
                       {Number(lv.referrals || 0).toLocaleString("en-IN")} referrals
                     </div>
                   </div>
                 </li>
               ))}
-              {levels.length === 0 && <li className="py-3 text-sm opacity-70">No level data found for this tier.</li>}
+              {levels.length === 0 && (
+                <li className="py-3 text-sm opacity-70">
+                  No level data found for this tier.
+                </li>
+              )}
             </ul>
           </Card>
         </div>
@@ -261,7 +307,7 @@ function TierModal({ open, onClose, tierKeyProp, tierData }) {
 export default function Overview() {
   const [dashboardData, setDashboardData] = useState(null);
   const [recentActivityLogs, setRecentActivityLogs] = useState([]);
-  const [tierData, setTierData] = useState(null);
+  const [tierData, setTierData] = useState(null); // normalized: keys lowercased
   const [loading, setLoading] = useState(true);
   const [tierOpen, setTierOpen] = useState(false);
   const [tierKeyState, setTierKeyState] = useState(null);
@@ -271,167 +317,136 @@ export default function Overview() {
     (async () => {
       try {
         setLoading(true);
-        
-        console.log('🔍 OVERVIEW PAGE - Starting API calls...');
-        
-        const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-        console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-        
-        // Fetch commission dashboard data
-        console.log('📊 Fetching dashboard data from:', COMMISSION_DASHBOARD_API);
-        const dashboardRes = await fetch(COMMISSION_DASHBOARD_API, { 
+
+        const token = localStorage.getItem("auth")
+          ? JSON.parse(localStorage.getItem("auth")).accessToken
+          : "";
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        // Dashboard
+        const dashboardRes = await fetch(COMMISSION_DASHBOARD_API, {
           cache: "no-store",
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers,
         });
-        console.log('📊 Dashboard Response Status:', dashboardRes.status);
-        console.log('📊 Dashboard Response Headers:', Object.fromEntries(dashboardRes.headers.entries()));
-        
         if (dashboardRes.ok) {
           const dashboardJson = await dashboardRes.json();
-          console.log('✅ Dashboard Data Received:', dashboardJson);
           if (mounted) setDashboardData(dashboardJson);
-        } else {
-          console.log('❌ Dashboard API Failed:', dashboardRes.status, await dashboardRes.text());
         }
 
-        // Fetch recent activity logs
-        console.log('📈 Fetching activity logs from:', RECENT_ACTIVITIES_API);
-        const activitiesRes = await fetch(`${RECENT_ACTIVITIES_API}?size=3`, { 
+        // Activities (limit 3)
+        const activitiesRes = await fetch(`${RECENT_ACTIVITIES_API}?size=3`, {
           cache: "no-store",
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers,
         });
-        console.log('📈 Activities Response Status:', activitiesRes.status);
-        console.log('📈 Activities Response Headers:', Object.fromEntries(activitiesRes.headers.entries()));
-        
         if (activitiesRes.ok) {
           const activitiesJson = await activitiesRes.json();
-          console.log('✅ Activity Logs Data Received:', activitiesJson);
-          if (mounted) setRecentActivityLogs(Array.isArray(activitiesJson.logs) ? activitiesJson.logs.slice(0, 3) : []);
-        } else {
-          console.log('❌ Activity Logs API Failed:', activitiesRes.status, await activitiesRes.text());
+          if (mounted)
+            setRecentActivityLogs(
+              Array.isArray(activitiesJson.logs)
+                ? activitiesJson.logs.slice(0, 3)
+                : []
+            );
         }
 
-        // Fetch real users data for accurate user count
-        console.log('👥 Fetching real users data from:', API_ENDPOINTS.USERS);
-        const usersRes = await fetch(API_ENDPOINTS.USERS, { 
+        // Real users -> count
+        const usersRes = await fetch(API_ENDPOINTS.USERS, {
           cache: "no-store",
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers,
         });
-        console.log('👥 Users Response Status:', usersRes.status);
-        console.log('👥 Users Response Headers:', Object.fromEntries(usersRes.headers.entries()));
-        
         if (usersRes.ok) {
           const usersJson = await usersRes.json();
-          console.log('✅ Real Users Data Received:', usersJson);
-          console.log('📊 Total Users Count:', usersJson.length);
           if (mounted) {
-            // Update dashboard data with real user count
-            setDashboardData(prev => ({
+            setDashboardData((prev) => ({
               ...prev,
               totalUsers: usersJson.length,
-              totalUsersCount: usersJson.length
+              totalUsersCount: usersJson.length,
             }));
           }
-        } else {
-          console.log('❌ Users API Failed:', usersRes.status, await usersRes.text());
         }
 
-        // Fetch pending commissions for accurate pending count
-        console.log('⏳ Fetching pending commissions from:', API_ENDPOINTS.PENDING_COMMISSIONS);
-        const pendingRes = await fetch(API_ENDPOINTS.PENDING_COMMISSIONS, { 
+        // Pending commissions -> count
+        const pendingRes = await fetch(API_ENDPOINTS.PENDING_COMMISSIONS, {
           cache: "no-store",
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers,
         });
-        console.log('⏳ Pending Response Status:', pendingRes.status);
-        
         if (pendingRes.ok) {
           const pendingJson = await pendingRes.json();
-          console.log('✅ Pending Commissions Data Received:', pendingJson);
-          console.log('📊 Pending Count:', pendingJson.length);
           if (mounted) {
-            // Update dashboard data with real pending count
-            setDashboardData(prev => ({
+            setDashboardData((prev) => ({
               ...prev,
-              pendingCommissionsCount: pendingJson.length
+              pendingCommissionsCount: pendingJson.length,
             }));
           }
-        } else {
-          console.log('❌ Pending API Failed:', pendingRes.status, await pendingRes.text());
         }
 
-        // Fetch tier level breakdown data
-        console.log('🏆 Fetching tier level breakdown from:', TIER_LEVEL_BREAKDOWN_API);
-        const tierRes = await fetch(TIER_LEVEL_BREAKDOWN_API, { 
+        // Tier level breakdown (normalize keys + shapes)
+        const tierRes = await fetch(TIER_LEVEL_BREAKDOWN_API, {
           cache: "no-store",
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers,
         });
-        console.log('🏆 Tier breakdown response status:', tierRes.status);
-        
         if (tierRes.ok) {
           const tierJson = await tierRes.json();
-          console.log('✅ Tier breakdown data received:', tierJson);
-          if (mounted) setTierData(tierJson);
-        } else {
-          console.log('❌ Tier breakdown API failed:', tierRes.status, await tierRes.text());
+          const normalized = Object.fromEntries(
+            Object.entries(tierJson || {}).map(([k, v]) => {
+              const pieArray = Array.isArray(v?.pie)
+                ? v.pie
+                : Array.isArray(v?.distribution)
+                ? v.distribution
+                : [];
+              const levelsArray = Array.isArray(v?.levels) ? v.levels : [];
+
+              return [
+                String(k).toLowerCase(),
+                {
+                  pie: pieArray.map((p) => ({
+                    label: String(p.label ?? p.name ?? ""),
+                    value: Number(p.value ?? p.count ?? 0) || 0,
+                  })),
+                  levels: levelsArray.map((l) => ({
+                    level: Number(l.level ?? l.levelNumber ?? 0) || 0,
+                    reward: String(l.reward ?? l.rewardName ?? ""),
+                    referrals:
+                      Number(l.referrals ?? l.requiredReferrals ?? 0) || 0,
+                    image: l.image ?? l.img ?? "",
+                  })),
+                },
+              ];
+            })
+          );
+          if (mounted) setTierData(normalized);
         }
 
-        // Fetch monthly revenue data
-        console.log('📈 Fetching monthly revenue from:', API_ENDPOINTS.MONTHLY_REVENUE);
-        const revenueRes = await fetch(API_ENDPOINTS.MONTHLY_REVENUE, { 
+        // Monthly revenue
+        const revenueRes = await fetch(API_ENDPOINTS.MONTHLY_REVENUE, {
           cache: "no-store",
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers,
         });
-        console.log('📈 Monthly revenue response status:', revenueRes.status);
-        
         if (revenueRes.ok) {
           const revenueJson = await revenueRes.json();
-          console.log('✅ Monthly revenue data received:', revenueJson);
           if (mounted) {
-            setDashboardData(prev => ({
+            setDashboardData((prev) => ({
               ...prev,
-              monthlyRevenue: revenueJson
+              monthlyRevenue: revenueJson,
             }));
           }
-        } else {
-          console.log('❌ Monthly revenue API failed:', revenueRes.status, await revenueRes.text());
         }
 
-        // Fetch top performers data
-        console.log('🏆 Fetching top performers from:', API_ENDPOINTS.TOP_PERFORMERS);
-        const performersRes = await fetch(API_ENDPOINTS.TOP_PERFORMERS, { 
+        // Top performers
+        const performersRes = await fetch(API_ENDPOINTS.TOP_PERFORMERS, {
           cache: "no-store",
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers,
         });
-        console.log('🏆 Top performers response status:', performersRes.status);
-        
         if (performersRes.ok) {
           const performersJson = await performersRes.json();
           if (mounted) {
-            setDashboardData(prev => ({
+            setDashboardData((prev) => ({
               ...prev,
-              topPerformers: performersJson
+              topPerformers: performersJson,
             }));
           }
-        } else {
-          console.log('❌ Top performers API failed:', performersRes.status, await performersRes.text());
         }
-        
       } catch (e) {
-        console.error('💥 Overview Load Error:', e);
+        console.error("💥 Overview Load Error:", e);
         if (mounted) {
           setDashboardData(null);
           setRecentActivityLogs([]);
@@ -441,70 +456,78 @@ export default function Overview() {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Transform real backend data to match UI expectations
-  const kpis = dashboardData ? [
-    {
-      id: "totalRevenue",
-      label: "Total Commissions",
-      value: dashboardData.totalCommissionAmount || 0,
-      delta: { direction: "up", vsLastMonthPct: 12.5 }
-    },
-    {
-      id: "totalUsers",
-      label: "Total Users",
-      value: dashboardData.totalUsers || dashboardData.totalUsersCount || 0,
-      delta: { direction: "up", vsLastMonthPct: 8.2 }
-    },
-    {
-      id: "pendingCommissions",
-      label: "Pending Commissions",
-      value: dashboardData.pendingCommissionsCount || 0,
-      delta: { direction: "down", vsLastMonthPct: 3.1 }
-    },
-    {
-      id: "paidCommissions",
-      label: "Paid Commissions",
-      value: dashboardData.paidCommissionsCount || 0,
-      delta: { direction: "up", vsLastMonthPct: 15.7 }
-    }
-  ] : [];
+  // Transform backend data to match UI
+  const kpis = dashboardData
+    ? [
+        {
+          id: "totalRevenue",
+          label: "Total Commissions",
+          value: dashboardData.totalCommissionAmount || 0,
+          delta: { direction: "up", vsLastMonthPct: 12.5 },
+        },
+        {
+          id: "totalUsers",
+          label: "Total Users",
+          value: dashboardData.totalUsers || dashboardData.totalUsersCount || 0,
+          delta: { direction: "up", vsLastMonthPct: 8.2 },
+        },
+        {
+          id: "pendingCommissions",
+          label: "Pending Commissions",
+          value: dashboardData.pendingCommissionsCount || 0,
+          delta: { direction: "down", vsLastMonthPct: 3.1 },
+        },
+        {
+          id: "paidCommissions",
+          label: "Paid Commissions",
+          value: dashboardData.paidCommissionsCount || 0,
+          delta: { direction: "up", vsLastMonthPct: 15.7 },
+        },
+      ]
+    : [];
 
-  const tiers = tierData; // Real tier data from backend
-  
+  const tiers = tierData || {}; // normalized (keys lowercased)
+
   // Real revenue data from backend - transform amount to value for chart
-  const revenue = (dashboardData?.monthlyRevenue || []).map(item => ({
+  const revenue = (dashboardData?.monthlyRevenue || []).map((item) => ({
     month: item.month,
-    value: item.amount
+    value: item.amount,
   }));
-  
+
   // Real top performers data from backend
   const top = dashboardData?.topPerformers || [];
-  
+
   // Transform recent activity logs to activities format
-  const activities = recentActivityLogs.map(activityLog => {
-    // Determine who performed the action
-    const actor = activityLog.adminId ? `Admin ${activityLog.adminId}` : 
-                  activityLog.userId ? `User ${activityLog.userId}` : 'System';
-    
-    // Format the action description
-    const action = activityLog.description || activityLog.actionType?.replace(/_/g, ' ') || 'Activity';
-    
-    // Format the timestamp
+  const activities = recentActivityLogs.map((activityLog) => {
+    const actor = activityLog.adminId
+      ? `Admin ${activityLog.adminId}`
+      : activityLog.userId
+      ? `User ${activityLog.userId}`
+      : "System";
+    const action =
+      activityLog.description ||
+      activityLog.actionType?.replace(/_/g, " ") ||
+      "Activity";
     const timestamp = activityLog.createdAt || new Date().toISOString();
-    
+
     return {
       user: actor,
-      action: action,
-      timestamp: timestamp,
-      tier: activityLog.category || 'System',
-      level: activityLog.severity || 'INFO'
+      action,
+      timestamp,
+      tier: activityLog.category || "System",
+      level: activityLog.severity || "INFO",
     };
   });
 
-  const openTier = (key) => { setTierKeyState(key); setTierOpen(true); };
+  const openTier = (key) => {
+    setTierKeyState(String(key).toLowerCase());
+    setTierOpen(true);
+  };
 
   if (loading) {
     return (
@@ -530,8 +553,12 @@ export default function Overview() {
               <Activity className="w-8 h-8" />
             </div>
             <div>
-              <div className="font-semibold text-lg mb-2">Couldn't load overview</div>
-              <div className="text-sm text-[rgba(var(--fg),0.7)] mb-4">Please check your authentication and try again.</div>
+              <div className="font-semibold text-lg mb-2">
+                Couldn't load overview
+              </div>
+              <div className="text-sm text-[rgba(var(--fg),0.7)] mb-4">
+                Please check your authentication and try again.
+              </div>
             </div>
             <button
               onClick={() => location.reload()}
@@ -566,16 +593,22 @@ export default function Overview() {
             const isUp = (k.delta?.direction ?? "up") === "up";
             const deltaPct = Math.abs(k.delta?.vsLastMonthPct ?? 0).toFixed(1);
             const val =
-              k.id === "totalRevenue" ? INR(Number(k.value || 0)) : Number(k.value || 0).toLocaleString("en-IN");
-            
-            // Map icons based on KPI type
+              k.id === "totalRevenue"
+                ? INR(Number(k.value || 0))
+                : Number(k.value || 0).toLocaleString("en-IN");
+
             const getIcon = (id) => {
               switch (id) {
-                case "totalRevenue": return DollarSign;
-                case "totalUsers": return Users;
-                case "pendingCommissions": return Clock;
-                case "paidCommissions": return TrendingUp;
-                default: return BarChart3;
+                case "totalRevenue":
+                  return DollarSign;
+                case "totalUsers":
+                  return Users;
+                case "pendingCommissions":
+                  return Clock;
+                case "paidCommissions":
+                  return TrendingUp;
+                default:
+                  return BarChart3;
               }
             };
 
@@ -585,7 +618,7 @@ export default function Overview() {
                 title={k.label}
                 value={val}
                 change={`${deltaPct}% vs last month`}
-                trend={isUp ? 'up' : 'down'}
+                trend={isUp ? "up" : "down"}
                 icon={getIcon(k.id)}
               />
             );
@@ -593,37 +626,66 @@ export default function Overview() {
         </section>
       )}
 
-      {/* Enhanced Tiers */}
+      {/* Enhanced Tiers (dynamic) */}
       <section>
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <PieChart className="w-5 h-5 text-blue-600" />
-                <div className="font-semibold text-lg">User Level Distribution</div>
-              </div>
-              <div className="text-sm text-[rgba(var(--fg),0.7)]">Choose a tier to view detailed breakdown</div>
-            </div>            
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {["bronze", "silver", "gold"].map((t) => (
-              <button
-                key={t}
-                onClick={() => openTier(t)}
-                data-tier={t}
-                className={`rounded-xl border-2 py-6 px-5 bg-[rgb(var(--card))] hover:bg-[rgba(var(--fg),0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-105 group`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs font-medium opacity-70">TIER</div>
-                  <div className="w-2 h-2 rounded-full bg-current opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                <div className="font-semibold text-lg">
+                  User Level Distribution
                 </div>
-                <div className="text-2xl font-bold mb-1">{t.toUpperCase()}</div>
-                <div className="text-xs opacity-70 group-hover:opacity-90 transition-opacity">Tap to view levels</div>
-              </button>
-            ))}
-
+              </div>
+              <div className="text-sm text-[rgba(var(--fg),0.7)]">
+                Choose a tier to view detailed breakdown
+              </div>
+            </div>
           </div>
+
+          {tiers && Object.keys(tiers).length > 0 ? (
+            (() => {
+              const order = ["bronze", "silver", "gold", "platinum"];
+              const tierKeys = Object.keys(tiers).sort((a, b) => {
+                const la = String(a).toLowerCase();
+                const lb = String(b).toLowerCase();
+                const ia = order.indexOf(la);
+                const ib = order.indexOf(lb);
+                if (ia !== -1 && ib !== -1) return ia - ib;
+                if (ia !== -1) return -1;
+                if (ib !== -1) return 1;
+                return String(a).localeCompare(String(b));
+              });
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {tierKeys.map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => openTier(t)}
+                      data-tier={t}
+                      className="rounded-xl border-2 py-6 px-5 bg-[rgb(var(--card))] hover:bg-[rgba(var(--fg),0.05)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:scale-105 group"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-xs font-medium opacity-70">TIER</div>
+                        <div className="w-2 h-2 rounded-full bg-current opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                      </div>
+                      <div className="text-2xl font-bold mb-1">
+                        {prettyTierName(t)}
+                      </div>
+                      <div className="text-xs opacity-70 group-hover:opacity-90 transition-opacity">
+                        Tap to view levels
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()
+          ) : (
+            <div className="rounded-lg border border-[rgb(var(--border))] p-6 text-center text-sm opacity-70">
+              No tiers found. Create a tier and it will appear here automatically.
+            </div>
+          )}
 
           <TierModal
             open={tierOpen}
@@ -648,7 +710,7 @@ export default function Overview() {
               Last 6 months
             </div>
           </div>
-          
+
           {revenue.length > 0 ? (
             <div className="h-64">
               <LineChartMini points={revenue} />
@@ -657,8 +719,12 @@ export default function Overview() {
             <div className="h-64 flex items-center justify-center rounded-lg bg-[rgba(var(--fg),0.05)]">
               <div className="text-center">
                 <TrendingUp className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
-                <div className="text-sm text-[rgba(var(--fg),0.7)]">No revenue data available</div>
-                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">Revenue data will appear here</div>
+                <div className="text-sm text-[rgba(var(--fg),0.7)]">
+                  No revenue data available
+                </div>
+                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">
+                  Revenue data will appear here
+                </div>
               </div>
             </div>
           )}
@@ -672,36 +738,50 @@ export default function Overview() {
               <div className="font-semibold text-lg">Top Performers</div>
             </div>
             <div className="text-sm text-[rgba(var(--fg),0.7)]">
-              {top.length} {top.length === 1 ? 'performer' : 'performers'}
+              {top.length} {top.length === 1 ? "performer" : "performers"}
             </div>
           </div>
-          
+
           <div className="space-y-3">
             {top.map((t, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors">
+              <div
+                key={i}
+                className="flex items-center gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors"
+              >
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
                     {i + 1}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-[rgb(var(--fg))] truncate">{t.name}</div>
+                  <div className="font-medium text-[rgb(var(--fg))] truncate">
+                    {t.name}
+                  </div>
                   <div className="flex items-center gap-2 text-sm text-[rgba(var(--fg),0.7)]">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      tierKey(t.level) === 'gold' ? 'bg-yellow-100 text-yellow-800' :
-                      tierKey(t.level) === 'silver' ? 'bg-gray-100 text-gray-800' :
-                      tierKey(t.level) === 'bronze' ? 'bg-amber-100 text-amber-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        tierKey(t.level) === "gold"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : tierKey(t.level) === "silver"
+                          ? "bg-gray-100 text-gray-800"
+                          : tierKey(t.level) === "bronze"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
                       {t.level}
                     </span>
                     <span>•</span>
-                    <span>{Number(t.referrals || 0).toLocaleString("en-IN")} referrals</span>
+                    <span>
+                      {Number(t.referrals || 0).toLocaleString("en-IN")} referrals
+                    </span>
                   </div>
                 </div>
                 <div className="flex-shrink-0 text-right">
                   <div className="font-semibold text-green-600">
-                    {t.currency === "INR" ? INR(Number(t.amount || 0)) : Number(t.amount || 0).toLocaleString("en-IN")}
+                    {t.currency === "INR"
+                      ? INR(Number(t.amount || 0))
+                      : Number(t.amount || 0).toLocaleString("en-IN")}
                   </div>
                   <div className="text-xs text-[rgba(var(--fg),0.6)]">earnings</div>
                 </div>
@@ -711,7 +791,9 @@ export default function Overview() {
               <div className="text-center py-8 text-[rgba(var(--fg),0.7)]">
                 <Users className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
                 <div className="text-sm">No performers yet</div>
-                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">Top performers will appear here</div>
+                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">
+                  Top performers will appear here
+                </div>
               </div>
             )}
           </div>
@@ -727,20 +809,27 @@ export default function Overview() {
           </div>
           <div className="space-y-3">
             {activities.map((a, i) => (
-              <div key={i} className="flex items-start gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors">
+              <div
+                key={i}
+                className="flex items-start gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors"
+              >
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                   <Activity className="w-4 h-4 text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-[rgb(var(--fg))]">{a.user}</span>
+                    <span className="font-medium text-[rgb(var(--fg))]">
+                      {a.user}
+                    </span>
                     {(a.tier || a.level) && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         {a.tier || a.level}
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">{a.action}</div>
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">
+                    {a.action}
+                  </div>
                   <div className="flex items-center gap-2 text-xs text-[rgba(var(--fg),0.6)]">
                     <Clock className="w-3 h-3" />
                     {relTime(a.timestamp)}
@@ -765,7 +854,7 @@ export default function Overview() {
             <BarChart3 className="w-5 h-5 text-purple-600" />
             <div className="font-semibold text-lg">Key Insights</div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-green-50 border border-green-200">
               <div className="flex items-center gap-2 mb-2">
@@ -773,26 +862,28 @@ export default function Overview() {
                 <div className="font-medium text-green-800">Revenue Growth</div>
               </div>
               <div className="text-sm text-green-700">
-                {revenue.length > 1 ? 
-                  `${((revenue[revenue.length - 1].amount - revenue[0].amount) / revenue[0].amount * 100).toFixed(1)}% increase over 6 months` :
-                  'Revenue data available'
-                }
+                {revenue.length > 1
+                  ? `${(
+                      ((revenue[revenue.length - 1].value - revenue[0].value) /
+                        Math.max(1, revenue[0].value)) *
+                      100
+                    ).toFixed(1)}% increase over 6 months`
+                  : "Revenue data available"}
               </div>
             </div>
-            
+
             <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-blue-600" />
                 <div className="font-medium text-blue-800">Top Performer</div>
               </div>
               <div className="text-sm text-blue-700">
-                {top.length > 0 ? 
-                  `${top[0].name} with ${top[0].referrals} referrals` :
-                  'No performers yet'
-                }
+                {top.length > 0
+                  ? `${top[0].name} with ${top[0].referrals} referrals`
+                  : "No performers yet"}
               </div>
             </div>
-            
+
             <div className="p-4 rounded-lg bg-purple-50 border border-purple-200">
               <div className="flex items-center gap-2 mb-2">
                 <Activity className="w-4 h-4 text-purple-600" />
