@@ -31,41 +31,57 @@ import {
   Loader2
 } from 'lucide-react';
 
+// Canonical API base (same as backend). Prefer env if provided.
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://asmlmbackend-production.up.railway.app';
+
+// Resolve a sensible default image based on product name
+const getDefaultImage = (productName) => {
+  const defaults = {
+    'Watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&crop=center',
+    'Growth Package': 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop&crop=center',
+    'Eliteeeee Package': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop&crop=center',
+    'Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&crop=center',
+    'car': 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=400&h=400&fit=crop&crop=center',
+    'Bag': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&crop=center',
+    'AC': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=400&fit=crop&crop=center'
+  };
+  return defaults[productName] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop&crop=center';
+};
+
+// Build a canonical image URL from what is stored in DB
+const buildProductImageUrl = (product) => {
+  const value = (product?.image || '').trim();
+  if (!value) return getDefaultImage(product?.name);
+
+  // If backend already returned absolute URL, use as-is
+  if (value.startsWith('http')) return value;
+
+  // If stored as a full relative path from backend (e.g., /uploads/products/filename.jpg)
+  if (value.startsWith('/')) return `${API_BASE}${value}`;
+
+  // Otherwise treat it as a bare filename/uuid and use the image endpoint
+  const file = value.split('/').pop();
+  return `${API_BASE}/api/products/image/${file}`;
+};
+
 // Product Card Component
 const ProductCard = ({ product, onEdit, onDelete, onView }) => (
   <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 hover:shadow-lg transition-all duration-300 group">
     <div className="relative">
       <div className="aspect-square rounded-lg overflow-hidden mb-4 bg-[rgba(var(--fg),0.06)]">
         {(() => {
-          // Get default image based on product name
-          const getDefaultImage = (productName) => {
-            const defaultImages = {
-              'Watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&crop=center',
-              'Growth Package': 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop&crop=center',
-              'Eliteeeee Package': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop&crop=center',
-              'Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&crop=center',
-              'car': 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=400&h=400&fit=crop&crop=center',
-              'Bag': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&crop=center',
-              'AC': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=400&fit=crop&crop=center'
-            };
-            return defaultImages[productName] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop&crop=center';
-          };
-
-          const imageUrl = product.image && product.image.trim() ? 
-            (product.image.startsWith('http') ? product.image :
-             product.image.startsWith('/uploads/products/') ? 
-               `https://asmlmbackend-production.up.railway.app/api/products/image/${product.image.split('/').pop()}` :
-               `https://asmlmbackend-production.up.railway.app${product.image}`) :
-            getDefaultImage(product.name);
-
+          const url = buildProductImageUrl(product);
+          // Cache-buster using updatedAt or id to avoid stale CDN/browser cache
+          const cacheKey = product?.updatedAt || product?.id || '';
+          const imageUrl = cacheKey ? `${url}?v=${encodeURIComponent(cacheKey)}` : url;
           return (
-            <img 
+            <img
               src={imageUrl}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {
                 console.error('Failed to load image:', imageUrl);
-                e.target.src = getDefaultImage(product.name);
+                e.currentTarget.src = getDefaultImage(product.name);
               }}
               onLoad={() => console.log('Image loaded successfully:', imageUrl)}
             />
