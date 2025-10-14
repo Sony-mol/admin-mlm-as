@@ -59,9 +59,15 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
           <div>
             <div className="text-sm opacity-70">Order ID</div>
             <div className="font-medium">{order.orderNo}</div>
+            {order.razorpayOrderId && (
+              <div className="text-xs opacity-60 mt-1">Razorpay: {order.razorpayOrderId}</div>
+            )}
           </div>
           <div className="sm:text-right">
             <StatusPill value={order.status} />
+            {order.isExpired && order.status === 'PENDING' && (
+              <div className="text-xs text-red-500 mt-1">⚠️ Expired</div>
+            )}
           </div>
         </div>
 
@@ -98,6 +104,11 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
           <div>
             <div className="font-medium">Total Amount</div>
             <div className="text-2xl font-semibold mt-1">{fmtINR(order.amount)}</div>
+            {order.timeRemaining !== null && order.status === 'PENDING' && (
+              <div className={`text-sm mt-2 ${order.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
+                {order.isExpired ? '⏰ Expired' : `⏱️ ${order.timeRemaining} min remaining`}
+              </div>
+            )}
           </div>
           <div className="md:text-right">
             <select
@@ -151,22 +162,45 @@ export default function Orders() {
         const realOrders = response.orders || [];
         
         // Transform backend order data to match frontend format
-        const transformedOrders = realOrders.map(order => ({
-        id: order.id || order.orderId,
-        orderNo: order.orderNumber,
-        customerName: order.userName || `User ${order.userId}`,
-        customerCode: order.userId ? `REF${order.userId}` : order.userEmail || "",
-        products: order.orderItems ? order.orderItems.map(item => item.productName) : [order.description || "MLM Package"],
-        amount: Number(order.totalAmount) || 0,
-        status: order.status || 'Pending',
+        const transformedOrders = realOrders.map(order => {
+          // Calculate time remaining for pending orders
+          let timeRemaining = null;
+          let isExpired = false;
+          if (order.status === 'PENDING' && order.createdAt) {
+            const createdAt = new Date(order.createdAt);
+            const now = new Date();
+            const diffMs = now - createdAt;
+            const diffMins = Math.floor(diffMs / 60000);
+            const expiryMins = 30;
+            timeRemaining = Math.max(0, expiryMins - diffMins);
+            isExpired = timeRemaining <= 0;
+          }
 
-        // 🔴 key fix: the UI reads "o.date", so populate "date"
-        date: order.createdAt,                   // <- use API createdAt
-        deliveryDate: order.deliveryDate || null,
-        paymentMethod: order.paymentMethod || 'Razorpay',
-        shippingAddress: order.shippingAddress || 'MLM System - Digital Delivery',
-        notes: order.notes || order.description || 'MLM System Order'
-      }));
+          return {
+            id: order.id || order.orderId,
+            orderNo: order.orderNumber,
+            customerName: order.userName || `User ${order.userId}`,
+            customerCode: order.userId ? `REF${order.userId}` : order.userEmail || "",
+            products: order.orderItems ? order.orderItems.map(item => item.productName) : [order.description || "MLM Package"],
+            amount: Number(order.totalAmount) || 0,
+            status: order.status || 'Pending',
+            paymentStatus: order.paymentStatus || order.status,
+            
+            // 🔴 key fix: the UI reads "o.date", so populate "date"
+            date: order.createdAt,                   // <- use API createdAt
+            deliveryDate: order.deliveryDate || null,
+            paymentMethod: order.paymentMethod || 'Razorpay',
+            shippingAddress: order.shippingAddress || 'MLM System - Digital Delivery',
+            notes: order.notes || order.description || 'MLM System Order',
+            
+            // NEW: Order expiry information
+            timeRemaining: timeRemaining,
+            isExpired: isExpired,
+            expiresAt: order.expiresAt || (order.createdAt ? new Date(new Date(order.createdAt).getTime() + 30*60000).toISOString() : null),
+            razorpayOrderId: order.razorpayOrderId || null,
+            activationStatus: order.activationStatus || null
+          };
+        });
         
         setOrders(transformedOrders);
         setErr(null);
@@ -351,7 +385,14 @@ export default function Orders() {
 
             {/* Status */}
             <div className="col-span-2 flex justify-center">
-              <StatusPill value={o.status} />
+              <div className="flex flex-col items-center gap-1">
+                <StatusPill value={o.status} />
+                {o.timeRemaining !== null && o.status === 'PENDING' && (
+                  <div className={`text-xs ${o.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
+                    {o.isExpired ? '⚠️ Expired' : `⏱️ ${o.timeRemaining}m`}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Date */}
@@ -382,7 +423,14 @@ export default function Orders() {
                 </div>
                 <div className="mt-1 text-xs opacity-70 truncate">{(o.products || []).join(", ")}</div>
               </div>
-              <StatusPill value={o.status} />
+              <div className="flex flex-col items-end gap-1">
+                <StatusPill value={o.status} />
+                {o.timeRemaining !== null && o.status === 'PENDING' && (
+                  <div className={`text-xs ${o.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
+                    {o.isExpired ? '⚠️ Expired' : `⏱️ ${o.timeRemaining}m`}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
