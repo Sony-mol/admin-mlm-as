@@ -79,18 +79,52 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
           </div>
         </div>
 
-        <div className="mt-5 space-y-2">
+        <div className="mt-5 space-y-3">
+          {/* Customer Information */}
           <div className="flex items-center gap-2 text-sm">
             <span>👤</span>
             <span className="font-medium">{order.customerName}</span>
             <span className="opacity-70">({order.customerCode})</span>
           </div>
-          {order.address && (
-            <div className="flex items-center gap-2 text-sm opacity-90">
-              <span>📍</span>
-              <span>{order.address}</span>
+          
+          {/* Shipping Information */}
+          {(order.shippingName || order.shippingPhone || order.shippingAddress) && (
+            <div className="border-t border-[rgb(var(--border))] pt-3 space-y-2">
+              <div className="text-xs font-semibold uppercase opacity-70 mb-2">Shipping Details</div>
+              
+              {order.shippingName && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span>📦</span>
+                  <span className="font-medium">{order.shippingName}</span>
+                </div>
+              )}
+              
+              {order.shippingPhone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span>📱</span>
+                  <span>{order.shippingPhone}</span>
+                </div>
+              )}
+              
+              {order.shippingAddress && (
+                <div className="flex items-start gap-2 text-sm">
+                  <span>📍</span>
+                  <div className="flex-1">
+                    <div>{order.shippingAddress}</div>
+                    {(order.shippingCity || order.shippingState || order.shippingPincode) && (
+                      <div className="opacity-80 mt-1">
+                        {order.shippingCity && <span>{order.shippingCity}</span>}
+                        {order.shippingCity && order.shippingState && <span>, </span>}
+                        {order.shippingState && <span>{order.shippingState}</span>}
+                        {order.shippingPincode && <span> - {order.shippingPincode}</span>}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
+          
           <div className="flex items-center gap-2 text-sm opacity-90">
             <span>🗓️</span>
             <span>Ordered on {fmtDate(order.date)}</span>
@@ -202,6 +236,13 @@ export default function Orders() {
             paymentMethod: order.paymentMethod || 'Razorpay',
             shippingAddress: order.shippingAddress || 'MLM System - Digital Delivery',
             notes: order.notes || order.description || 'MLM System Order',
+            
+            // Shipping details
+            shippingName: order.shippingName || null,
+            shippingPhone: order.shippingPhone || null,
+            shippingCity: order.shippingCity || null,
+            shippingState: order.shippingState || null,
+            shippingPincode: order.shippingPincode || null,
             
             // NEW: Order expiry information
             timeRemaining: timeRemaining,
