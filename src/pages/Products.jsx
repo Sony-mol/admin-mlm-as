@@ -48,20 +48,45 @@ const getDefaultImage = (productName) => {
   return defaults[productName] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop&crop=center';
 };
 
-// Build a canonical image URL from what is stored in DB
-const buildProductImageUrl = (product) => {
+// Build ordered candidate URLs from what is stored in DB (to support legacy shapes)
+const buildProductImageCandidates = (product) => {
   const value = (product?.image || '').trim();
-  if (!value) return getDefaultImage(product?.name);
+  const candidates = [];
+  if (!value) return candidates;
 
-  // If backend already returned absolute URL, use as-is
-  if (value.startsWith('http')) return value;
+  // Absolute URL stored in DB
+  if (value.startsWith('http')) {
+    candidates.push(value);
+    return candidates;
+  }
 
-  // If stored as a full relative path from backend (e.g., /uploads/products/filename.jpg)
-  if (value.startsWith('/')) return `${API_BASE}${value}`;
+  // If already an API image path
+  if (value.startsWith('/api/products/image/')) {
+    candidates.push(`${API_BASE}${value}`);
+  }
 
-  // Otherwise treat it as a bare filename/uuid and use the image endpoint
-  const file = value.split('/').pop();
-  return `${API_BASE}/api/products/image/${file}`;
+  // If relative path like /uploads/products/<file>
+  if (value.startsWith('/uploads/')) {
+    const file = value.split('/').pop();
+    candidates.push(`${API_BASE}/api/products/image/${file}`); // preferred served endpoint
+    candidates.push(`${API_BASE}${value}`); // direct static path (if exposed)
+  }
+
+  // Bare filename or uuid
+  if (!value.includes('/')) {
+    const file = value;
+    candidates.push(`${API_BASE}/api/products/image/${file}`);
+    candidates.push(`${API_BASE}/uploads/products/${file}`);
+  }
+
+  // Safety: last attempt, prefix as-is
+  if (!value.startsWith('/')) {
+    candidates.push(`${API_BASE}/${value}`);
+  }
+
+  // Remove duplicates while preserving order
+  const seen = new Set();
+  return candidates.filter((u) => (seen.has(u) ? false : (seen.add(u), true)));
 };
 
 // Product Card Component
@@ -70,20 +95,33 @@ const ProductCard = ({ product, onEdit, onDelete, onView }) => (
     <div className="relative">
       <div className="aspect-square rounded-lg overflow-hidden mb-4 bg-[rgba(var(--fg),0.06)]">
         {(() => {
-          const url = buildProductImageUrl(product);
-          // Cache-buster using updatedAt or id to avoid stale CDN/browser cache
+          const candidates = buildProductImageCandidates(product);
           const cacheKey = product?.updatedAt || product?.id || '';
-          const imageUrl = cacheKey ? `${url}?v=${encodeURIComponent(cacheKey)}` : url;
+          let attemptIndex = 0;
+          const pick = (idx) => {
+            const base = candidates[idx] || getDefaultImage(product.name);
+            return cacheKey ? `${base}?v=${encodeURIComponent(cacheKey)}` : base;
+          };
+          const initial = pick(0);
           return (
             <img
-              src={imageUrl}
+              src={initial}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {
-                console.error('Failed to load image:', imageUrl);
-                e.currentTarget.src = getDefaultImage(product.name);
+                // Try next candidate; fallback to default at the end
+                attemptIndex += 1;
+                if (attemptIndex < candidates.length) {
+                  const next = pick(attemptIndex);
+                  console.warn('Retrying product image with:', next);
+                  e.currentTarget.src = next;
+                } else {
+                  const fallback = getDefaultImage(product.name);
+                  console.error('All image candidates failed. Falling back to default.', candidates);
+                  e.currentTarget.src = fallback;
+                }
               }}
-              onLoad={() => console.log('Image loaded successfully:', imageUrl)}
+              onLoad={(e) => console.log('Image loaded successfully:', e.currentTarget.src)}
             />
           );
         })()}
