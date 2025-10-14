@@ -499,7 +499,14 @@ export default function Users() {
              referrerEmail: user.referrerEmail || null,
              referrerCode: user.referredByCode || '--'
            }));
-          
+           
+           // Sort by joinDate (createdAt) in descending order (latest first)
+           transformedUsers.sort((a, b) => {
+             const dateA = new Date(a.joinDate || 0);
+             const dateB = new Date(b.joinDate || 0);
+             return dateB - dateA;
+           });
+           
           setList(transformedUsers);
           console.log('✅ Users loaded successfully:', transformedUsers.length);
         } else {

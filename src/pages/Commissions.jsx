@@ -95,7 +95,14 @@ export default function Commissions() {
         if (pendingRes.ok) {
           const pendingJson = await pendingRes.json();
           console.log('✅ Pending Data Received:', pendingJson);
-          if (mounted) setPendingCommissions(Array.isArray(pendingJson) ? pendingJson : []);
+          const pendingData = Array.isArray(pendingJson) ? pendingJson : [];
+          // Sort by createdAt in descending order (latest first)
+          pendingData.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0);
+            const dateB = new Date(b.createdAt || 0);
+            return dateB - dateA;
+          });
+          if (mounted) setPendingCommissions(pendingData);
         } else {
           console.log('❌ Pending API Failed:', pendingRes.status, await pendingRes.text());
         }
@@ -109,7 +116,14 @@ export default function Commissions() {
         if (paidRes.ok) {
           const paidJson = await paidRes.json();
           console.log('✅ Paid Data Received:', paidJson);
-          if (mounted) setPaidCommissions(Array.isArray(paidJson) ? paidJson : []);
+          const paidData = Array.isArray(paidJson) ? paidJson : [];
+          // Sort by createdAt in descending order (latest first)
+          paidData.sort((a, b) => {
+            const dateA = new Date(a.createdAt || 0);
+            const dateB = new Date(b.createdAt || 0);
+            return dateB - dateA;
+          });
+          if (mounted) setPaidCommissions(paidData);
         } else {
           console.log('❌ Paid API Failed:', paidRes.status, await paidRes.text());
         }
