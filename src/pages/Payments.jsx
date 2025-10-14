@@ -109,12 +109,28 @@ export default function Payments() {
             p.status === 'FAILED' ? 'Failed' :
             (p.status || 'Unknown'),
           method: {
-            channel: p.paymentMethod || null,
+            channel: p.paymentMethod || (p.razorpayPaymentId ? 'Razorpay' : null),
             account: p.razorpayPaymentId || p.razorpayOrderId || null,
           },
           requestedAt: p.createdAt || null,
           processedAt: p.updatedAt || p.createdAt || null,
           description: p.description || `Payment ${p.id}`,
+          
+          // Razorpay transaction details
+          razorpayOrderId: p.razorpayOrderId || null,
+          razorpayPaymentId: p.razorpayPaymentId || null,
+          razorpaySignature: p.razorpaySignature || null,
+          
+          // Shipping details (if available)
+          shippingName: p.shippingName || null,
+          shippingPhone: p.shippingPhone || null,
+          shippingAddress: p.shippingAddress || null,
+          shippingCity: p.shippingCity || null,
+          shippingState: p.shippingState || null,
+          shippingPincode: p.shippingPincode || null,
+          
+          // Delivery status (if available)
+          deliveryStatus: p.deliveryStatus || null,
         }));
 
         // Sort payments by date (latest first)
@@ -336,10 +352,6 @@ export default function Payments() {
                 <div className="font-medium">{modalItem.method.channel || '--'}</div>
               </div>
               <div>
-                <div className="text-sm opacity-70">Account</div>
-                <div className="font-medium">{modalItem.method.account || '--'}</div>
-              </div>
-              <div>
                 <div className="text-sm opacity-70">Requested At</div>
                 <div className="font-medium">{fDate(modalItem.requestedAt)}</div>
               </div>
@@ -350,6 +362,76 @@ export default function Payments() {
                 </div>
               )}
             </div>
+
+            {/* Razorpay Transaction Details */}
+            {(modalItem.razorpayOrderId || modalItem.razorpayPaymentId) && (
+              <div className="border-t border-[rgb(var(--border))] pt-4">
+                <div className="text-xs font-semibold uppercase opacity-70 mb-3">Razorpay Transaction Details</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {modalItem.razorpayOrderId && (
+                    <div>
+                      <div className="text-sm opacity-70">Razorpay Order ID</div>
+                      <div className="font-medium text-sm break-all">{modalItem.razorpayOrderId}</div>
+                    </div>
+                  )}
+                  {modalItem.razorpayPaymentId && (
+                    <div>
+                      <div className="text-sm opacity-70">Razorpay Payment ID</div>
+                      <div className="font-medium text-sm break-all">{modalItem.razorpayPaymentId}</div>
+                    </div>
+                  )}
+                  {modalItem.razorpaySignature && (
+                    <div className="md:col-span-2">
+                      <div className="text-sm opacity-70">Transaction Signature</div>
+                      <div className="font-medium text-xs break-all opacity-80">{modalItem.razorpaySignature}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Shipping Details */}
+            {(modalItem.shippingName || modalItem.shippingPhone || modalItem.shippingAddress) && (
+              <div className="border-t border-[rgb(var(--border))] pt-4">
+                <div className="text-xs font-semibold uppercase opacity-70 mb-3">Shipping Details</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {modalItem.shippingName && (
+                    <div>
+                      <div className="text-sm opacity-70">Recipient Name</div>
+                      <div className="font-medium">{modalItem.shippingName}</div>
+                    </div>
+                  )}
+                  {modalItem.shippingPhone && (
+                    <div>
+                      <div className="text-sm opacity-70">Phone Number</div>
+                      <div className="font-medium">{modalItem.shippingPhone}</div>
+                    </div>
+                  )}
+                  {modalItem.shippingAddress && (
+                    <div className="md:col-span-2">
+                      <div className="text-sm opacity-70">Address</div>
+                      <div className="font-medium">{modalItem.shippingAddress}</div>
+                      {(modalItem.shippingCity || modalItem.shippingState || modalItem.shippingPincode) && (
+                        <div className="text-sm opacity-80 mt-1">
+                          {modalItem.shippingCity && <span>{modalItem.shippingCity}</span>}
+                          {modalItem.shippingCity && modalItem.shippingState && <span>, </span>}
+                          {modalItem.shippingState && <span>{modalItem.shippingState}</span>}
+                          {modalItem.shippingPincode && <span> - {modalItem.shippingPincode}</span>}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {modalItem.deliveryStatus && (
+                    <div>
+                      <div className="text-sm opacity-70">Delivery Status</div>
+                      <div className="font-medium">
+                        <StatusPill value={modalItem.deliveryStatus} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div>
               <div className="text-sm opacity-70">Description</div>
