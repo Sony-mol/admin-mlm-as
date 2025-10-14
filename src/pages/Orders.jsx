@@ -202,6 +202,13 @@ export default function Orders() {
           };
         });
         
+        // Sort orders by date (latest first)
+        transformedOrders.sort((a, b) => {
+          const dateA = new Date(a.date || 0);
+          const dateB = new Date(b.date || 0);
+          return dateB - dateA; // Descending order (latest first)
+        });
+        
         setOrders(transformedOrders);
         setErr(null);
         console.log('✅ Orders loaded successfully:', transformedOrders.length);

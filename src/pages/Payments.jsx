@@ -117,6 +117,12 @@ export default function Payments() {
           description: p.description || `Payment ${p.id}`,
         }));
 
+        // Sort payments by date (latest first)
+        transformedPayments.sort((a, b) => {
+          const dateA = new Date(a.requestedAt || a.processedAt || 0);
+          const dateB = new Date(b.requestedAt || b.processedAt || 0);
+          return dateB - dateA; // Descending order (latest first)
+        });
         
         setPayments(transformedPayments);
         setErr(null);
