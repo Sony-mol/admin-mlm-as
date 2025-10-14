@@ -50,38 +50,46 @@ const getDefaultImage = (productName) => {
 
 // Build ordered candidate URLs from what is stored in DB (to support legacy shapes)
 const buildProductImageCandidates = (product) => {
-  const value = (product?.image || '').trim();
+  // Prefer fields similar to the mobile app first
+  const rawValues = [
+    product?.imageUrl,         // used by mobile app
+    product?.image,            // legacy/admin
+    product?.image_path,       // possible backend field
+  ].filter(Boolean).map(v => String(v).trim()).filter(v => v.length > 0);
+
   const candidates = [];
-  if (!value) return candidates;
+  if (rawValues.length === 0) return candidates;
 
-  // Absolute URL stored in DB
-  if (value.startsWith('http')) {
-    candidates.push(value);
-    return candidates;
-  }
+  for (const value of rawValues) {
+    // Absolute URL stored in DB
+    if (value.startsWith('http')) {
+      candidates.push(value);
+      continue;
+    }
 
-  // If already an API image path
-  if (value.startsWith('/api/products/image/')) {
-    candidates.push(`${API_BASE}${value}`);
-  }
+    // If already an API image path
+    if (value.startsWith('/api/products/image/')) {
+      candidates.push(`${API_BASE}${value}`);
+    }
 
-  // If relative path like /uploads/products/<file>
-  if (value.startsWith('/uploads/')) {
-    const file = value.split('/').pop();
-    candidates.push(`${API_BASE}/api/products/image/${file}`); // preferred served endpoint
-    candidates.push(`${API_BASE}${value}`); // direct static path (if exposed)
-  }
+    // If relative path like /uploads/products/<file>
+    if (value.startsWith('/uploads/')) {
+      const file = value.split('/').pop();
+      candidates.push(`${API_BASE}/api/products/image/${file}`); // preferred served endpoint
+      candidates.push(`${API_BASE}${value}`); // direct static path (if exposed)
+    }
 
-  // Bare filename or uuid
-  if (!value.includes('/')) {
-    const file = value;
-    candidates.push(`${API_BASE}/api/products/image/${file}`);
-    candidates.push(`${API_BASE}/uploads/products/${file}`);
-  }
+    // Bare filename or uuid
+    if (!value.includes('/')) {
+      const file = value;
+      candidates.push(`${API_BASE}/api/products/image/${file}`);
+      candidates.push(`${API_BASE}/uploads/products/${file}`);
+    }
 
-  // Safety: last attempt, prefix as-is
-  if (!value.startsWith('/')) {
-    candidates.push(`${API_BASE}/${value}`);
+    // Safety: last attempt, prefix as-is
+    if (!value.startsWith('/')) {
+      candidates.push(`${API_BASE}/${value}`);
+    }
   }
 
   // Remove duplicates while preserving order
