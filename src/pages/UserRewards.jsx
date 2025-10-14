@@ -85,6 +85,15 @@ const UserRewards = () => {
       );
     }
 
+    // Sort by date in descending order (latest at the top)
+    // For claimed rewards, sort by claimedAt
+    // For unclaimed rewards, sort by createdAt (if available) or keep original order
+    filtered.sort((a, b) => {
+      const dateA = a.isClaimed && a.claimedAt ? new Date(a.claimedAt) : (a.createdAt ? new Date(a.createdAt) : new Date(0));
+      const dateB = b.isClaimed && b.claimedAt ? new Date(b.claimedAt) : (b.createdAt ? new Date(b.createdAt) : new Date(0));
+      return dateB - dateA; // Descending order (newest first)
+    });
+
     return filtered;
   };
 
