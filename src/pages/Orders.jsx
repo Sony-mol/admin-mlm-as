@@ -21,8 +21,9 @@ function StatusPill({ value }) {
     key === "shipped" ? "bg-teal-500" :
     key === "delivered" ? "bg-violet-600" :
     key === "pending" || key === "processing" ? "bg-amber-500" :
-    key === "active" || key === "approved" || key === "completed" ? "bg-emerald-500" :
-    key === "suspended" || key === "cancelled" || key === "canceled" || key === "rejected" ? "bg-red-500" :
+    key === "confirmed" ? "bg-blue-500" :
+    key === "active" || key === "approved" || key === "completed" || key === "success" ? "bg-emerald-500" :
+    key === "suspended" || key === "cancelled" || key === "canceled" || key === "rejected" || key === "failed" ? "bg-red-500" :
     "bg-slate-400";
   return (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white ${color}`}>
@@ -34,7 +35,7 @@ function StatusPill({ value }) {
 /* =================== Modal (responsive) =================== */
 function OrderModal({ order, onClose, onUpdateStatus }) {
   if (!order) return null;
-  const statuses = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"];
+  const statuses = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
 
   return (
     <div
@@ -64,7 +65,14 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
             )}
           </div>
           <div className="sm:text-right">
-            <StatusPill value={order.status} />
+            <div className="mb-2">
+              <div className="text-xs opacity-70 mb-1">Payment Status</div>
+              <StatusPill value={order.paymentStatus} />
+            </div>
+            <div>
+              <div className="text-xs opacity-70 mb-1">Delivery Status</div>
+              <StatusPill value={order.deliveryStatus || 'PENDING'} />
+            </div>
             {order.isExpired && order.status === 'PENDING' && (
               <div className="text-xs text-red-500 mt-1">⚠️ Expired</div>
             )}
@@ -111,8 +119,9 @@ function OrderModal({ order, onClose, onUpdateStatus }) {
             )}
           </div>
           <div className="md:text-right">
+            <label className="block text-sm font-medium mb-2">Update Delivery Status</label>
             <select
-              value={order.status}
+              value={order.deliveryStatus || 'PENDING'}
               onChange={(e) => onUpdateStatus(order, e.target.value)}
               className="w-full md:w-64 px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
             >
@@ -185,6 +194,7 @@ export default function Orders() {
             amount: Number(order.totalAmount) || 0,
             status: order.status || 'Pending',
             paymentStatus: order.paymentStatus || order.status,
+            deliveryStatus: order.deliveryStatus || 'PENDING', // Use delivery status from API
             
             // 🔴 key fix: the UI reads "o.date", so populate "date"
             date: order.createdAt,                   // <- use API createdAt
@@ -247,38 +257,52 @@ export default function Orders() {
     return orders.filter((o) => {
       const hay = `${o.orderNo} ${o.customerName} ${o.customerCode} ${(o.products || []).join(" ")}`.toLowerCase();
       const matchQ = q.trim() === "" || hay.includes(q.toLowerCase());
-      const matchStatus = status === "All" || o.status === status;
+      const deliveryStatus = o.deliveryStatus || 'PENDING';
+      const matchStatus = status === "All" || deliveryStatus === status.toUpperCase();
       return matchQ && matchStatus;
     });
   }, [orders, q, status]);
 
   const kpis = useMemo(() => {
     const total = orders.length;
-    const c = (s) => orders.filter((o) => o.status === s).length;
+    const c = (s) => orders.filter((o) => (o.deliveryStatus || 'PENDING') === s).length;
     return {
       total,
-      pending: c("Pending"),
-      processing: c("Processing"),
-      shipped: c("Shipped"),
-      delivered: c("Delivered"),
-      cancelled: c("Cancelled"),
+      pending: c("PENDING"),
+      processing: c("PROCESSING"),
+      shipped: c("SHIPPED"),
+      delivered: c("DELIVERED"),
+      cancelled: c("CANCELLED"),
     };
   }, [orders]);
 
-  async function updateStatus(order, nextStatus) {
-    const updated = { ...order, status: nextStatus };
+  async function updateStatus(order, nextDeliveryStatus) {
+    const updated = { ...order, deliveryStatus: nextDeliveryStatus };
     setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)));
     setView((v) => (v?.id === order.id ? updated : v));
     try {
-      const res = await fetch(`${API_ORDERS}/${order.id}`, {
+      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+      const headers = { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      };
+      
+      const res = await fetch(`${API_ENDPOINTS.ORDERS}/${order.id}/delivery-status`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
+        headers: headers,
+        body: JSON.stringify({ deliveryStatus: nextDeliveryStatus }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || `HTTP ${res.status}`);
+      }
+      
+      console.log('✅ Delivery status updated successfully');
     } catch (e) {
+      console.error('❌ Failed to update delivery status:', e);
       await load();
-      alert("Could not update status: " + (e.message || "unknown error"));
+      alert("Could not update delivery status: " + (e.message || "unknown error"));
     }
   }
 
@@ -334,11 +358,12 @@ export default function Orders() {
             className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
           >
             <option>All</option>
-            <option>Pending</option>
-            <option>Processing</option>
-            <option>Shipped</option>
-            <option>Delivered</option>
-            <option>Cancelled</option>
+            <option>PENDING</option>
+            <option>CONFIRMED</option>
+            <option>PROCESSING</option>
+            <option>SHIPPED</option>
+            <option>DELIVERED</option>
+            <option>CANCELLED</option>
           </select>
         </div>
       </div>
@@ -393,7 +418,7 @@ export default function Orders() {
             {/* Status */}
             <div className="col-span-2 flex justify-center">
               <div className="flex flex-col items-center gap-1">
-                <StatusPill value={o.status} />
+                <StatusPill value={o.deliveryStatus || 'PENDING'} />
                 {o.timeRemaining !== null && o.status === 'PENDING' && (
                   <div className={`text-xs ${o.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
                     {o.isExpired ? '⚠️ Expired' : `⏱️ ${o.timeRemaining}m`}
