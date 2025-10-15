@@ -1,5 +1,6 @@
 // src/pages/Commissions.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Pagination from '../components/Pagination';
 import { Check, X, Clock, DollarSign, Users, TrendingUp } from 'lucide-react';
 
 // Import API configuration
@@ -58,6 +59,7 @@ export default function Commissions() {
   const [bulkAction, setBulkAction] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [q, setQ] = useState('');
 
   // Load all commission data
   useEffect(() => {
@@ -396,6 +398,13 @@ export default function Commissions() {
             <h2 className="text-xl font-semibold">Pending Commissions</h2>
             <p className="text-sm opacity-70">Awaiting approval</p>
           </div>
+          <div className="flex items-center gap-2">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search referrer/referred/user id…"
+              className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]"
+            />
           {pendingCommissions.length > 0 && (
             <button
               onClick={selectAllPending}
@@ -404,6 +413,7 @@ export default function Commissions() {
               Select All ({pendingCommissions.length})
             </button>
           )}
+          </div>
         </div>
 
         {pendingCommissions.length === 0 ? (
@@ -411,8 +421,21 @@ export default function Commissions() {
             No pending commissions
           </div>
         ) : (
+          {(() => {
+            const filtered = pendingCommissions.filter((c) => {
+              if (!q.trim()) return true;
+              const hay = `${c.id} ${c.referrerUserId} ${c.referredUserId}`.toLowerCase();
+              return hay.includes(q.toLowerCase());
+            });
+            const [page, setPage] = React.useState(1);
+            const [pageSize, setPageSize] = React.useState(20);
+            React.useEffect(() => { setPage(1); }, [q, pendingCommissions.length]);
+            const start = (page - 1) * pageSize;
+            const paged = filtered.slice(start, start + pageSize);
+            return (
+            <>
           <div className="space-y-3">
-            {pendingCommissions.map((commission) => (
+            {paged.map((commission) => (
               <div
                 key={commission.id}
                 className={`p-4 rounded-lg border transition-all ${
@@ -478,6 +501,15 @@ export default function Commissions() {
               </div>
             ))}
           </div>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={filtered.length}
+            onPageChange={setPage}
+            onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+          />
+          </>
+          );})()}
         )}
       </Card>
 
@@ -493,8 +525,15 @@ export default function Commissions() {
             No paid commissions yet
           </div>
         ) : (
+          {(() => {
+            const [page, setPage] = React.useState(1);
+            const [pageSize, setPageSize] = React.useState(20);
+            const start = (page - 1) * pageSize;
+            const paged = paidCommissions.slice(start, start + pageSize);
+            return (
+            <>
           <div className="space-y-3">
-            {paidCommissions.slice(0, 10).map((commission) => (
+            {paged.map((commission) => (
               <div
                 key={commission.id}
                 className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(22,163,74,0.12)]"
@@ -527,6 +566,15 @@ export default function Commissions() {
               </div>
             ))}
           </div>
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={paidCommissions.length}
+            onPageChange={setPage}
+            onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+          />
+          </>
+          );})()}
         )}
       </Card>
 

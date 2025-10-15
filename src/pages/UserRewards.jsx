@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import Pagination from '../components/Pagination';
 import { 
   Gift, 
   Users, 
@@ -64,7 +65,7 @@ const UserRewards = () => {
     fetchRewardStats();
   };
 
-  const getFilteredRewards = () => {
+  const filtered = useMemo(() => {
     let filtered = userRewards;
 
     // Apply status filter
@@ -95,7 +96,16 @@ const UserRewards = () => {
     });
 
     return filtered;
-  };
+  }, [userRewards, filter, searchTerm]);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [filter, searchTerm]);
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   const getStatusBadge = (reward) => {
     if (reward.isClaimed) {
@@ -278,7 +288,7 @@ const UserRewards = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgb(var(--border))] bg-[rgb(var(--card))]">
-              {getFilteredRewards().map((reward) => (
+              {paged.map((reward) => (
                 <tr key={reward.userRewardId} className="hover:bg-[rgba(var(--fg),0.02)]">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -327,13 +337,21 @@ const UserRewards = () => {
           </table>
         </div>
 
-        {getFilteredRewards().length === 0 && (
+        {filtered.length === 0 && (
           <div className="text-center py-10 text-[rgba(var(--fg),0.7)]">
             <Gift className="w-12 h-12 mx-auto mb-4 text-[rgba(var(--fg),0.3)]" />
             <p className="text-lg">No rewards found.</p>
             <p className="text-sm">Try adjusting your filters or search terms.</p>
           </div>
         )}
+
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={filtered.length}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+        />
       </div>
     </div>
   );

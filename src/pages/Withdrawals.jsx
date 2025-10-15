@@ -18,6 +18,8 @@ const Withdrawals = () => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedWithdrawals, setSelectedWithdrawals] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
@@ -285,7 +287,10 @@ const Withdrawals = () => {
         ? true
         : String(w.status).toUpperCase() === selectedStatus;
 
-    return matchesText && matchesStatus;
+    const ts = w.createdAt ? new Date(w.createdAt).getTime() : 0;
+    const fromOk = !dateFrom || ts >= new Date(dateFrom + 'T00:00:00').getTime();
+    const toOk = !dateTo || ts <= new Date(dateTo + 'T23:59:59').getTime();
+    return matchesText && matchesStatus && fromOk && toOk;
   }).sort((a, b) => {
     // Sort by createdAt in descending order (latest first)
     const dateA = new Date(a.createdAt || 0);
@@ -463,7 +468,7 @@ const Withdrawals = () => {
               </div>
             </div>
 
-            {/* Status Filter */}
+          {/* Status Filter */}
             <div className="flex gap-2 flex-wrap">
               {statusOptions.map((option) => (
                 <button
@@ -479,6 +484,11 @@ const Withdrawals = () => {
                 </button>
               ))}
             </div>
+          <div className="flex items-center gap-2 mt-4">
+            <input type="date" value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]" />
+            <span className="opacity-60">to</span>
+            <input type="date" value={dateTo} onChange={(e)=>setDateTo(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]" />
+          </div>
           </div>
 
           {/* Bulk Actions */}

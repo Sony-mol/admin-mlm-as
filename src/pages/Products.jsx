@@ -1,5 +1,6 @@
 // src/pages/Products.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Pagination from '../components/Pagination';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -850,6 +851,15 @@ export default function Products() {
     console.log('Viewing product:', product);
   };
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [searchTerm, filterCategory, viewMode]);
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredProducts.slice(start, start + pageSize);
+  }, [filteredProducts, page, pageSize]);
+
   return (
     <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--fg))] p-6">
       <div className="max-w-7xl mx-auto">
@@ -933,7 +943,7 @@ export default function Products() {
               ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
               : 'grid-cols-1'
           }`}>
-            {filteredProducts.map((product) => (
+            {paged.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -944,6 +954,14 @@ export default function Products() {
             ))}
           </div>
         )}
+
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={filteredProducts.length}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+        />
 
         {filteredProducts.length === 0 && !loading && (
           <div className="text-center py-12">

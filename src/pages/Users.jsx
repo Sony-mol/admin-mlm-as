@@ -375,6 +375,8 @@ export default function Users() {
   const [status, setStatus] = useState('ALL');     // normalized
   const [tier, setTier] = useState('ALL');         // dynamic from TIER_STRUCTURE
   const [level, setLevel] = useState('ALL');       // dynamic from TIER_STRUCTURE ("Level X")
+  const [joinedFrom, setJoinedFrom] = useState('');
+  const [joinedTo, setJoinedTo] = useState('');
   const [selected, setSelected] = useState(null);
 
   // management
@@ -723,9 +725,13 @@ export default function Users() {
           }
         })();
 
-      return matchQ && matchStatus && matchTier && matchLevel && matchDate;
+      const ts = u.joinDate ? new Date(u.joinDate).getTime() : 0;
+      const joinedFromOk = !joinedFrom || ts >= new Date(joinedFrom + 'T00:00:00').getTime();
+      const joinedToOk = !joinedTo || ts <= new Date(joinedTo + 'T23:59:59').getTime();
+
+      return matchQ && matchStatus && matchTier && matchLevel && matchDate && joinedFromOk && joinedToOk;
     });
-  }, [list, q, status, tier, level, selectedDates]);
+  }, [list, q, status, tier, level, selectedDates, joinedFrom, joinedTo]);
 
   // ===== Pagination =====
   const [page, setPage] = useState(1);
@@ -992,8 +998,13 @@ export default function Users() {
               </option>
             ))}
           </select>
-
           
+          {/* Joined Date Range */}
+          <div className="flex items-center gap-2">
+            <input type="date" value={joinedFrom} onChange={(e)=>setJoinedFrom(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
+            <span className="opacity-60">to</span>
+            <input type="date" value={joinedTo} onChange={(e)=>setJoinedTo(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
+          </div>
         </div>
 
         {/* Selected-date chips */}

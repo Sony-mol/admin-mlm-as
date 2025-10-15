@@ -66,6 +66,10 @@ export default function Payments() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
   const [ptype, setPtype] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [amountMin, setAmountMin] = useState("");
+  const [amountMax, setAmountMax] = useState("");
 
   const [modalItem, setModalItem] = useState(null);
 
@@ -187,7 +191,13 @@ export default function Payments() {
       const matchQ = q.trim() === "" || hay.includes(q.toLowerCase());
       const matchStatus = status === "All" || p.status === status;
       const matchType = ptype === "All" || p.type === ptype;
-      return matchQ && matchStatus && matchType;
+      const ts = (p.requestedAt || p.processedAt) ? new Date(p.requestedAt || p.processedAt).getTime() : 0;
+      const fromOk = !dateFrom || ts >= new Date(dateFrom + 'T00:00:00').getTime();
+      const toOk = !dateTo || ts <= new Date(dateTo + 'T23:59:59').getTime();
+      const amt = Number(p.amount || 0);
+      const minOk = amountMin === "" || amt >= Number(amountMin);
+      const maxOk = amountMax === "" || amt <= Number(amountMax);
+      return matchQ && matchStatus && matchType && fromOk && toOk && minOk && maxOk;
     });
   }, [payments, q, status, ptype]);
 
@@ -253,6 +263,15 @@ export default function Payments() {
           <option value="Commission">Commission</option>
           <option value="Withdrawal">Withdrawal</option>
         </select>
+        <div className="flex items-center gap-2">
+          <input type="date" value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))]" />
+          <span className="opacity-60">to</span>
+          <input type="date" value={dateTo} onChange={(e)=>setDateTo(e.target.value)} className="px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))]" />
+        </div>
+        <div className="flex items-center gap-2">
+          <input type="number" inputMode="numeric" placeholder="Min ₹" value={amountMin} onChange={(e)=>setAmountMin(e.target.value)} className="w-28 px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))]" />
+          <input type="number" inputMode="numeric" placeholder="Max ₹" value={amountMax} onChange={(e)=>setAmountMax(e.target.value)} className="w-28 px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))]" />
+        </div>
       </div>
 
       {/* Table */}

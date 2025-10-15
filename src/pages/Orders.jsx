@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Pagination from '../components/Pagination';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -178,6 +179,10 @@ export default function Orders() {
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [amountMin, setAmountMin] = useState("");
+  const [amountMax, setAmountMax] = useState("");
   const [view, setView] = useState(null); // modal
 
   async function load() {
@@ -300,9 +305,24 @@ export default function Orders() {
       const matchQ = q.trim() === "" || hay.includes(q.toLowerCase());
       const deliveryStatus = o.deliveryStatus || 'PENDING';
       const matchStatus = status === "All" || deliveryStatus === status.toUpperCase();
-      return matchQ && matchStatus;
+      const ts = o.date ? new Date(o.date).getTime() : 0;
+      const fromOk = !dateFrom || ts >= new Date(dateFrom + 'T00:00:00').getTime();
+      const toOk = !dateTo || ts <= new Date(dateTo + 'T23:59:59').getTime();
+      const amt = Number(o.amount || 0);
+      const minOk = amountMin === "" || amt >= Number(amountMin);
+      const maxOk = amountMax === "" || amt <= Number(amountMax);
+      return matchQ && matchStatus && fromOk && toOk && minOk && maxOk;
     });
   }, [orders, q, status]);
+
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [q, status]);
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
 
   const kpis = useMemo(() => {
     const total = orders.length;
@@ -406,6 +426,15 @@ export default function Orders() {
             <option>DELIVERED</option>
             <option>CANCELLED</option>
           </select>
+          <div className="flex items-center gap-2">
+            <input type="date" value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
+            <span className="opacity-60">to</span>
+            <input type="date" value={dateTo} onChange={(e)=>setDateTo(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="number" inputMode="numeric" placeholder="Min ₹" value={amountMin} onChange={(e)=>setAmountMin(e.target.value)} className="w-28 px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
+            <input type="number" inputMode="numeric" placeholder="Max ₹" value={amountMax} onChange={(e)=>setAmountMax(e.target.value)} className="w-28 px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
+          </div>
         </div>
       </div>
 
@@ -421,7 +450,7 @@ export default function Orders() {
           <div className="col-span-1">Date</div>
         </div>
 
-        {filtered.map((o) => (
+        {paged.map((o) => (
           <div
             key={o.id || o.orderNo}
             className={[
@@ -480,9 +509,17 @@ export default function Orders() {
         )}
       </div>
 
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={filtered.length}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+      />
+
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
-        {filtered.map((o) => (
+        {paged.map((o) => (
           <div
             key={o.id || o.orderNo}
             className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 active:scale-[0.998] transition"
