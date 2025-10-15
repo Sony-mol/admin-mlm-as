@@ -61,6 +61,30 @@ export default function Commissions() {
   const [actionLoading, setActionLoading] = useState(false);
   const [q, setQ] = useState('');
 
+  // Pending list pagination + filtering
+  const [pendingPage, setPendingPage] = useState(1);
+  const [pendingPageSize, setPendingPageSize] = useState(20);
+  const filteredPending = useMemo(() => {
+    return pendingCommissions.filter((c) => {
+      if (!q.trim()) return true;
+      const hay = `${c.id} ${c.referrerUserId} ${c.referredUserId}`.toLowerCase();
+      return hay.includes(q.toLowerCase());
+    });
+  }, [pendingCommissions, q]);
+  useEffect(() => { setPendingPage(1); }, [q, pendingCommissions.length]);
+  const pendingPaged = useMemo(() => {
+    const start = (pendingPage - 1) * pendingPageSize;
+    return filteredPending.slice(start, start + pendingPageSize);
+  }, [filteredPending, pendingPage, pendingPageSize]);
+
+  // Paid list pagination
+  const [paidPage, setPaidPage] = useState(1);
+  const [paidPageSize, setPaidPageSize] = useState(20);
+  const paidPaged = useMemo(() => {
+    const start = (paidPage - 1) * paidPageSize;
+    return paidCommissions.slice(start, start + paidPageSize);
+  }, [paidCommissions, paidPage, paidPageSize]);
+
   // Load all commission data
   useEffect(() => {
     let mounted = true;
@@ -421,21 +445,9 @@ export default function Commissions() {
             No pending commissions
           </div>
         ) : (
-          {(() => {
-            const filtered = pendingCommissions.filter((c) => {
-              if (!q.trim()) return true;
-              const hay = `${c.id} ${c.referrerUserId} ${c.referredUserId}`.toLowerCase();
-              return hay.includes(q.toLowerCase());
-            });
-            const [page, setPage] = React.useState(1);
-            const [pageSize, setPageSize] = React.useState(20);
-            React.useEffect(() => { setPage(1); }, [q, pendingCommissions.length]);
-            const start = (page - 1) * pageSize;
-            const paged = filtered.slice(start, start + pageSize);
-            return (
-            <>
+          <>
           <div className="space-y-3">
-            {paged.map((commission) => (
+            {pendingPaged.map((commission) => (
               <div
                 key={commission.id}
                 className={`p-4 rounded-lg border transition-all ${
@@ -502,14 +514,13 @@ export default function Commissions() {
             ))}
           </div>
           <Pagination
-            page={page}
-            pageSize={pageSize}
-            total={filtered.length}
-            onPageChange={setPage}
-            onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+            page={pendingPage}
+            pageSize={pendingPageSize}
+            total={filteredPending.length}
+            onPageChange={setPendingPage}
+            onPageSizeChange={(n) => { setPendingPageSize(n); setPendingPage(1); }}
           />
           </>
-          );})()}
         )}
       </Card>
 
@@ -525,15 +536,9 @@ export default function Commissions() {
             No paid commissions yet
           </div>
         ) : (
-          {(() => {
-            const [page, setPage] = React.useState(1);
-            const [pageSize, setPageSize] = React.useState(20);
-            const start = (page - 1) * pageSize;
-            const paged = paidCommissions.slice(start, start + pageSize);
-            return (
-            <>
+          <>
           <div className="space-y-3">
-            {paged.map((commission) => (
+            {paidPaged.map((commission) => (
               <div
                 key={commission.id}
                 className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(22,163,74,0.12)]"
@@ -567,14 +572,13 @@ export default function Commissions() {
             ))}
           </div>
           <Pagination
-            page={page}
-            pageSize={pageSize}
+            page={paidPage}
+            pageSize={paidPageSize}
             total={paidCommissions.length}
-            onPageChange={setPage}
-            onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+            onPageChange={setPaidPage}
+            onPageSizeChange={(n) => { setPaidPageSize(n); setPaidPage(1); }}
           />
           </>
-          );})()}
         )}
       </Card>
 
