@@ -1,5 +1,6 @@
 // src/pages/Withdrawals.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import Pagination from '../components/Pagination';
 import { API_ENDPOINTS } from '../config/api';
 import {
   DollarSign,
@@ -292,6 +293,15 @@ const Withdrawals = () => {
     return dateB - dateA;
   });
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [searchTerm, selectedStatus]);
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredWithdrawals.slice(start, start + pageSize);
+  }, [filteredWithdrawals, page, pageSize]);
+
   const statusOptions = [
     { value: 'ALL', label: 'All Withdrawals', count: withdrawals.length },
     { value: 'PENDING', label: 'Pending', count: statistics.pendingCount || 0 },
@@ -563,7 +573,7 @@ const Withdrawals = () => {
                   </td>
                 </tr>
               ) : (
-                filteredWithdrawals.map((withdrawal) => (
+                paged.map((withdrawal) => (
                   <tr key={withdrawal.id} className="hover:bg-[rgba(var(--fg),0.03)]">
                     <td className="px-6 py-4">
                       <input
@@ -676,6 +686,14 @@ const Withdrawals = () => {
           </table>
         </div>
       </div>
+
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={filteredWithdrawals.length}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+      />
 
       {/* Withdrawal Details Modal */}
       {showDetailsModal && selectedWithdrawal && (

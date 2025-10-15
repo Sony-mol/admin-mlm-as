@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Pagination from '../components/Pagination';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -190,6 +191,15 @@ export default function Payments() {
     });
   }, [payments, q, status, ptype]);
 
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [q, status, ptype]);
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
   const kpis = useMemo(() => {
     const total = payments.reduce((sum, p) => sum + p.amount, 0);
     const pending = payments.filter((p) => p.status === "Pending").length;
@@ -262,7 +272,7 @@ export default function Payments() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((payment) => (
+              {paged.map((payment) => (
                 <tr key={payment.id} className="border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--muted))]">
                   <td className="py-3 px-4">
                     <div className="font-medium">{payment.code}</div>
@@ -311,6 +321,14 @@ export default function Payments() {
           </table>
         </div>
       </Card>
+
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={filtered.length}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+      />
 
       {/* Modal */}
       <Modal open={!!modalItem} onClose={() => setModalItem(null)}>

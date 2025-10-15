@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import Pagination from '../components/Pagination';
 import {
   Calendar as CalendarIcon,
   ChevronLeft, ChevronRight,
@@ -726,6 +727,15 @@ export default function Users() {
     });
   }, [list, q, status, tier, level, selectedDates]);
 
+  // ===== Pagination =====
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  useEffect(() => { setPage(1); }, [q, status, tier, level, selectedDates]);
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
   // ===== Export helpers (unchanged) =====
   function mapUsersToUserDetailsRows(users) {
     return users.map((u) => ({
@@ -1032,7 +1042,7 @@ export default function Users() {
           <div className="col-span-2 flex justify-center">Actions</div>
         </div>
 
-        {filtered.map((u) => (
+        {paged.map((u) => (
           <div
             key={u.id || u.code}
             role="button"
@@ -1107,9 +1117,17 @@ export default function Users() {
         )}
       </div>
 
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={filtered.length}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+      />
+
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
-        {filtered.map((u) => (
+        {paged.map((u) => (
           <div
             key={u.id || u.code}
             className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.998]"
