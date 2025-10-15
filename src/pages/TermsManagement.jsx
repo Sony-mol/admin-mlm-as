@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://asbackend-production-56a3.up.railway.app';
+import { getApiUrl } from '../config/api';
 
 export default function TermsManagement() {
   const [activeTab, setActiveTab] = useState('TERMS');
@@ -30,7 +29,7 @@ export default function TermsManagement() {
   const fetchCurrentTerms = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/api/terms/active/all`);
+      const response = await axios.get(getApiUrl('/api/terms/active/all'));
       
       if (response.data.terms) {
         setTermsData({
@@ -60,7 +59,7 @@ export default function TermsManagement() {
   const fetchVersionHistory = async (type) => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await axios.get(`${API_BASE_URL}/api/terms/versions/${type}`, {
+      const response = await axios.get(getApiUrl(`/api/terms/versions/${type}`), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       setVersions(response.data);
@@ -83,7 +82,7 @@ export default function TermsManagement() {
       const dataToSave = activeTab === 'TERMS' ? termsData : privacyData;
 
       const response = await axios.post(
-        `${API_BASE_URL}/api/terms/admin/update`,
+        getApiUrl('/api/terms/admin/update'),
         dataToSave,
         {
           headers: {
@@ -115,51 +114,47 @@ export default function TermsManagement() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="flex items-center justify-center min-h-screen bg-[rgb(var(--bg))]">
+        <div className="text-[rgb(var(--fg))] text-xl">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--fg))]">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 sticky top-0 z-10">
+      <div className="bg-[rgb(var(--card))] border-b border-[rgb(var(--border))] sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-yellow-400">Terms & Conditions Management</h1>
-          <p className="text-gray-400 text-sm mt-1">Manage your app's legal documents</p>
+          <h1 className="text-2xl font-semibold">Terms & Conditions Management</h1>
+          <p className="opacity-70 text-sm mt-1">Manage your app's legal documents</p>
         </div>
       </div>
 
       {/* Message Banner */}
       {message && (
         <div className={`max-w-7xl mx-auto px-4 py-2 mt-4 rounded-lg ${
-          message.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+          message.type === 'success' ? 'bg-green-500/15 border border-green-600' : 'bg-red-500/15 border border-red-600'
         }`}>
-          <p className="text-white text-center">{message.text}</p>
+          <p className="text-center">{message.text}</p>
         </div>
       )}
 
       {/* Tabs */}
       <div className="max-w-7xl mx-auto px-4 mt-6">
-        <div className="flex space-x-2 border-b border-gray-700">
+        <div className="flex space-x-2 border-b border-[rgb(var(--border))]">
           <button
             onClick={() => setActiveTab('TERMS')}
-            className={`px-6 py-3 font-semibold transition-colors ${
-              activeTab === 'TERMS'
-                ? 'text-yellow-400 border-b-2 border-yellow-400'
-                : 'text-gray-400 hover:text-white'
-            }`}
+            className={`px-6 py-3 font-medium transition-colors ${
+              activeTab === 'TERMS' ? 'border-b-2' : 'opacity-70 hover:opacity-100'
+            } border-[rgb(var(--border))]`}
           >
             Terms & Conditions
           </button>
           <button
             onClick={() => setActiveTab('PRIVACY')}
-            className={`px-6 py-3 font-semibold transition-colors ${
-              activeTab === 'PRIVACY'
-                ? 'text-yellow-400 border-b-2 border-yellow-400'
-                : 'text-gray-400 hover:text-white'
-            }`}
+            className={`px-6 py-3 font-medium transition-colors ${
+              activeTab === 'PRIVACY' ? 'border-b-2' : 'opacity-70 hover:opacity-100'
+            } border-[rgb(var(--border))]`}
           >
             Privacy Policy
           </button>
@@ -171,47 +166,47 @@ export default function TermsManagement() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Editor */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
+            <div className="bg-[rgb(var(--card))] rounded-2xl p-6 border border-[rgb(var(--border))] shadow">
               {/* Title */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
+                <label className="block text-sm font-medium mb-2 opacity-80">
                   Title
                 </label>
                 <input
                   type="text"
                   value={currentData.title}
                   onChange={(e) => setCurrentData({ ...currentData, title: e.target.value })}
-                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
+                  className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
                   placeholder="Enter title"
                 />
               </div>
 
               {/* Version */}
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
+                <label className="block text-sm font-medium mb-2 opacity-80">
                   Version
                 </label>
                 <input
                   type="text"
                   value={currentData.version}
                   onChange={(e) => setCurrentData({ ...currentData, version: e.target.value })}
-                  className="w-32 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
+                  className="w-32 px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
                   placeholder="1.0"
                 />
               </div>
 
               {/* Content */}
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
+                <label className="block text-sm font-medium mb-2 opacity-80">
                   Content
                 </label>
                 <textarea
                   value={currentData.content}
                   onChange={(e) => setCurrentData({ ...currentData, content: e.target.value })}
-                  className="w-full h-96 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-yellow-400 resize-none"
+                  className="w-full h-96 px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] font-mono text-sm resize-none"
                   placeholder="Enter content here..."
                 />
-                <p className="text-gray-400 text-xs mt-2">
+                <p className="opacity-70 text-xs mt-2">
                   Tip: Use line breaks to create paragraphs. Content will be displayed as-is in the mobile app.
                 </p>
               </div>
@@ -221,23 +216,22 @@ export default function TermsManagement() {
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className={`flex-1 py-3 rounded-lg font-semibold transition-colors ${
-                    isSaving
-                      ? 'bg-gray-600 cursor-not-allowed'
-                      : 'bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                  className={`flex-1 py-3 rounded-lg font-medium transition-colors border border-[rgb(var(--border))] ${
+                    isSaving ? 'opacity-60 cursor-not-allowed' : ''
                   }`}
+                  style={{ background: 'rgb(var(--fg)))', color: 'rgb(var(--bg))' }}
                 >
                   {isSaving ? 'Saving...' : 'Save & Publish'}
                 </button>
                 <button
                   onClick={() => setShowPreview(!showPreview)}
-                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors"
+                  className="px-6 py-3 rounded-lg font-medium transition-colors border border-[rgb(var(--border))]"
                 >
                   {showPreview ? 'Hide Preview' : 'Preview'}
                 </button>
                 <button
                   onClick={fetchCurrentTerms}
-                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors"
+                  className="px-6 py-3 rounded-lg font-medium transition-colors border border-[rgb(var(--border))]"
                 >
                   Reset
                 </button>
@@ -246,14 +240,14 @@ export default function TermsManagement() {
 
             {/* Preview */}
             {showPreview && (
-              <div className="bg-gray-800 rounded-lg p-6 shadow-xl mt-6">
-                <h3 className="text-xl font-bold text-yellow-400 mb-4">Preview</h3>
-                <div className="bg-black rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-yellow-400 mb-4">{currentData.title}</h2>
-                  <div className="text-gray-300 whitespace-pre-line leading-relaxed">
+              <div className="bg-[rgb(var(--card))] rounded-2xl p-6 border border-[rgb(var(--border))] shadow mt-6">
+                <h3 className="text-xl font-semibold mb-4">Preview</h3>
+                <div className="rounded-lg p-6 border border-[rgb(var(--border))] bg-[rgb(var(--bg))]">
+                  <h2 className="text-2xl font-semibold mb-4">{currentData.title}</h2>
+                  <div className="opacity-90 whitespace-pre-line leading-relaxed">
                     {currentData.content}
                   </div>
-                  <p className="text-gray-500 text-sm mt-6 italic">Version {currentData.version}</p>
+                  <p className="opacity-70 text-sm mt-6 italic">Version {currentData.version}</p>
                 </div>
               </div>
             )}
@@ -262,28 +256,28 @@ export default function TermsManagement() {
           {/* Sidebar */}
           <div className="lg:col-span-1">
             {/* Current Info */}
-            <div className="bg-gray-800 rounded-lg p-6 shadow-xl mb-6">
-              <h3 className="text-lg font-bold text-yellow-400 mb-4">Current Version</h3>
+            <div className="bg-[rgb(var(--card))] rounded-2xl p-6 border border-[rgb(var(--border))] shadow mb-6">
+              <h3 className="text-lg font-semibold mb-4">Current Version</h3>
               <div className="space-y-3">
                 <div>
-                  <p className="text-gray-400 text-sm">Type</p>
-                  <p className="text-white font-semibold">{currentData.type}</p>
+                  <p className="opacity-70 text-sm">Type</p>
+                  <p className="font-medium">{currentData.type}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Version</p>
-                  <p className="text-white font-semibold">{currentData.version}</p>
+                  <p className="opacity-70 text-sm">Version</p>
+                  <p className="font-medium">{currentData.version}</p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-sm">Character Count</p>
-                  <p className="text-white font-semibold">{currentData.content.length}</p>
+                  <p className="opacity-70 text-sm">Character Count</p>
+                  <p className="font-medium">{currentData.content.length}</p>
                 </div>
               </div>
             </div>
 
             {/* Tips */}
-            <div className="bg-gray-800 rounded-lg p-6 shadow-xl">
-              <h3 className="text-lg font-bold text-yellow-400 mb-4">💡 Tips</h3>
-              <ul className="space-y-3 text-sm text-gray-300">
+            <div className="bg-[rgb(var(--card))] rounded-2xl p-6 border border-[rgb(var(--border))] shadow">
+              <h3 className="text-lg font-semibold mb-4">💡 Tips</h3>
+              <ul className="space-y-3 text-sm opacity-90">
                 <li className="flex items-start">
                   <span className="text-yellow-400 mr-2">•</span>
                   <span>Changes are published immediately after saving</span>
@@ -311,7 +305,7 @@ export default function TermsManagement() {
             <div className="mt-6">
               <button
                 onClick={() => fetchVersionHistory(activeTab)}
-                className="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors"
+                className="w-full py-3 rounded-lg font-medium transition-colors border border-[rgb(var(--border))]"
               >
                 View Version History
               </button>
@@ -319,23 +313,23 @@ export default function TermsManagement() {
 
             {/* Version History */}
             {versions.length > 0 && (
-              <div className="bg-gray-800 rounded-lg p-6 shadow-xl mt-6">
-                <h3 className="text-lg font-bold text-yellow-400 mb-4">Version History</h3>
+              <div className="bg-[rgb(var(--card))] rounded-2xl p-6 border border-[rgb(var(--border))] shadow mt-6">
+                <h3 className="text-lg font-semibold mb-4">Version History</h3>
                 <div className="space-y-3 max-h-64 overflow-y-auto">
                   {versions.map((version) => (
                     <div
                       key={version.id}
-                      className={`p-3 rounded-lg ${
-                        version.isActive ? 'bg-green-900 border border-green-600' : 'bg-gray-700'
+                      className={`p-3 rounded-lg border ${
+                        version.isActive ? 'border-green-600/60 bg-green-500/10' : 'border-[rgb(var(--border))] bg-[rgb(var(--bg))]'
                       }`}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="font-semibold">v{version.version}</span>
+                        <span className="font-medium">v{version.version}</span>
                         {version.isActive && (
-                          <span className="text-xs bg-green-600 px-2 py-1 rounded">Active</span>
+                          <span className="text-xs bg-green-500/20 border border-green-600/60 px-2 py-1 rounded">Active</span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs opacity-70 mt-1">
                         {new Date(version.updatedAt).toLocaleDateString()}
                       </p>
                     </div>
@@ -348,7 +342,7 @@ export default function TermsManagement() {
       </div>
 
       {/* Footer */}
-      <div className="max-w-7xl mx-auto px-4 py-8 text-center text-gray-500 text-sm">
+      <div className="max-w-7xl mx-auto px-4 py-8 text-center opacity-70 text-sm">
         <p>💡 All changes are saved with version control. Users will see the latest version automatically.</p>
       </div>
     </div>
