@@ -1,8 +1,7 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-  (import.meta.env.PROD 
-    ? 'https://asmlmbackend-production.up.railway.app' 
-    : 'https://asmlmbackend-production.up.railway.app'); // Always use backend URL
+// Prefer same-origin calls (proxied by server.js) to avoid CORS.
+// Can be overridden with VITE_API_BASE_URL for local/dev if needed.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 // Helper function to get full API URL
 export const getApiUrl = (path) => {

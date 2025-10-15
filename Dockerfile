@@ -31,5 +31,7 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Start the application
+# BACKEND_URL lets us proxy to the backend without CORS
+ENV BACKEND_URL="https://asmlmbackend-production.up.railway.app"
 CMD ["node", "server.js"]
 

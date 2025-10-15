@@ -1,9 +1,11 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'dist');
+const BACKEND_URL = process.env.BACKEND_URL || 'https://asmlmbackend-production.up.railway.app';
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -19,8 +21,51 @@ const MIME_TYPES = {
   '.woff2': 'font/woff2'
 };
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   console.log(`${req.method} ${req.url}`);
+
+  // Reverse proxy for API calls to avoid CORS
+  if (req.url.startsWith('/api/')) {
+    try {
+      const targetUrl = new URL(req.url, BACKEND_URL);
+
+      // Collect request body (if any)
+      const chunks = [];
+      for await (const chunk of req) chunks.push(chunk);
+      const body = chunks.length ? Buffer.concat(chunks) : undefined;
+
+      // Prepare headers (avoid overriding Host)
+      const headers = { ...req.headers };
+      delete headers.host;
+      // Forward cookies and auth headers as-is
+
+      const upstreamRes = await fetch(targetUrl, {
+        method: req.method,
+        headers,
+        body: ['GET', 'HEAD'].includes(req.method) ? undefined : body,
+        // Disable compression auto-decode differences
+        redirect: 'manual'
+      });
+
+      // Write status and headers back to client
+      const hdrs = {};
+      upstreamRes.headers.forEach((value, key) => {
+        // Avoid setting any CORS headers (same-origin now)
+        if (!['access-control-allow-origin', 'access-control-allow-credentials'].includes(key)) {
+          hdrs[key] = value;
+        }
+      });
+      res.writeHead(upstreamRes.status, hdrs);
+      const buf = Buffer.from(await upstreamRes.arrayBuffer());
+      res.end(buf);
+      return;
+    } catch (e) {
+      console.error('Proxy error:', e);
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Bad Gateway', details: e.message }));
+      return;
+    }
+  }
 
   let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url);
 
