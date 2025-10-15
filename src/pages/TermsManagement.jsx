@@ -106,7 +106,13 @@ export default function TermsManagement() {
       );
 
       showMessage('Saved successfully!', 'success');
-      fetchCurrentTerms();
+      // Keep the editor text intact; if backend returned normalized data, use it
+      const saved = response?.data?.[activeTab === 'TERMS' ? 'terms' : 'privacy'];
+      if (saved) {
+        if (activeTab === 'TERMS') setTermsData((prev) => ({ ...prev, ...saved }));
+        else setPrivacyData((prev) => ({ ...prev, ...saved }));
+      }
+      // Refresh version history in the background
       fetchVersionHistory(activeTab);
     } catch (error) {
       console.error('Error saving:', error);
