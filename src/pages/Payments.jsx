@@ -4,6 +4,9 @@ import Pagination from '../components/Pagination';
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
 
+// Import shared OrderModal component
+import OrderModal from '../components/OrderModal';
+
 /* ---------- helpers ---------- */
 const tierAttr = (t='') => String(t||'').toLowerCase();
 
@@ -72,6 +75,9 @@ export default function Payments() {
   const [amountMax, setAmountMax] = useState("");
 
   const [modalItem, setModalItem] = useState(null);
+  const [detailedPayment, setDetailedPayment] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderData, setOrderData] = useState(null);
 
   async function load() {
     try {
@@ -201,6 +207,100 @@ export default function Payments() {
     });
   }, [payments, q, status, ptype]);
 
+  async function fetchDetailedPayment(paymentId) {
+    try {
+      console.log('🔍 Fetching detailed payment information for ID:', paymentId);
+      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
+      const response = await fetch(`${API_ENDPOINTS.PAYMENT_DETAILS}/${paymentId}`, { headers });
+      if (response.ok) {
+        const detailedData = await response.json();
+        console.log('✅ Detailed payment data received:', detailedData);
+        
+        // Transform the detailed data to match our frontend format
+        const transformedDetailedPayment = {
+          ...detailedData,
+          // Map backend fields to frontend format
+          code: detailedData.code,
+          user: {
+            name: detailedData.user?.userName || 'Unknown',
+            code: detailedData.user?.userId || 'N/A',
+          },
+          userEmail: detailedData.user?.userEmail,
+          userPhone: detailedData.user?.userPhone,
+          referenceCode: detailedData.user?.referenceCode,
+          hasPaidActivation: detailedData.user?.hasPaidActivation,
+          isFirstOrder: detailedData.user?.isFirstOrder,
+          shippingName: detailedData.shipping?.shippingName,
+          shippingPhone: detailedData.shipping?.shippingPhone,
+          shippingAddress: detailedData.shipping?.shippingAddress,
+          shippingCity: detailedData.shipping?.shippingCity,
+          shippingState: detailedData.shipping?.shippingState,
+          shippingPincode: detailedData.shipping?.shippingPincode,
+          deliveryStatus: detailedData.shipping?.deliveryStatus,
+          razorpayOrderId: detailedData.payment?.razorpayOrderId,
+          razorpayPaymentId: detailedData.payment?.razorpayPaymentId,
+          razorpaySignature: detailedData.payment?.razorpaySignature,
+          paymentMethod: detailedData.payment?.paymentMethod,
+          products: detailedData.products || [],
+          isOrderPayment: detailedData.isOrderPayment,
+          orderNumber: detailedData.orderNumber,
+          timeRemaining: detailedData.timing?.timeRemaining,
+          isExpired: detailedData.timing?.isExpired,
+          description: detailedData.description
+        };
+        
+        setDetailedPayment(transformedDetailedPayment);
+        return transformedDetailedPayment;
+      } else {
+        console.error('❌ Failed to fetch detailed payment:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching detailed payment:', error);
+      return null;
+    }
+  }
+
+  function handleViewOrderDetails(payment) {
+    if (payment.isOrderPayment && payment.razorpayOrderId) {
+      // Transform payment data to order format for the OrderModal
+      const orderData = {
+        id: payment.id,
+        orderNo: payment.orderNumber,
+        customerName: payment.user.name,
+        customerCode: payment.user.code,
+        userEmail: payment.userEmail,
+        userPhone: payment.userPhone,
+        referenceCode: payment.referenceCode,
+        hasPaidActivation: payment.hasPaidActivation,
+        isFirstOrder: payment.isFirstOrder,
+        shippingName: payment.shippingName,
+        shippingPhone: payment.shippingPhone,
+        shippingAddress: payment.shippingAddress,
+        shippingCity: payment.shippingCity,
+        shippingState: payment.shippingState,
+        shippingPincode: payment.shippingPincode,
+        razorpayOrderId: payment.razorpayOrderId,
+        razorpayPaymentId: payment.razorpayPaymentId,
+        razorpaySignature: payment.razorpaySignature,
+        paymentMethod: payment.paymentMethod,
+        products: payment.products?.map(p => p.name) || ['MLM Activation Package'],
+        amount: payment.amount,
+        paymentStatus: payment.status,
+        deliveryStatus: payment.deliveryStatus,
+        date: payment.requestedAt,
+        timeRemaining: payment.timeRemaining,
+        isExpired: payment.isExpired,
+        description: payment.description
+      };
+      
+      setOrderData(orderData);
+      setShowOrderModal(true);
+    }
+  }
+
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -328,7 +428,10 @@ export default function Payments() {
                   </td>
                   <td className="py-3 px-4">
                     <button
-                      onClick={() => setModalItem(payment)}
+                      onClick={async () => {
+                        setModalItem(payment);
+                        await fetchDetailedPayment(payment.id);
+                      }}
                       className="text-blue-600 hover:text-blue-800 font-medium"
                     >
                       View Details
@@ -349,139 +452,229 @@ export default function Payments() {
         onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
       />
 
-      {/* Modal */}
-      <Modal open={!!modalItem} onClose={() => setModalItem(null)}>
+      {/* Enhanced Payment Modal */}
+      <Modal open={!!modalItem} onClose={() => {
+        setModalItem(null);
+        setDetailedPayment(null);
+      }}>
         {modalItem && (
           <div className="space-y-6">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-xl font-semibold">Payment Details</h3>
+                <h3 className="text-2xl font-semibold">Payment Details</h3>
                 <p className="text-sm opacity-70">Complete information for payment {modalItem.code}</p>
               </div>
-              <button onClick={() => setModalItem(null)} className="opacity-70 hover:opacity-100 text-xl" aria-label="Close">×</button>
+              <button onClick={() => {
+                setModalItem(null);
+                setDetailedPayment(null);
+              }} className="opacity-70 hover:opacity-100 text-2xl" aria-label="Close">×</button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="text-sm opacity-70">Payment ID</div>
-                <div className="font-medium">{modalItem.code}</div>
+            {/* Payment Status Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-[rgb(var(--bg))] rounded-lg p-4">
+                <div className="text-sm opacity-70 mb-2">Payment Information</div>
+                <div className="font-medium text-lg">{modalItem.code}</div>
+                {detailedPayment?.razorpayOrderId && (
+                  <div className="text-xs opacity-60 mt-1 break-all">Order: {detailedPayment.orderNumber}</div>
+                )}
               </div>
-              <div>
-                <div className="text-sm opacity-70">Amount</div>
-                <div className="font-medium">{fINR(modalItem.amount)}</div>
+              
+              <div className="bg-[rgb(var(--bg))] rounded-lg p-4">
+                <div className="text-sm opacity-70 mb-2">Payment Status</div>
+                <StatusPill value={modalItem.status} />
+                <div className="text-xs opacity-60 mt-1">via {modalItem.method.channel || 'RAZORPAY'}</div>
               </div>
-              <div>
-                <div className="text-sm opacity-70">Status</div>
-                <div className="font-medium">
-                  <StatusPill value={modalItem.status} />
-                </div>
+              
+              <div className="bg-[rgb(var(--bg))] rounded-lg p-4">
+                <div className="text-sm opacity-70 mb-2">Amount</div>
+                <div className="font-medium text-lg">{fINR(modalItem.amount)}</div>
+                <div className="text-xs opacity-60 mt-1">{modalItem.type}</div>
               </div>
-              <div>
-                <div className="text-sm opacity-70">Type</div>
-                <div className="font-medium">{modalItem.type}</div>
-              </div>
-              <div>
-                <div className="text-sm opacity-70">User</div>
-                <div className="font-medium">{modalItem.user.name || '--'} ({modalItem.user.code || '--'})</div>
-              </div>
-              <div>
-                <div className="text-sm opacity-70">Payment Method</div>
-                <div className="font-medium">{modalItem.method.channel || '--'}</div>
-              </div>
-              <div>
-                <div className="text-sm opacity-70">Requested At</div>
-                <div className="font-medium">{fDate(modalItem.requestedAt)}</div>
-              </div>
-              {modalItem.processedAt && (
+            </div>
+
+            {/* Customer Information */}
+            <div className="bg-[rgb(var(--bg))] rounded-lg p-4 mb-6">
+              <div className="text-sm font-semibold uppercase opacity-70 mb-3">Customer Information</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm opacity-70">Processed At</div>
-                  <div className="font-medium">{fDate(modalItem.processedAt)}</div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span>👤</span>
+                    <span className="font-medium">{modalItem.user.name || 'Unknown'}</span>
+                  </div>
+                  <div className="text-sm opacity-70">ID: {modalItem.user.code || 'N/A'}</div>
+                  {detailedPayment?.userEmail && (
+                    <div className="text-sm opacity-70">Email: {detailedPayment.userEmail}</div>
+                  )}
+                  {detailedPayment?.userPhone && (
+                    <div className="text-sm opacity-70">Phone: {detailedPayment.userPhone}</div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Razorpay Transaction Details */}
-            {(modalItem.razorpayOrderId || modalItem.razorpayPaymentId) && (
-              <div className="border-t border-[rgb(var(--border))] pt-4">
-                <div className="text-xs font-semibold uppercase opacity-70 mb-3">Razorpay Transaction Details</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {modalItem.razorpayOrderId && (
-                    <div>
-                      <div className="text-sm opacity-70">Razorpay Order ID</div>
-                      <div className="font-medium text-sm break-all">{modalItem.razorpayOrderId}</div>
+                <div>
+                  {detailedPayment?.referenceCode && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <span>🔗</span>
+                      <span className="font-medium">Referral Code: {detailedPayment.referenceCode}</span>
                     </div>
                   )}
-                  {modalItem.razorpayPaymentId && (
-                    <div>
-                      <div className="text-sm opacity-70">Razorpay Payment ID</div>
-                      <div className="font-medium text-sm break-all">{modalItem.razorpayPaymentId}</div>
-                    </div>
-                  )}
-                  {modalItem.razorpaySignature && (
-                    <div className="md:col-span-2">
-                      <div className="text-sm opacity-70">Transaction Signature</div>
-                      <div className="font-medium text-xs break-all opacity-80">{modalItem.razorpaySignature}</div>
-                    </div>
-                  )}
+                  <div className="text-sm opacity-70">Activation: {detailedPayment?.hasPaidActivation ? '✅ Paid' : '❌ Pending'}</div>
+                  <div className="text-sm opacity-70">First Order: {detailedPayment?.isFirstOrder ? 'Yes' : 'No'}</div>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Shipping Details */}
-            {(modalItem.shippingName || modalItem.shippingPhone || modalItem.shippingAddress) && (
-              <div className="border-t border-[rgb(var(--border))] pt-4">
-                <div className="text-xs font-semibold uppercase opacity-70 mb-3">Shipping Details</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {modalItem.shippingName && (
-                    <div>
-                      <div className="text-sm opacity-70">Recipient Name</div>
-                      <div className="font-medium">{modalItem.shippingName}</div>
+            {/* Shipping Information */}
+            {(detailedPayment?.shippingName || detailedPayment?.shippingPhone || detailedPayment?.shippingAddress) && (
+              <div className="bg-[rgb(var(--bg))] rounded-lg p-4 mb-6">
+                <div className="text-sm font-semibold uppercase opacity-70 mb-3">Shipping Details</div>
+                <div className="space-y-3">
+                  {detailedPayment.shippingName && (
+                    <div className="flex items-center gap-2">
+                      <span>📦</span>
+                      <span className="font-medium">{detailedPayment.shippingName}</span>
                     </div>
                   )}
-                  {modalItem.shippingPhone && (
-                    <div>
-                      <div className="text-sm opacity-70">Phone Number</div>
-                      <div className="font-medium">{modalItem.shippingPhone}</div>
+                  
+                  {detailedPayment.shippingPhone && (
+                    <div className="flex items-center gap-2">
+                      <span>📱</span>
+                      <span>{detailedPayment.shippingPhone}</span>
                     </div>
                   )}
-                  {modalItem.shippingAddress && (
-                    <div className="md:col-span-2">
-                      <div className="text-sm opacity-70">Address</div>
-                      <div className="font-medium">{modalItem.shippingAddress}</div>
-                      {(modalItem.shippingCity || modalItem.shippingState || modalItem.shippingPincode) && (
-                        <div className="text-sm opacity-80 mt-1">
-                          {modalItem.shippingCity && <span>{modalItem.shippingCity}</span>}
-                          {modalItem.shippingCity && modalItem.shippingState && <span>, </span>}
-                          {modalItem.shippingState && <span>{modalItem.shippingState}</span>}
-                          {modalItem.shippingPincode && <span> - {modalItem.shippingPincode}</span>}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {modalItem.deliveryStatus && (
-                    <div>
-                      <div className="text-sm opacity-70">Delivery Status</div>
-                      <div className="font-medium">
-                        <StatusPill value={modalItem.deliveryStatus} />
+                  
+                  {detailedPayment.shippingAddress && (
+                    <div className="flex items-start gap-2">
+                      <span>📍</span>
+                      <div className="flex-1">
+                        <div>{detailedPayment.shippingAddress}</div>
+                        {(detailedPayment.shippingCity || detailedPayment.shippingState || detailedPayment.shippingPincode) && (
+                          <div className="opacity-80 mt-1">
+                            {detailedPayment.shippingCity && <span>{detailedPayment.shippingCity}</span>}
+                            {detailedPayment.shippingCity && detailedPayment.shippingState && <span>, </span>}
+                            {detailedPayment.shippingState && <span>{detailedPayment.shippingState}</span>}
+                            {detailedPayment.shippingPincode && <span> - {detailedPayment.shippingPincode}</span>}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
+                  
+                  {detailedPayment.deliveryStatus && (
+                    <div className="flex items-center gap-2">
+                      <span>🚚</span>
+                      <span className="font-medium">Delivery Status: </span>
+                      <StatusPill value={detailedPayment.deliveryStatus} />
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            <div>
-              <div className="text-sm opacity-70">Description</div>
-              <div className="font-medium">{modalItem.description}</div>
+            {/* Payment Details */}
+            {(detailedPayment?.razorpayPaymentId || detailedPayment?.razorpayOrderId) && (
+              <div className="bg-[rgb(var(--bg))] rounded-lg p-4 mb-6">
+                <div className="text-sm font-semibold uppercase opacity-70 mb-3">Payment Details</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="opacity-70">Payment Method</div>
+                    <div className="font-medium">{detailedPayment.paymentMethod || 'RAZORPAY'}</div>
+                  </div>
+                  {detailedPayment.razorpayPaymentId && (
+                    <div>
+                      <div className="opacity-70">Payment ID</div>
+                      <div className="font-medium break-all">{detailedPayment.razorpayPaymentId}</div>
+                    </div>
+                  )}
+                  {detailedPayment.razorpayOrderId && (
+                    <div>
+                      <div className="opacity-70">Order ID</div>
+                      <div className="font-medium break-all">{detailedPayment.razorpayOrderId}</div>
+                    </div>
+                  )}
+                  {detailedPayment.razorpaySignature && (
+                    <div className="md:col-span-2">
+                      <div className="opacity-70">Transaction Signature</div>
+                      <div className="font-mono text-xs break-all">{detailedPayment.razorpaySignature}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Products (for order payments) */}
+            {detailedPayment?.isOrderPayment && detailedPayment.products && detailedPayment.products.length > 0 && (
+              <div className="bg-[rgb(var(--bg))] rounded-lg p-4 mb-6">
+                <div className="text-sm font-semibold uppercase opacity-70 mb-3">Products</div>
+                <div className="space-y-3">
+                  {detailedPayment.products.map((product, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+                      <div>
+                        <div className="font-medium">{product.name}</div>
+                        <div className="text-sm opacity-70">{product.description}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium">{fINR(product.totalPrice)}</div>
+                        <div className="text-sm opacity-70">Qty: {product.quantity}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Payment Summary */}
+            <div className="bg-[rgb(var(--bg))] rounded-lg p-4 mb-6">
+              <div className="text-sm font-semibold uppercase opacity-70 mb-3">Payment Summary</div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Payment Date:</span>
+                  <span>{fDate(modalItem.requestedAt)}</span>
+                </div>
+                {modalItem.processedAt && (
+                  <div className="flex justify-between">
+                    <span>Processed:</span>
+                    <span>{fDate(modalItem.processedAt)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Total Amount:</span>
+                  <span className="font-semibold text-lg">{fINR(modalItem.amount)}</span>
+                </div>
+                {detailedPayment?.timeRemaining !== null && detailedPayment?.timeRemaining !== undefined && (
+                  <div className={`text-sm ${detailedPayment.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
+                    {detailedPayment.isExpired ? '⏰ Payment Expired' : `⏱️ ${detailedPayment.timeRemaining} min remaining`}
+                  </div>
+                )}
+                {modalItem.description && (
+                  <div className="text-sm opacity-70 mt-2">
+                    <span className="font-medium">Notes:</span> {modalItem.description}
+                  </div>
+                )}
+              </div>
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-3 pt-4">
               <button
-                onClick={() => setModalItem(null)}
+                onClick={() => {
+                  setModalItem(null);
+                  setDetailedPayment(null);
+                }}
                 className="px-4 py-2 rounded-lg bg-gray-600 text-white hover:bg-gray-700 transition-colors"
               >
                 Close
               </button>
+              
+              {/* View Order Details Button (for order payments) */}
+              {detailedPayment?.isOrderPayment && (
+                <button
+                  onClick={() => handleViewOrderDetails(detailedPayment)}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                >
+                  📦 View Order Details
+                </button>
+              )}
+              
               {modalItem.status === "Pending" && (
                 <button className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors">
                   Approve
@@ -491,6 +684,22 @@ export default function Payments() {
           </div>
         )}
       </Modal>
+
+      {/* Order Details Modal */}
+      {showOrderModal && orderData && (
+        <OrderModal 
+          order={orderData} 
+          detailedOrder={orderData}
+          onClose={() => {
+            setShowOrderModal(false);
+            setOrderData(null);
+          }} 
+          onUpdateStatus={() => {
+            // Handle order status updates if needed
+            console.log('Order status update requested');
+          }}
+        />
+      )}
     </div>
   );
 }

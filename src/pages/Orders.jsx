@@ -4,6 +4,9 @@ import Pagination from '../components/Pagination';
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
 
+// Import shared OrderModal component
+import OrderModal from '../components/OrderModal';
+
 const fmtINR = (n) =>
   Number(n || 0).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
 const fmtDate = (iso) => {
@@ -33,143 +36,6 @@ function StatusPill({ value }) {
   );
 }
 
-/* =================== Modal (responsive) =================== */
-function OrderModal({ order, onClose, onUpdateStatus }) {
-  if (!order) return null;
-  const statuses = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog" aria-modal="true"
-      onClick={onClose}
-      style={{ background: "rgba(0,0,0,0.5)" }}
-    >
-      <div
-        className="relative w-[min(720px,92vw)] md:w-[min(860px,92vw)] max-h-[90vh] overflow-y-auto rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="text-xl font-semibold">Order Details</h3>
-            <p className="text-sm opacity-70">Complete information for order {order.orderNo}</p>
-          </div>
-            <button onClick={onClose} className="opacity-70 hover:opacity-100 text-xl" aria-label="Close">×</button>
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-          <div>
-            <div className="text-sm opacity-70">Order ID</div>
-            <div className="font-medium">{order.orderNo}</div>
-            {order.razorpayOrderId && (
-              <div className="text-xs opacity-60 mt-1">Razorpay: {order.razorpayOrderId}</div>
-            )}
-          </div>
-          <div className="sm:text-right">
-            <div className="mb-2">
-              <div className="text-xs opacity-70 mb-1">Payment Status</div>
-              <StatusPill value={order.paymentStatus} />
-            </div>
-            <div>
-              <div className="text-xs opacity-70 mb-1">Delivery Status</div>
-              <StatusPill value={order.deliveryStatus || 'PENDING'} />
-            </div>
-            {order.isExpired && order.status === 'PENDING' && (
-              <div className="text-xs text-red-500 mt-1">⚠️ Expired</div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-5 space-y-3">
-          {/* Customer Information */}
-          <div className="flex items-center gap-2 text-sm">
-            <span>👤</span>
-            <span className="font-medium">{order.customerName}</span>
-            <span className="opacity-70">({order.customerCode})</span>
-          </div>
-          
-          {/* Shipping Information */}
-          {(order.shippingName || order.shippingPhone || order.shippingAddress) && (
-            <div className="border-t border-[rgb(var(--border))] pt-3 space-y-2">
-              <div className="text-xs font-semibold uppercase opacity-70 mb-2">Shipping Details</div>
-              
-              {order.shippingName && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span>📦</span>
-                  <span className="font-medium">{order.shippingName}</span>
-                </div>
-              )}
-              
-              {order.shippingPhone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span>📱</span>
-                  <span>{order.shippingPhone}</span>
-                </div>
-              )}
-              
-              {order.shippingAddress && (
-                <div className="flex items-start gap-2 text-sm">
-                  <span>📍</span>
-                  <div className="flex-1">
-                    <div>{order.shippingAddress}</div>
-                    {(order.shippingCity || order.shippingState || order.shippingPincode) && (
-                      <div className="opacity-80 mt-1">
-                        {order.shippingCity && <span>{order.shippingCity}</span>}
-                        {order.shippingCity && order.shippingState && <span>, </span>}
-                        {order.shippingState && <span>{order.shippingState}</span>}
-                        {order.shippingPincode && <span> - {order.shippingPincode}</span>}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-          
-          <div className="flex items-center gap-2 text-sm opacity-90">
-            <span>🗓️</span>
-            <span>Ordered on {fmtDate(order.date)}</span>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <div className="font-medium mb-2">Products</div>
-          <div className="space-y-2">
-            {(order.products || []).map((p, idx) => (
-              <div key={idx} className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] px-3 py-2 text-sm">
-                {p}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-          <div>
-            <div className="font-medium">Total Amount</div>
-            <div className="text-2xl font-semibold mt-1">{fmtINR(order.amount)}</div>
-            {order.timeRemaining !== null && order.status === 'PENDING' && (
-              <div className={`text-sm mt-2 ${order.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
-                {order.isExpired ? '⏰ Expired' : `⏱️ ${order.timeRemaining} min remaining`}
-              </div>
-            )}
-          </div>
-          <div className="md:text-right">
-            <label className="block text-sm font-medium mb-2">Update Delivery Status</label>
-            <select
-              value={order.deliveryStatus || 'PENDING'}
-              onChange={(e) => onUpdateStatus(order, e.target.value)}
-              className="w-full md:w-64 px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
-            >
-              {statuses.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* =================== Page =================== */
 export default function Orders() {
@@ -184,6 +50,7 @@ export default function Orders() {
   const [amountMin, setAmountMin] = useState("");
   const [amountMax, setAmountMax] = useState("");
   const [view, setView] = useState(null); // modal
+  const [detailedOrder, setDetailedOrder] = useState(null); // detailed order data
 
   async function load() {
     try {
@@ -254,7 +121,22 @@ export default function Orders() {
             isExpired: isExpired,
             expiresAt: order.expiresAt || (order.createdAt ? new Date(new Date(order.createdAt).getTime() + 30*60000).toISOString() : null),
             razorpayOrderId: order.razorpayOrderId || null,
-            activationStatus: order.activationStatus || null
+            activationStatus: order.activationStatus || null,
+            
+            // Enhanced user information
+            userEmail: order.userEmail || null,
+            userPhone: order.userPhone || null,
+            referenceCode: order.referenceCode || null,
+            hasPaidActivation: order.hasPaidActivation || false,
+            isFirstOrder: order.isFirstOrder || false,
+            
+            // Payment details
+            paymentMethod: order.paymentMethod || 'RAZORPAY',
+            razorpayPaymentId: order.razorpayPaymentId || null,
+            razorpaySignature: order.razorpaySignature || null,
+            
+            // Product information
+            orderItems: order.orderItems || []
           };
         });
         
@@ -336,6 +218,57 @@ export default function Orders() {
       cancelled: c("CANCELLED"),
     };
   }, [orders]);
+
+  async function fetchDetailedOrder(orderId) {
+    try {
+      console.log('🔍 Fetching detailed order information for ID:', orderId);
+      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
+      const response = await fetch(`${API_ENDPOINTS.ORDER_DETAILS}/${orderId}`, { headers });
+      if (response.ok) {
+        const detailedData = await response.json();
+        console.log('✅ Detailed order data received:', detailedData);
+        
+        // Transform the detailed data to match our frontend format
+        const transformedDetailedOrder = {
+          ...detailedData,
+          // Map backend fields to frontend format
+          orderNo: detailedData.orderNumber,
+          customerName: detailedData.user?.userName || 'Unknown',
+          customerCode: detailedData.user?.userId ? `REF${detailedData.user.userId}` : 'N/A',
+          userEmail: detailedData.user?.userEmail,
+          userPhone: detailedData.user?.userPhone,
+          referenceCode: detailedData.user?.referenceCode,
+          hasPaidActivation: detailedData.user?.hasPaidActivation,
+          isFirstOrder: detailedData.user?.isFirstOrder,
+          shippingName: detailedData.shipping?.shippingName,
+          shippingPhone: detailedData.shipping?.shippingPhone,
+          shippingAddress: detailedData.shipping?.shippingAddress,
+          shippingCity: detailedData.shipping?.shippingCity,
+          shippingState: detailedData.shipping?.shippingState,
+          shippingPincode: detailedData.shipping?.shippingPincode,
+          razorpayOrderId: detailedData.payment?.razorpayOrderId,
+          razorpayPaymentId: detailedData.payment?.razorpayPaymentId,
+          razorpaySignature: detailedData.payment?.razorpaySignature,
+          paymentMethod: detailedData.payment?.paymentMethod,
+          products: detailedData.products?.map(p => p.name) || ['MLM Activation Package'],
+          timeRemaining: detailedData.timing?.timeRemaining,
+          isExpired: detailedData.timing?.isExpired,
+          description: detailedData.description
+        };
+        
+        setDetailedOrder(transformedDetailedOrder);
+        return transformedDetailedOrder;
+      } else {
+        console.error('❌ Failed to fetch detailed order:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching detailed order:', error);
+      return null;
+    }
+  }
 
   async function updateStatus(order, nextDeliveryStatus) {
     const updated = { ...order, deliveryStatus: nextDeliveryStatus };
@@ -462,7 +395,10 @@ export default function Orders() {
               "border-t border-[rgb(var(--border))]",
               "cursor-pointer",
             ].join(" ")}
-            onClick={() => setView(o)}
+            onClick={async () => {
+              setView(o);
+              await fetchDetailedOrder(o.id);
+            }}
             role="button"
             aria-label={`View order ${o.orderNo}`}
           >
@@ -523,7 +459,10 @@ export default function Orders() {
           <div
             key={o.id || o.orderNo}
             className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 active:scale-[0.998] transition"
-            onClick={() => setView(o)}
+            onClick={async () => {
+              setView(o);
+              await fetchDetailedOrder(o.id);
+            }}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -557,7 +496,10 @@ export default function Orders() {
       </div>
 
       {/* Modal */}
-      <OrderModal order={view} onClose={() => setView(null)} onUpdateStatus={updateStatus} />
+      <OrderModal order={view} detailedOrder={detailedOrder} onClose={() => {
+        setView(null);
+        setDetailedOrder(null);
+      }} onUpdateStatus={updateStatus} />
     </div>
   );
 }
