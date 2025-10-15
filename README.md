@@ -1,3 +1,26 @@
+## Railway Frontend Deployment
+
+1) Build & serve via Dockerfile (already configured)
+
+2) Required environment variable on the frontend service:
+
+```
+BACKEND_URL=https://asmlmbackend-production.up.railway.app
+```
+
+This makes the bundled server proxy all `/api/*` calls to the backend, removing CORS.
+
+3) Frontend code calls same-origin paths
+
+- `asmlm/src/config/api.js` forces `API_BASE_URL=''`, so requests go to `/api/...`.
+- No `VITE_API_BASE_URL` needed.
+
+4) Deploy steps
+
+- Push changes; Railway will build using the Dockerfile.
+- Confirm the env variable on the service matches your backend URL if it changes.
+- After deploy, hard refresh the browser.
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

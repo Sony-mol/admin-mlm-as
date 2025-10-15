@@ -1,7 +1,7 @@
 // API Configuration
-// Prefer same-origin calls (proxied by server.js) to avoid CORS.
-// Can be overridden with VITE_API_BASE_URL for local/dev if needed.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// Force same-origin calls (proxied by server.js) to avoid CORS entirely.
+// Do NOT override via env in production; set BACKEND_URL on the server instead.
+const API_BASE_URL = '';
 
 // Helper function to get full API URL
 export const getApiUrl = (path) => {
