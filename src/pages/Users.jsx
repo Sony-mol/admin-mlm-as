@@ -191,7 +191,34 @@ function CalendarPopover({ open, onClose, selectedDates, onToggleDate, onClear }
 /* =================== Details Modal (responsive) =================== */
 function UserModal({ user, onClose }) {
   if (!user) return null;
-  const combined = [user.tier, user.level].filter(Boolean).join(' ') || '—';
+  const [details, setDetails] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [err, setErr] = React.useState(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+        const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(`${API_ENDPOINTS.USERS}/${user.id}`, { headers, cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (mounted) setDetails(data);
+      } catch (e) {
+        if (mounted) setErr(e.message || 'Failed to load user');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [user?.id]);
+
+  const u = details || user; // prefer real details when loaded
+  const combined = [u.tier, u.level].filter(Boolean).join(' ') || '—';
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -207,36 +234,41 @@ function UserModal({ user, onClose }) {
         <div className="flex items-start justify-between">
           <div>
             <h3 className="text-xl font-semibold">User Details</h3>
-            <p className="text-sm opacity-70">Complete information about {user.name}</p>
+            <p className="text-sm opacity-70">Complete information about {u.name}</p>
           </div>
           <button onClick={onClose} className="opacity-70 hover:opacity-100 text-xl" aria-label="Close">×</button>
         </div>
 
+        {loading ? (
+          <div className="py-12 text-center opacity-70">Loading user…</div>
+        ) : err ? (
+          <div className="py-12 text-center text-red-600">{err}</div>
+        ) : (
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           <div className="space-y-2">
             <div className="text-sm opacity-70">Referral Code</div>
-            <div className="font-medium">{user.code}</div>
+            <div className="font-medium">{u.referenceCode || u.code || '--'}</div>
 
             <div className="text-sm opacity-70 mt-4">Email</div>
-            <div className="font-medium break-all">{user.email}</div>
+            <div className="font-medium break-all">{u.email}</div>
 
-            {user.phone && (
+            {(u.phone || u.phoneNumber) && (
               <>
                 <div className="text-sm opacity-70 mt-4">Phone</div>
-                <div className="font-medium">{user.phone}</div>
+                <div className="font-medium">{u.phone || u.phoneNumber}</div>
               </>
             )}
 
             <div className="text-sm opacity-70 mt-4">Joined</div>
-            <div className="font-medium">{fmtDate(user.joinDate)}</div>
+            <div className="font-medium">{fmtDate(u.createdAt || u.joinDate)}</div>
 
             <div className="text-sm opacity-70 mt-4">Referrer</div>
             <div className="font-medium">
-              {user.referrerCode && user.referrerCode !== '--' ? (
+              {(u.referrerCode || u.referredByCode) && (u.referrerCode || u.referredByCode) !== '--' ? (
                 <div>
-                  <div>Code: {user.referrerCode}</div>
-                  {user.referrerName && <div className="text-sm opacity-70">Name: {user.referrerName}</div>}
-                  {user.referrerEmail && <div className="text-sm opacity-70">Email: {user.referrerEmail}</div>}
+                  <div>Code: {u.referrerCode || u.referredByCode}</div>
+                  {u.referrerName && <div className="text-sm opacity-70">Name: {u.referrerName}</div>}
+                  {u.referrerEmail && <div className="text-sm opacity-70">Email: {u.referrerEmail}</div>}
                 </div>
               ) : (
                 '--'
@@ -247,24 +279,100 @@ function UserModal({ user, onClose }) {
           <div className="space-y-3">
             <div className="text-sm opacity-70">Tier / Level</div>
             <div className="flex flex-wrap gap-2">
-              {user.tier && <Chip className="!bg-transparent" data-tier={tierKey(user.tier)}>{user.tier}</Chip>}
-              {user.level && <Chip>{user.level}</Chip>}
+              {u.tier && <Chip className="!bg-transparent" data-tier={tierKey(u.tier)}>{u.tier}</Chip>}
+              {u.level && <Chip>{u.level}</Chip>}
               {!user.tier && !user.level && <span className="text-sm opacity-60">{combined}</span>}
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div className="rounded-xl border border-[rgb(var(--border))] p-4 text-center">
-                <div className="text-2xl font-bold">{Number(user.referrals || 0).toLocaleString('en-IN')}</div>
+                <div className="text-2xl font-bold">{Number(u.referralCount || u.referrals || 0).toLocaleString('en-IN')}</div>
                 <div className="text-sm opacity-70">Total Referrals</div>
               </div>
               <div className="rounded-xl border border-[rgb(var(--border))] p-4 text-center">
-                <div className="text-2xl font-bold">{fmtINR(user.earnings)}</div>
-                <div className="text-sm opacity-70">Total Earnings</div>
+                <UserFinancials userId={u.userId || u.id} />
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-[rgb(var(--border))] p-4">
+                <div className="text-xs opacity-70">Status</div>
+                <div className="mt-1"><StatusPill value={u.status} /></div>
+              </div>
+              <div className="rounded-xl border border-[rgb(var(--border))] p-4">
+                <div className="text-xs opacity-70">Role</div>
+                <div className="mt-1 text-sm font-medium">{u.role || 'USER'}</div>
+              </div>
+              <div className="rounded-xl border border-[rgb(var(--border))] p-4">
+                <div className="text-xs opacity-70">Has Paid Activation</div>
+                <div className="mt-1 text-sm font-medium">{String(u.hasPaidActivation ?? '—')}</div>
+              </div>
+              <div className="rounded-xl border border-[rgb(var(--border))] p-4">
+                <div className="text-xs opacity-70">User ID</div>
+                <div className="mt-1 text-sm font-medium">{u.userId || u.id || '—'}</div>
+              </div>
+              <div className="rounded-xl border border-[rgb(var(--border))] p-4 col-span-2">
+                <div className="text-xs opacity-70">Referred By</div>
+                <div className="mt-1 text-sm font-medium">{u.referredByUser || u.referredByCode || '—'}</div>
+              </div>
+              <div className="rounded-xl border border-[rgb(var(--border))] p-4">
+                <div className="text-xs opacity-70">Created At</div>
+                <div className="mt-1 text-sm font-medium">{fmtDate(u.createdAt)}</div>
+              </div>
+              <div className="rounded-xl border border-[rgb(var(--border))] p-4">
+                <div className="text-xs opacity-70">Updated At</div>
+                <div className="mt-1 text-sm font-medium">{fmtDate(u.updatedAt)}</div>
               </div>
             </div>
           </div>
         </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+function UserFinancials({ userId }) {
+  const [earnings, setEarnings] = React.useState(null);
+  const [balance, setBalance] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [err, setErr] = React.useState(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+        const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const [earnRes, balRes] = await Promise.all([
+          fetch(`/api/commissions/total/${userId}`, { headers, cache: 'no-store' }),
+          fetch(`${API_ENDPOINTS.ADMIN_USER_BALANCE}/${userId}/balance`, { headers, cache: 'no-store' })
+        ]);
+        const earnJson = earnRes.ok ? await earnRes.json() : {};
+        const balJson = balRes.ok ? await balRes.json() : {};
+        if (mounted) {
+          setEarnings(earnJson.totalEarnings ?? earnJson.totalCommissions ?? 0);
+          setBalance(balJson.currentBalance ?? balJson.approvedBalance ?? 0);
+        }
+      } catch (e) {
+        if (mounted) setErr(e.message || 'Failed to load finances');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [userId]);
+
+  if (loading) return <div className="text-sm opacity-70">Loading…</div>;
+  if (err) return <div className="text-sm text-red-600">{err}</div>;
+
+  return (
+    <div className="text-center">
+      <div className="text-2xl font-bold">{fmtINR(earnings)}</div>
+      <div className="text-sm opacity-70">Total Earnings</div>
+      <div className="mt-3 text-xs opacity-70">Present Wallet Balance: <span className="font-medium">{fmtINR(balance)}</span></div>
     </div>
   );
 }
