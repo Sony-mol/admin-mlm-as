@@ -462,9 +462,16 @@ export default function Overview() {
         if (revenueRes.ok) {
           const revenueJson = await revenueRes.json();
           if (mounted) {
+            // Compute growth vs last month from last two points
+            const series = Array.isArray(revenueJson) ? revenueJson : [];
+            const last = series.length >= 1 ? Number(series[series.length - 1]?.amount ?? 0) : 0;
+            const prev = series.length >= 2 ? Number(series[series.length - 2]?.amount ?? 0) : 0;
+            const revenueGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+
             setDashboardData((prev) => ({
               ...prev,
               monthlyRevenue: revenueJson,
+              revenueGrowthPct,
             }));
           }
         }
@@ -506,25 +513,28 @@ export default function Overview() {
           id: "totalRevenue",
           label: "Total Commissions",
           value: dashboardData.totalCommissionAmount || 0,
-          delta: { direction: "up", vsLastMonthPct: 12.5 },
+          delta: {
+            direction: (dashboardData.revenueGrowthPct ?? 0) >= 0 ? "up" : "down",
+            vsLastMonthPct: Math.abs(dashboardData.revenueGrowthPct ?? 0),
+          },
         },
         {
           id: "totalUsers",
           label: "Total Users",
           value: dashboardData.totalUsers || dashboardData.totalUsersCount || 0,
-          delta: { direction: "up", vsLastMonthPct: 8.2 },
+          delta: null,
         },
         {
           id: "pendingCommissions",
           label: "Pending Commissions",
           value: dashboardData.pendingCommissionsCount || 0,
-          delta: { direction: "down", vsLastMonthPct: 3.1 },
+          delta: null,
         },
         {
           id: "paidCommissions",
           label: "Paid Commissions",
           value: dashboardData.paidCommissionsCount || 0,
-          delta: { direction: "up", vsLastMonthPct: 15.7 },
+          delta: null,
         },
       ]
     : [];
@@ -630,8 +640,8 @@ export default function Overview() {
       {kpis.length > 0 && (
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {kpis.map((k, i) => {
-            const isUp = (k.delta?.direction ?? "up") === "up";
-            const deltaPct = Math.abs(k.delta?.vsLastMonthPct ?? 0).toFixed(1);
+            const isUp = k.delta ? (k.delta.direction ?? "up") === "up" : true;
+            const deltaPct = k.delta ? Math.abs(k.delta.vsLastMonthPct ?? 0).toFixed(1) : null;
             const val =
               k.id === "totalRevenue"
                 ? INR(Number(k.value || 0))
@@ -657,8 +667,8 @@ export default function Overview() {
                 key={i}
                 title={k.label}
                 value={val}
-                change={`${deltaPct}% vs last month`}
-                trend={isUp ? "up" : "down"}
+                change={deltaPct !== null ? `${deltaPct}% vs last month` : null}
+                trend={k.delta ? (isUp ? "up" : "down") : undefined}
                 icon={getIcon(k.id)}
               />
             );

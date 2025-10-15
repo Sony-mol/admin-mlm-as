@@ -20,6 +20,7 @@ import {
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
+import LineChartMini from "../components/charts/LineChartMini";
 
 // Enhanced Analytics Components
 const StatCard = ({ title, value, change, icon: Icon, trend, loading = false, color = "blue" }) => (
@@ -46,33 +47,43 @@ const StatCard = ({ title, value, change, icon: Icon, trend, loading = false, co
   </div>
 );
 
-const AnalyticsChart = ({ title, data, type = "line", loading = false }) => (
-  <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
-    <div className="flex items-center justify-between mb-6">
-      <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">{title}</h3>
-      <div className="flex items-center space-x-2">
-        <button className="p-2 text-[rgba(var(--fg),0.6)] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
-          <Download className="w-4 h-4" />
-        </button>
-        <button className="p-2 text-[rgba(var(--fg),0.6)] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
-          <Filter className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-    {loading ? (
-      <div className="h-64 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    ) : (
-      <div className="h-64 flex items-center justify-center rounded-lg bg-[rgba(var(--fg),0.05)]">
-        <div className="text-center">
-          <BarChart3 className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
-          <div className="text-sm text-[rgba(var(--fg),0.6)]">Chart visualization coming soon</div>
+const AnalyticsChart = ({ title, data, type = "line", loading = false }) => {
+  // Normalize data into { month, value }
+  const points = Array.isArray(data)
+    ? data.map((d) => ({ month: d.month ?? d.label, value: d.value ?? d.amount ?? 0 }))
+    : [];
+  return (
+    <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">{title}</h3>
+        <div className="flex items-center space-x-2">
+          <button className="p-2 text-[rgba(var(--fg),0.6)] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
+            <Download className="w-4 h-4" />
+          </button>
+          <button className="p-2 text-[rgba(var(--fg),0.6)] hover:text-[rgb(var(--fg))] rounded-lg hover:bg-[rgba(var(--fg),0.05)]">
+            <Filter className="w-4 h-4" />
+          </button>
         </div>
       </div>
-    )}
-  </div>
-);
+      {loading ? (
+        <div className="h-64 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      ) : points.length > 0 ? (
+        <div className="h-64">
+          <LineChartMini points={points.map((p) => ({ month: p.month, value: Number(p.value) || 0 }))} />
+        </div>
+      ) : (
+        <div className="h-64 flex items-center justify-center rounded-lg bg-[rgba(var(--fg),0.05)]">
+          <div className="text-center">
+            <BarChart3 className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
+            <div className="text-sm text-[rgba(var(--fg),0.6)]">No data available</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PerformanceTable = ({ data, loading = false }) => (
   <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
@@ -137,7 +148,7 @@ const PerformanceTable = ({ data, loading = false }) => (
                 <td className="py-3 px-4">
                   <div className="flex items-center space-x-1">
                     <TrendingUp className="w-4 h-4 text-green-500" />
-                    <span className="text-sm text-green-600">+12.5%</span>
+                    <span className="text-sm text-green-600">{performer.growthPct ? `+${performer.growthPct}%` : '—'}</span>
                   </div>
                 </td>
               </tr>
@@ -195,6 +206,21 @@ export default function Analytics() {
           analyticsRes.json()
         ]);
 
+        // Normalize dashboard totals and compute derived metrics
+        const totalPendingAmount = parseFloat((dashboard.totalPendingAmount ?? 0).toString()) || 0;
+        const totalPaidAmount = parseFloat((dashboard.totalPaidAmount ?? 0).toString()) || 0;
+        const totalRevenueAmount = totalPendingAmount + totalPaidAmount;
+
+        const pendingCount = Number(dashboard.pendingCommissions ?? dashboard.pendingCommissionsCount ?? 0);
+        const paidCount = Number(dashboard.paidCommissions ?? dashboard.paidCommissionsCount ?? 0);
+        const totalCommissionRecords = pendingCount + paidCount;
+
+        // Revenue growth based on monthly series (first vs last)
+        const series = Array.isArray(revenue) ? revenue : [];
+        const firstVal = series.length > 0 ? Number(series[0].amount ?? series[0].value ?? 0) : 0;
+        const lastVal = series.length > 0 ? Number(series[series.length - 1].amount ?? series[series.length - 1].value ?? 0) : 0;
+        const revenueGrowthPct = ((lastVal - firstVal) / Math.max(1, firstVal)) * 100;
+
         setAnalyticsData({
           dashboard,
           revenue,
@@ -202,11 +228,16 @@ export default function Analytics() {
           users,
           analytics,
           // Calculate additional metrics
-          totalUsers: analytics.totalUsers || users.length,
-          activeUsers: analytics.activeUsers || users.filter(u => u.status === 'ACTIVE').length,
-          conversionRate: analytics.conversionRate || (dashboard.paidCommissionsCount / dashboard.totalCommissionsCount * 100),
-          avgEarnings: performers.length > 0 ? 
-            performers.reduce((sum, p) => sum + parseFloat(p.amount), 0) / performers.length : 0
+          totalUsers: (analytics && analytics.totalUsers) || users.length,
+          activeUsers: (analytics && analytics.activeUsers) || users.filter(u => (u.status || u.accountStatus) === 'ACTIVE').length,
+          conversionRate:
+            (analytics && analytics.conversionRate) || ((paidCount / Math.max(1, totalCommissionRecords)) * 100),
+          avgEarnings:
+            performers.length > 0
+              ? performers.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0) / performers.length
+              : 0,
+          totalRevenueAmount,
+          revenueGrowthPct,
         });
 
       } catch (error) {
@@ -222,8 +253,8 @@ export default function Analytics() {
   const kpis = analyticsData ? [
     {
       title: "Total Revenue",
-      value: `₹${analyticsData.dashboard.totalCommissionAmount || 0}`,
-      change: "+12.5%",
+      value: `₹${(analyticsData.totalRevenueAmount || 0).toFixed(0)}`,
+      change: `${(analyticsData.revenueGrowthPct || 0).toFixed(1)}%`,
       trend: "up",
       icon: DollarSign,
       color: "green"
@@ -231,7 +262,7 @@ export default function Analytics() {
     {
       title: "Active Users",
       value: analyticsData.activeUsers || 0,
-      change: "+8.2%",
+      change: null,
       trend: "up",
       icon: Users,
       color: "blue"
@@ -239,7 +270,7 @@ export default function Analytics() {
     {
       title: "Conversion Rate",
       value: `${analyticsData.conversionRate?.toFixed(1) || 0}%`,
-      change: "+3.1%",
+      change: null,
       trend: "up",
       icon: Target,
       color: "purple"
@@ -247,7 +278,7 @@ export default function Analytics() {
     {
       title: "Avg Earnings",
       value: `₹${analyticsData.avgEarnings?.toFixed(0) || 0}`,
-      change: "+15.7%",
+      change: null,
       trend: "up",
       icon: Award,
       color: "orange"
@@ -294,13 +325,13 @@ export default function Analytics() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <AnalyticsChart 
             title="Revenue Trends" 
-            data={analyticsData?.revenue} 
+            data={analyticsData?.revenue}
             type="line"
             loading={loading}
           />
           <AnalyticsChart 
             title="User Growth" 
-            data={analyticsData?.users} 
+            data={(analyticsData?.users || []).map((_, idx) => ({ month: idx + 1, value: 1 }))}
             type="bar"
             loading={loading}
           />
