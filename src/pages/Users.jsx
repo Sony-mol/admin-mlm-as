@@ -585,29 +585,7 @@ export default function Users() {
     }
   }
 
-  async function deleteUser(userId) {
-    try {
-      setActionLoading(true);
-      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
-      const response = await fetch(`${API_ENDPOINTS.USERS}/${userId}`, { method: 'DELETE', headers });
-      if (response.ok) {
-        setErr(null);
-        setSuccess(`User deleted successfully! User ID: ${userId} - All related data has been permanently removed.`);
-        alert(`✅ User deleted successfully!\n\nUser ID: ${userId}\nAll related data has been permanently removed.`);
-        await loadUsers();
-        setSelected(null);
-        setTimeout(() => setSuccess(null), 5000);
-      } else {
-        const errorData = await response.json();
-        setErr(`Failed to delete user: ${errorData.error || 'Unknown error'}`);
-      }
-    } catch (error) {
-      setErr(`Error deleting user: ${error.message}`);
-    } finally {
-      setActionLoading(false);
-    }
-  }
+  // Deleting users is disabled; function intentionally removed
 
   function confirmUserAction(user, action) {
     setConfirmAction({
@@ -625,7 +603,9 @@ export default function Users() {
     if (!confirmAction) return;
     const { user, action } = confirmAction;
     if (action === 'delete') {
-      await deleteUser(user.id);
+      // deletion disabled
+      setConfirmAction(null);
+      return;
     } else {
       const newStatus = action === 'suspend' ? 'SUSPENDED' : 'ACTIVE';
       await updateUserStatus(user.id, newStatus);
@@ -1101,7 +1081,7 @@ export default function Users() {
             </div>
 
             <div className="col-span-2 flex items-center gap-3 justify-center " onClick={(e) => e.stopPropagation()}>
-              <button title="Edit User" onClick={() => setEditingUser(u)} className="hover:opacity-100 opacity-80">✏️</button>
+              {/* Edit action removed */}
               <button
                 title="Suspend"
                 onClick={() => confirmUserAction(u, 'suspend')}
@@ -1118,7 +1098,7 @@ export default function Users() {
               >
                 ✅
               </button>
-              <button title="Delete User" onClick={() => confirmUserAction(u, 'delete')} className="hover:opacity-100 opacity-80 text-red-600 hover:text-red-700">🗑️</button>
+              {/* Delete action removed */}
             </div>
           </div>
         ))}
@@ -1223,15 +1203,7 @@ export default function Users() {
         </div>
       )}
 
-      {/* Edit User Modal */}
-      {editingUser && (
-        <EditUserModal 
-          user={editingUser} 
-          onClose={() => setEditingUser(null)}
-          onSave={updateUserDetails}
-          loading={actionLoading}
-        />
-      )}
+      {/* Edit User Modal removed */}
     </div>
   );
 }

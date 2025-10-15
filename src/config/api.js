@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
   WITHDRAWALS: getApiUrl('/api/withdrawals'),
   ORDERS: getApiUrl('/api/orders'),
   PAYMENTS: getApiUrl('/api/payments'),
+  PAYMENTS_STATISTICS: getApiUrl('/api/payments/statistics'),
   ACTIVITY_LOGS: getApiUrl('/api/activity-logs'),
   TIER_STRUCTURE: getApiUrl('/api/admin/tier-management/structure'),
   TIER_STATISTICS: getApiUrl('/api/admin/tier-management/statistics'),

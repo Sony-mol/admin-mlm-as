@@ -179,7 +179,9 @@ export default function Analytics() {
           revenueRes,
           performersRes,
           usersRes,
-          analyticsRes
+          analyticsRes,
+          paymentsStatsRes,
+          paymentsAllRes
         ] = await Promise.all([
           fetch(API_ENDPOINTS.COMMISSION_DASHBOARD, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -195,15 +197,23 @@ export default function Analytics() {
           }),
           fetch(API_ENDPOINTS.USERS + '/analytics', {
             headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(API_ENDPOINTS.PAYMENTS_STATISTICS, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          }),
+          fetch(API_ENDPOINTS.PAYMENTS, {
+            headers: { 'Authorization': `Bearer ${token}` }
           })
         ]);
 
-        const [dashboard, revenue, performers, users, analytics] = await Promise.all([
+        const [dashboard, revenue, performers, users, analytics, paymentsStats, paymentsAll] = await Promise.all([
           dashboardRes.json(),
           revenueRes.json(),
           performersRes.json(),
           usersRes.json(),
-          analyticsRes.json()
+          analyticsRes.json(),
+          paymentsStatsRes.ok ? paymentsStatsRes.json() : Promise.resolve({}),
+          paymentsAllRes.ok ? paymentsAllRes.json() : Promise.resolve([])
         ]);
 
         // Normalize dashboard totals and compute derived metrics
@@ -215,19 +225,39 @@ export default function Analytics() {
         const paidCount = Number(dashboard.paidCommissions ?? dashboard.paidCommissionsCount ?? 0);
         const totalCommissionRecords = pendingCount + paidCount;
 
-        // Revenue growth based on monthly series (first vs last)
-        const series = Array.isArray(revenue) ? revenue : [];
-        const firstVal = series.length > 0 ? Number(series[0].amount ?? series[0].value ?? 0) : 0;
-        const lastVal = series.length > 0 ? Number(series[series.length - 1].amount ?? series[series.length - 1].value ?? 0) : 0;
-        const revenueGrowthPct = ((lastVal - firstVal) / Math.max(1, firstVal)) * 100;
+        // Real sales revenue from payments: totalPurchases (successful ORDER_PAYMENT)
+        const grossRevenue = Number(paymentsStats.totalPurchases || 0);
+
+        // Build monthly gross revenue series from all payments (ORDER_PAYMENT & SUCCESS)
+        const paySeriesMap = new Map();
+        (Array.isArray(paymentsAll) ? paymentsAll : []).forEach(p => {
+          const isOrder = (p.type === 'ORDER_PAYMENT') || (p.transactionType === 'ORDER_PAYMENT');
+          const isSuccess = (p.status === 'SUCCESS') || (p.transactionStatus === 'SUCCESS');
+          if (!isOrder || !isSuccess) return;
+          const ts = p.createdAt || p.timestamp || p.date || p.createdDate;
+          if (!ts) return;
+          const d = new Date(ts);
+          const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+          const amt = Number(p.amount || 0);
+          paySeriesMap.set(key, (paySeriesMap.get(key) || 0) + amt);
+        });
+        const paySeriesKeys = Array.from(paySeriesMap.keys()).sort();
+        const salesRevenueSeries = paySeriesKeys.map(k => ({ month: k, amount: paySeriesMap.get(k) }));
+
+        // Growth vs last month from payments series
+        const sLen = salesRevenueSeries.length;
+        const lastVal = sLen > 0 ? Number(salesRevenueSeries[sLen-1].amount) : 0;
+        const prevVal = sLen > 1 ? Number(salesRevenueSeries[sLen-2].amount) : 0;
+        const revenueGrowthPct = ((lastVal - prevVal) / Math.max(1, prevVal)) * 100;
 
         setAnalyticsData({
           dashboard,
-          revenue,
+          revenue: salesRevenueSeries.length ? salesRevenueSeries : revenue,
           performers,
           users,
           analytics,
           // Calculate additional metrics
+          grossRevenue,
           totalUsers: (analytics && analytics.totalUsers) || users.length,
           activeUsers: (analytics && analytics.activeUsers) || users.filter(u => (u.status || u.accountStatus) === 'ACTIVE').length,
           conversionRate:
@@ -252,8 +282,8 @@ export default function Analytics() {
 
   const kpis = analyticsData ? [
     {
-      title: "Total Revenue",
-      value: `₹${(analyticsData.totalRevenueAmount || 0).toFixed(0)}`,
+      title: "Revenue",
+      value: `₹${(analyticsData.grossRevenue ?? analyticsData.totalRevenueAmount ?? 0).toFixed(0)}`,
       change: `${(analyticsData.revenueGrowthPct || 0).toFixed(1)}%`,
       trend: "up",
       icon: DollarSign,
