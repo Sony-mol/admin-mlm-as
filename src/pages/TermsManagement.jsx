@@ -237,7 +237,7 @@ export default function TermsManagement() {
                   className={`flex-1 py-3 rounded-lg font-medium transition-colors border border-[rgb(var(--border))] ${
                     isSaving ? 'opacity-60 cursor-not-allowed' : ''
                   }`}
-                  style={{ background: 'rgb(var(--fg)))', color: 'rgb(var(--bg))' }}
+                  style={{ background: 'rgb(var(--fg))', color: 'rgb(var(--bg))' }}
                 >
                   {isSaving ? 'Saving...' : 'Save & Publish'}
                 </button>
