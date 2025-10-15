@@ -330,7 +330,30 @@ export default function Overview() {
         });
         if (dashboardRes.ok) {
           const dashboardJson = await dashboardRes.json();
-          if (mounted) setDashboardData(dashboardJson);
+          if (mounted) {
+            const dash = dashboardJson || {};
+            const pendingCount = Number(
+              dash.pendingCommissions ?? dash.pendingCount ?? 0
+            );
+            const paidCount = Number(
+              dash.paidCommissions ?? dash.paidCount ?? 0
+            );
+            const totalPendingAmount = parseFloat(
+              (dash.totalPendingAmount ?? 0).toString()
+            ) || 0;
+            const totalPaidAmount = parseFloat(
+              (dash.totalPaidAmount ?? 0).toString()
+            ) || 0;
+            const totalCommissionAmount = totalPendingAmount + totalPaidAmount;
+
+            setDashboardData((prev) => ({
+              ...prev,
+              ...dash,
+              pendingCommissionsCount: pendingCount,
+              paidCommissionsCount: paidCount,
+              totalCommissionAmount,
+            }));
+          }
         }
 
         // Activities (limit 3)
@@ -375,6 +398,21 @@ export default function Overview() {
             setDashboardData((prev) => ({
               ...prev,
               pendingCommissionsCount: pendingJson.length,
+            }));
+          }
+        }
+
+        // Paid commissions -> count
+        const paidRes = await fetch(API_ENDPOINTS.PAID_COMMISSIONS, {
+          cache: "no-store",
+          headers,
+        });
+        if (paidRes.ok) {
+          const paidJson = await paidRes.json();
+          if (mounted) {
+            setDashboardData((prev) => ({
+              ...prev,
+              paidCommissionsCount: Array.isArray(paidJson) ? paidJson.length : 0,
             }));
           }
         }
@@ -501,6 +539,8 @@ export default function Overview() {
 
   // Real top performers data from backend
   const top = dashboardData?.topPerformers || [];
+  const [showAllTop, setShowAllTop] = useState(false);
+  const visibleTop = top.slice(0, showAllTop ? 10 : 3);
 
   // Transform recent activity logs to activities format
   const activities = recentActivityLogs.map((activityLog) => {
@@ -737,13 +777,21 @@ export default function Overview() {
               <Users className="w-5 h-5 text-blue-600" />
               <div className="font-semibold text-lg">Top Performers</div>
             </div>
-            <div className="text-sm text-[rgba(var(--fg),0.7)]">
-              {top.length} {top.length === 1 ? "performer" : "performers"}
-            </div>
+          <div className="flex items-center gap-3 text-sm text-[rgba(var(--fg),0.7)]">
+            {top.length} {top.length === 1 ? "performer" : "performers"}
+            {top.length > 3 && (
+              <button
+                onClick={() => setShowAllTop((s) => !s)}
+                className="px-3 py-1 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
+              >
+                {showAllTop ? "Show top 3" : "View all"}
+              </button>
+            )}
+          </div>
           </div>
 
           <div className="space-y-3">
-            {top.map((t, i) => (
+            {visibleTop.map((t, i) => (
               <div
                 key={i}
                 className="flex items-center gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors"
