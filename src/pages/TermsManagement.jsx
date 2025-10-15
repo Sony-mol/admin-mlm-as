@@ -26,6 +26,19 @@ export default function TermsManagement() {
     fetchCurrentTerms();
   }, []);
 
+  // Helper to read token/userId from the unified auth storage
+  function getAuthInfo() {
+    try {
+      const raw = localStorage.getItem('auth');
+      const parsed = raw ? JSON.parse(raw) : null;
+      const token = parsed?.accessToken || '';
+      const userId = parsed?.user?.userId || localStorage.getItem('userId') || '';
+      return { token, userId };
+    } catch {
+      return { token: '', userId: '' };
+    }
+  }
+
   const fetchCurrentTerms = async () => {
     try {
       setIsLoading(true);
@@ -58,7 +71,7 @@ export default function TermsManagement() {
 
   const fetchVersionHistory = async (type) => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const { token } = getAuthInfo();
       const response = await axios.get(getApiUrl(`/api/terms/versions/${type}`), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -71,8 +84,7 @@ export default function TermsManagement() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      const token = localStorage.getItem('adminToken');
-      const userId = localStorage.getItem('userId');
+      const { token, userId } = getAuthInfo();
       
       if (!token || !userId) {
         showMessage('Please login as admin', 'error');
