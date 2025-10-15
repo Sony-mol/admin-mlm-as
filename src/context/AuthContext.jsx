@@ -177,7 +177,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     user: auth?.user || null,
     accessToken: auth?.accessToken || null,
-    refreshToken: auth?.refreshToken || null,
+    refreshTokenValue: auth?.refreshToken || null,
     expiresAt: auth?.expiresAt || null,
     isExpired,
     login, logout, authFetch, refreshToken,
