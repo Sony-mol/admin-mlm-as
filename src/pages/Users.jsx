@@ -6,7 +6,6 @@ import {
   X
 } from 'lucide-react';
 
-// Import API configuration
 import { API_ENDPOINTS } from '../config/api';
 
 const fmtINR = (n) =>
@@ -21,12 +20,22 @@ const ymdLocal = (d) => {
   return `${y}-${m}-${day}`;
 };
 
+const titleCase = (s='') => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+const normUpper = (s) => String(s || '').toUpperCase();
+const levelNumFromString = (val) => {
+  // "Level 1" -> 1 ; "1" -> 1 ; 1 -> 1 ; null -> null
+  if (val == null) return null;
+  const m = String(val).match(/(\d+)/);
+  return m ? Number(m[1]) : null;
+};
+
 /* ---------- helpers for tier color ---------- */
 const tierKey = (label = '') => {
   const s = String(label).toLowerCase();
-  if (s.startsWith('gold') || s === 'gold' || s === 'g1' || s === 'g2') return 'gold';
-  if (s.startsWith('silver') || s === 'silver' || s === 's1' || s === 's2' || s === 's3') return 'silver';
-  if (s.startsWith('bronze') || s === 'bronze' || s === 'b1' || s === 'b2' || s === 'b3' || s === 'b4') return 'bronze';
+  if (s.includes('gold')) return 'gold';
+  if (s.includes('silver')) return 'silver';
+  if (s.includes('bronze')) return 'bronze';
+  if (s.includes('diamond')) return 'diamond';
   return '';
 };
 
@@ -55,7 +64,7 @@ function Chip({ children, className = '' }) {
   );
 }
 
-/* =================== Calendar Popover (multi-date, no year button) =================== */
+/* =================== Calendar Popover (multi-date) =================== */
 function CalendarPopover({ open, onClose, selectedDates, onToggleDate, onClear }) {
   const [view, setView] = React.useState(() => {
     const d = new Date();
@@ -109,48 +118,23 @@ function CalendarPopover({ open, onClose, selectedDates, onToggleDate, onClear }
     >
       {/* Header */}
       <div className="p-3 flex items-center justify-between border-b border-[rgb(var(--border))] gap-2">
-        {/* Prev/Next month */}
         <div className="flex items-center gap-1">
-          <button
-            className={btnBase}
-            onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}
-            aria-label="Previous month"
-            title="Previous month"
-          >
+          <button className={btnBase} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() - 1, 1))}>
             <ChevronLeft size={18} />
           </button>
-          <button
-            className={btnBase}
-            onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}
-            aria-label="Next month"
-            title="Next month"
-          >
+          <button className={btnBase} onClick={() => setView(new Date(view.getFullYear(), view.getMonth() + 1, 1))}>
             <ChevronRight size={18} />
           </button>
         </div>
-
-        {/* Month + Year (year is NOT a button anymore) */}
         <div className="flex items-center gap-2">
           <div className="font-medium">{monthLabel}</div>
           <div className="font-medium">{year}</div>
         </div>
-
-        {/* Prev/Next year */}
         <div className="flex items-center gap-1">
-          <button
-            className={btnBase}
-            onClick={() => setView(new Date(view.getFullYear() - 1, view.getMonth(), 1))}
-            aria-label="Previous year"
-            title="Previous year"
-          >
+          <button className={btnBase} onClick={() => setView(new Date(view.getFullYear() - 1, view.getMonth(), 1))}>
             <ChevronsLeft size={18} />
           </button>
-          <button
-            className={btnBase}
-            onClick={() => setView(new Date(view.getFullYear() + 1, view.getMonth(), 1))}
-            aria-label="Next year"
-            title="Next year"
-          >
+          <button className={btnBase} onClick={() => setView(new Date(view.getFullYear() + 1, view.getMonth(), 1))}>
             <ChevronsRight size={18} />
           </button>
         </div>
@@ -229,7 +213,7 @@ function UserModal({ user, onClose }) {
 
         <div className="grid md:grid-cols-2 gap-6 mt-6">
           <div className="space-y-2">
-             <div className="text-sm opacity-70">Referral Code</div>
+            <div className="text-sm opacity-70">Referral Code</div>
             <div className="font-medium">{user.code}</div>
 
             <div className="text-sm opacity-70 mt-4">Email</div>
@@ -245,18 +229,18 @@ function UserModal({ user, onClose }) {
             <div className="text-sm opacity-70 mt-4">Joined</div>
             <div className="font-medium">{fmtDate(user.joinDate)}</div>
 
-             <div className="text-sm opacity-70 mt-4">Referrer</div>
-             <div className="font-medium">
-               {user.referrerCode && user.referrerCode !== '--' ? (
-                 <div>
-                   <div>Code: {user.referrerCode}</div>
-                   {user.referrerName && <div className="text-sm opacity-70">Name: {user.referrerName}</div>}
-                   {user.referrerEmail && <div className="text-sm opacity-70">Email: {user.referrerEmail}</div>}
-                 </div>
-               ) : (
-                 '--'
-               )}
-             </div>
+            <div className="text-sm opacity-70 mt-4">Referrer</div>
+            <div className="font-medium">
+              {user.referrerCode && user.referrerCode !== '--' ? (
+                <div>
+                  <div>Code: {user.referrerCode}</div>
+                  {user.referrerName && <div className="text-sm opacity-70">Name: {user.referrerName}</div>}
+                  {user.referrerEmail && <div className="text-sm opacity-70">Email: {user.referrerEmail}</div>}
+                </div>
+              ) : (
+                '--'
+              )}
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -284,8 +268,7 @@ function UserModal({ user, onClose }) {
   );
 }
 
-/* =================== Page =================== */
-// Edit User Modal Component
+/* =================== Edit User Modal =================== */
 function EditUserModal({ user, onClose, onSave, loading }) {
   const [formData, setFormData] = useState({
     name: user.name || '',
@@ -380,6 +363,7 @@ function EditUserModal({ user, onClose, onSave, loading }) {
   );
 }
 
+/* =================== Page =================== */
 export default function Users() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -387,49 +371,152 @@ export default function Users() {
   const [success, setSuccess] = useState(null);
 
   const [q, setQ] = useState('');
-  const [status, setStatus] = useState('All');
-  const [level, setLevel] = useState('All');
+  const [status, setStatus] = useState('ALL');     // normalized
+  const [tier, setTier] = useState('ALL');         // dynamic from TIER_STRUCTURE
+  const [level, setLevel] = useState('ALL');       // dynamic from TIER_STRUCTURE ("Level X")
   const [selected, setSelected] = useState(null);
-  
-  // User management states
+
+  // management
   const [editingUser, setEditingUser] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
-  
-  // Bulk operations states
+
+  // bulk
   const [selectedUsers, setSelectedUsers] = useState(new Set());
   const [bulkAction, setBulkAction] = useState('');
 
   // calendar filters
-  const [selectedDates, setSelectedDates] = useState(() => new Set()); // local YYYY-MM-DD strings
+  const [selectedDates, setSelectedDates] = useState(() => new Set());
   const [calOpen, setCalOpen] = useState(false);
-  
-  // Sync referral counts state
+
+  // Sync referral counts
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
 
-  // Sync referral counts function
+  // Tier structure state
+  const [tierStructure, setTierStructure] = useState(null); // raw JSON from API
+  const [tierLoading, setTierLoading] = useState(false);
+
+  // ===== Load users + tier structure =====
+  async function loadUsers() {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      const res = await fetch(API_ENDPOINTS.USERS, { headers });
+      if (res.ok) {
+        const realUsers = await res.json();
+        const transformedUsers = realUsers.map(user => ({
+          id: user.id,
+          code: user.referenceCode || '--',
+          name: user.name,
+          email: user.email,
+          phone: user.phoneNumber || 'N/A',
+          joinDate: user.createdAt || new Date().toISOString(),
+          status: user.status,                  // "ACTIVE" | "SUSPENDED" | ...
+          tier: user.tier || null,              // e.g., "BRONZE"
+          level: user.level || null,            // e.g., "Level 1"
+          referrals: user.referralCount || 0,
+          earnings: user.walletBalance || 0,
+          upline: user.referredByCode || '--',
+          role: user.role || 'USER',
+          referrerName: user.referrerName || null,
+          referrerEmail: user.referrerEmail || null,
+          referrerCode: user.referredByCode || '--'
+        }));
+        transformedUsers.sort((a, b) => new Date(b.joinDate || 0) - new Date(a.joinDate || 0));
+        setList(transformedUsers);
+        setErr(null);
+      } else {
+        setErr(`Couldn't load users: ${res.status}`);
+      }
+    } catch (e) {
+      setErr(e.message || 'Failed to load users');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadTierStructure() {
+    try {
+      setTierLoading(true);
+      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+      const headers = { 'Authorization': `Bearer ${token}` };
+      const res = await fetch(API_ENDPOINTS.TIER_STRUCTURE, { headers, cache: 'no-store' });
+      if (!res.ok) throw new Error(`Tier structure load failed: ${res.status}`);
+      const data = await res.json();
+      setTierStructure(data);
+    } catch (e) {
+      console.error('Tier structure error:', e);
+      setTierStructure(null); // fallback will kick in later
+    } finally {
+      setTierLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    // load both, independently
+    loadUsers();
+    loadTierStructure();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ===== Dynamic Options from tierStructure =====
+  const dynamicTierOptions = useMemo(() => {
+    // returns array like: ['ALL', 'BRONZE', 'SILVER', 'GOLD', 'DIAMOND', ...] in UPPER
+    if (!tierStructure || typeof tierStructure !== 'object') {
+      // fallback from user list tiers if structure not available
+      const uniq = new Set(list.map(u => normUpper(u.tier)).filter(Boolean));
+      return ['ALL', ...Array.from(uniq).sort()];
+    }
+    const keys = Object.keys(tierStructure); // e.g., ['gold','diamond','silver','demo','bronze']
+    const uppers = keys.map(k => normUpper(k));
+    return ['ALL', ...Array.from(new Set(uppers)).sort()];
+  }, [tierStructure, list]);
+
+  const dynamicLevelOptions = useMemo(() => {
+    // If a tier is selected (not ALL), show only that tier's levels; otherwise show all levels across tiers.
+    const labelFor = (n) => `Level ${n}`;
+    const numbers = new Set();
+
+    if (tierStructure && typeof tierStructure === 'object') {
+      const pushLevels = (arr=[]) => {
+        for (const x of arr) if (x && typeof x.level === 'number') numbers.add(x.level);
+      };
+
+      if (tier !== 'ALL') {
+        // find matching key in any case
+        const matchKey = Object.keys(tierStructure).find(k => normUpper(k) === tier);
+        if (matchKey) pushLevels(tierStructure[matchKey]);
+      } else {
+        for (const k of Object.keys(tierStructure)) pushLevels(tierStructure[k]);
+      }
+    } else {
+      // fallback from users if structure missing
+      for (const u of list) {
+        const n = levelNumFromString(u.level);
+        if (n != null) numbers.add(n);
+      }
+    }
+
+    const arr = Array.from(numbers).sort((a,b) => a - b).map(n => labelFor(n));
+    return ['ALL', ...arr];
+  }, [tierStructure, tier, list]);
+
+  // ===== Sync referral counts (unchanged) =====
   async function syncReferralCounts() {
     try {
       setSyncing(true);
       setSyncResult(null);
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
       const headers = { 'Authorization': `Bearer ${token}` };
-      
-      console.log('🔄 Starting referral count synchronization...');
-      
       const response = await fetch(`${API_ENDPOINTS.USERS}/sync-referral-counts`, {
         method: 'POST',
         headers
       });
-      
-      if (!response.ok) {
-        throw new Error(`Sync failed with status: ${response.status}`);
-      }
-      
+      if (!response.ok) throw new Error(`Sync failed with status: ${response.status}`);
       const result = await response.json();
-      console.log('✅ Sync completed:', result);
-      
       setSyncResult({
         success: true,
         message: result.message,
@@ -437,12 +524,8 @@ export default function Users() {
         usersUpdated: result.usersUpdated,
         totalUsers: result.totalUsers
       });
-      
-      // Refresh the user list to show updated counts
-      await load();
-      
+      await loadUsers();
     } catch (error) {
-      console.error('❌ Sync failed:', error);
       setSyncResult({
         success: false,
         message: 'Failed to sync referral counts: ' + error.message
@@ -452,171 +535,24 @@ export default function Users() {
     }
   }
 
-  async function load() {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
-      // Fetch real users from backend
-      // We'll get users from commission data and user endpoints
-      const users = [];
-      
-      // Fetch real users from backend API
-      try {
-        console.log('🔍 USERS PAGE - Starting API calls...');
-        console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-        console.log('📡 Headers:', headers);
-        
-        // Fetch real users from /api/users endpoint
-        console.log('👥 Fetching real users from:', API_ENDPOINTS.USERS);
-        const usersRes = await fetch(API_ENDPOINTS.USERS, { headers });
-        console.log('👥 Users Response Status:', usersRes.status);
-        console.log('👥 Users Response Headers:', Object.fromEntries(usersRes.headers.entries()));
-        
-        if (usersRes.ok) {
-          const realUsers = await usersRes.json();
-          console.log('✅ Real Users Data Received:', realUsers);
-          console.log('📊 Total Users Found:', realUsers.length);
-          
-           // Transform backend user data to match frontend format
-           const transformedUsers = realUsers.map(user => ({
-             id: user.id,
-             code: user.referenceCode || '--', // Show -- for users without referral code
-             name: user.name,
-             email: user.email,
-             phone: user.phoneNumber || 'N/A',
-             joinDate: user.createdAt || new Date().toISOString(),
-             status: user.status,
-             tier: user.tier || 'Bronze',
-             level: user.level || 'B1',
-             referrals: user.referralCount || 0, // Use real referral count from database
-             earnings: user.walletBalance || 0,
-             upline: user.referredByCode || '--', // Show referrer code or --
-             role: user.role || 'USER',
-             // Add referrer information for modal
-             referrerName: user.referrerName || null,
-             referrerEmail: user.referrerEmail || null,
-             referrerCode: user.referredByCode || '--'
-           }));
-           
-           // Sort by joinDate (createdAt) in descending order (latest first)
-           transformedUsers.sort((a, b) => {
-             const dateA = new Date(a.joinDate || 0);
-             const dateB = new Date(b.joinDate || 0);
-             return dateB - dateA;
-           });
-           
-          setList(transformedUsers);
-          console.log('✅ Users loaded successfully:', transformedUsers.length);
-        } else {
-          console.log('❌ Users API Failed:', usersRes.status, await usersRes.text());
-          // Fallback to mock data if API fails
-          const mockUsers = [
-            {
-              id: 38,
-              code: 'REF209825',
-              name: 'Test User 1',
-              email: 'testuser1@example.com',
-              phone: '7416685085',
-              joinDate: '2024-01-15T10:30:00Z',
-              status: 'ACTIVE',
-              tier: 'Gold',
-              level: 'G1',
-              referrals: 1,
-              earnings: 475.00,
-              upline: null
-            },
-            {
-              id: 96,
-              code: 'REF209826',
-              name: 'Test User 2',
-              email: 'testuser11@example.com',
-              phone: '7416685086',
-              joinDate: '2024-01-20T14:45:00Z',
-              status: 'ACTIVE',
-              tier: 'Silver',
-              level: 'S1',
-              referrals: 0,
-              earnings: 250.00,
-              upline: 'REF209825'
-            }
-          ];
-          setList(mockUsers);
-        }
-      } catch (apiError) {
-        console.error('💥 Error fetching users from backend:', apiError);
-        // Fallback to mock data
-        const mockUsers = [
-          {
-            id: 38,
-            code: 'REF209825',
-            name: 'Test User 1',
-            email: 'testuser1@example.com',
-            phone: '7416685085',
-            joinDate: '2024-01-15T10:30:00Z',
-            status: 'ACTIVE',
-            tier: 'Gold',
-            level: 'G1',
-            referrals: 1,
-            earnings: 475.00,
-            upline: null
-          },
-          {
-            id: 96,
-            code: 'REF209826',
-            name: 'Test User 2',
-            email: 'testuser11@example.com',
-            phone: '7416685086',
-            joinDate: '2024-01-20T14:45:00Z',
-            status: 'ACTIVE',
-            tier: 'Silver',
-            level: 'S1',
-            referrals: 0,
-            earnings: 250.00,
-            upline: 'REF209825'
-          }
-        ];
-        setList(mockUsers);
-      }
-      
-      setErr(null);
-    } catch (e) {
-      setErr(e.message || 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  }
-  useEffect(() => { load(); }, []);
-
-  // User management functions
+  // ===== Actions (unchanged) =====
   async function updateUserStatus(userId, newStatus) {
     try {
       setActionLoading(true);
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-      
-      console.log(`🔄 Updating user ${userId} status to ${newStatus}`);
+      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
       const response = await fetch(`${API_ENDPOINTS.USERS}/${userId}/status`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({ status: newStatus })
       });
-      
       if (response.ok) {
-        console.log(`✅ User ${userId} status updated to ${newStatus}`);
-        // Reload the user list
-        await load();
+        await loadUsers();
         setSelected(null);
       } else {
-        console.error(`❌ Failed to update user ${userId} status:`, response.status);
         setErr(`Failed to update user status: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error updating user status:', error);
       setErr('Failed to update user status');
     } finally {
       setActionLoading(false);
@@ -627,29 +563,19 @@ export default function Users() {
     try {
       setActionLoading(true);
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-      
-      console.log(`🔄 Updating user ${userId} details:`, userData);
+      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
       const response = await fetch(`${API_ENDPOINTS.USERS}/${userId}`, {
         method: 'PUT',
         headers,
         body: JSON.stringify(userData)
       });
-      
       if (response.ok) {
-        console.log(`✅ User ${userId} details updated`);
-        // Reload the user list
-        await load();
+        await loadUsers();
         setEditingUser(null);
       } else {
-        console.error(`❌ Failed to update user ${userId} details:`, response.status);
         setErr(`Failed to update user details: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error updating user details:', error);
       setErr('Failed to update user details');
     } finally {
       setActionLoading(false);
@@ -660,43 +586,26 @@ export default function Users() {
     try {
       setActionLoading(true);
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-      
-      console.log(`🗑️ Deleting user ${userId}`);
-      const response = await fetch(`${API_ENDPOINTS.USERS}/${userId}`, {
-        method: 'DELETE',
-        headers
-      });
-      
+      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+      const response = await fetch(`${API_ENDPOINTS.USERS}/${userId}`, { method: 'DELETE', headers });
       if (response.ok) {
-        console.log(`✅ User ${userId} deleted successfully`);
-        // Show success message
         setErr(null);
         setSuccess(`User deleted successfully! User ID: ${userId} - All related data has been permanently removed.`);
-        // Show success notification
         alert(`✅ User deleted successfully!\n\nUser ID: ${userId}\nAll related data has been permanently removed.`);
-        // Reload the user list
-        await load();
+        await loadUsers();
         setSelected(null);
-        // Clear success message after 5 seconds
         setTimeout(() => setSuccess(null), 5000);
       } else {
-        console.log(`❌ Failed to delete user: ${response.status}`);
         const errorData = await response.json();
         setErr(`Failed to delete user: ${errorData.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('❌ Error deleting user:', error);
       setErr(`Error deleting user: ${error.message}`);
     } finally {
       setActionLoading(false);
     }
   }
 
-  // Confirmation function
   function confirmUserAction(user, action) {
     setConfirmAction({
       user,
@@ -711,55 +620,35 @@ export default function Users() {
 
   async function executeConfirmedAction() {
     if (!confirmAction) return;
-    
     const { user, action } = confirmAction;
-    
     if (action === 'delete') {
       await deleteUser(user.id);
     } else {
       const newStatus = action === 'suspend' ? 'SUSPENDED' : 'ACTIVE';
       await updateUserStatus(user.id, newStatus);
     }
-    
     setConfirmAction(null);
   }
 
-  // Bulk operations functions
+  // ===== Bulk =====
   const toggleUserSelection = (userId) => {
     setSelectedUsers(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(userId)) {
-        newSet.delete(userId);
-      } else {
-        newSet.add(userId);
-      }
-      return newSet;
+      const s = new Set(prev);
+      s.has(userId) ? s.delete(userId) : s.add(userId);
+      return s;
     });
   };
-
-  const selectAllUsers = () => {
-    const allIds = filtered.map(u => u.id);
-    setSelectedUsers(new Set(allIds));
-  };
-
-  const clearUserSelection = () => {
-    setSelectedUsers(new Set());
-  };
+  const selectAllUsers = () => setSelectedUsers(new Set(filtered.map(u => u.id)));
+  const clearUserSelection = () => setSelectedUsers(new Set());
 
   const confirmBulkUserAction = () => {
     if (selectedUsers.size === 0 || !bulkAction) {
       alert('Please select users and choose an action.');
       return;
     }
-
     const actionText = bulkAction === 'SUSPENDED' ? 'suspend' : 'activate';
-    const selectedUserNames = filtered
-      .filter(u => selectedUsers.has(u.id))
-      .map(u => u.name)
-      .slice(0, 3)
-      .join(', ');
+    const selectedUserNames = filtered.filter(u => selectedUsers.has(u.id)).map(u => u.name).slice(0, 3).join(', ');
     const moreCount = selectedUsers.size > 3 ? ` and ${selectedUsers.size - 3} more` : '';
-
     setConfirmAction({
       isBulk: true,
       action: bulkAction,
@@ -771,7 +660,6 @@ export default function Users() {
 
   const executeConfirmedBulkAction = async () => {
     if (!confirmAction || !confirmAction.isBulk) return;
-    
     await handleBulkUserUpdate();
     setConfirmAction(null);
   };
@@ -780,115 +668,47 @@ export default function Users() {
     try {
       setActionLoading(true);
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-      
-      console.log(`🔄 Bulk updating ${selectedUsers.size} users to ${bulkAction}`);
-      
-      // Update each user individually (since we don't have a bulk endpoint yet)
+      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
       const updatePromises = Array.from(selectedUsers).map(async (userId) => {
         const response = await fetch(`${API_ENDPOINTS.USERS}/${userId}/status`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify({ status: bulkAction })
+          method: 'PUT', headers, body: JSON.stringify({ status: bulkAction })
         });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to update user ${userId}`);
-        }
-        
+        if (!response.ok) throw new Error(`Failed to update user ${userId}`);
         return { userId, success: true };
       });
-
       const results = await Promise.allSettled(updatePromises);
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
-
-      console.log(`✅ Bulk update completed: ${successful} successful, ${failed} failed`);
       alert(`Bulk update completed: ${successful} successful, ${failed} failed`);
-      
-      // Clear selection and refresh data
       setSelectedUsers(new Set());
       setBulkAction('');
-      await load();
-      
+      await loadUsers();
     } catch (error) {
-      console.error('Error in bulk update:', error);
       alert('Failed to update users. Please try again.');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // status action (unchanged)
-  async function setUserStatus(user, next) {
-    let targetId = user.id;
-
-    if (!targetId && user.code) {
-      try {
-        let r = await fetch(`${USERS_API}?code=${encodeURIComponent(user.code)}`, { cache: 'no-store' });
-        if (r.ok) {
-          const arr = await r.json();
-          targetId = Array.isArray(arr) && arr[0]?.id;
-        }
-        if (!targetId) {
-          r = await fetch(`${USERS_API}?search=${encodeURIComponent(user.code)}`, { cache: 'no-store' });
-          if (r.ok) {
-            const arr = await r.json();
-            targetId = Array.isArray(arr) && arr.find(x => x.code === user.code)?.id;
-          }
-        }
-      } catch { /* noop */ }
-    }
-
-    if (!targetId) {
-      alert('Cannot update: missing id for this user. Ensure your /api/users items have an "id".');
-      return;
-    }
-
-    const updated = { ...user, id: targetId, status: next };
-
-    // optimistic UI
-    setList(prev => prev.map(u => (u.id === targetId || u.code === user.code) ? updated : u));
-    if (selected?.id === targetId || selected?.code === user.code) setSelected(updated);
-
-    try {
-      let res = await fetch(`${USERS_API}/${targetId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      });
-      if (!res.ok) {
-        res = await fetch(`${USERS_API}/${targetId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: next }),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      }
-    } catch (e) {
-      await load(); // revert
-      alert('Could not update status: ' + (e.message || 'unknown error'));
-    }
-  }
-
-  // Filter: q, status, level, joinDate (multi)
+  // ===== Filtering =====
   const filtered = useMemo(() => {
     return list.filter(u => {
       const matchQ =
         q.trim() === '' ||
         [u.name, u.email, u.code].some(x => String(x || '').toLowerCase().includes(q.toLowerCase()));
-      const matchStatus = status === 'All' || u.status === status;
 
-      const sel = level;
-      const matchLevel =
-        sel === 'All' ||
-        (sel === 'Beginner' && String(u.tier || '').toLowerCase() === 'beginner') ||
-        String(u.level || '') === sel;
+      // status normalized
+      const matchStatus = status === 'ALL' || normUpper(u.status) === status;
 
-      // Join date filter: union of selected dates (if any)
+      // tier normalized (user has 'BRONZE', structure keys can be 'bronze' etc.)
+      const matchTier = tier === 'ALL' || normUpper(u.tier) === tier;
+
+      // level: compare by numeric level (robust to "Level 1" vs 1)
+      const selectedLevelNum = level === 'ALL' ? null : levelNumFromString(level);
+      const userLevelNum = levelNumFromString(u.level);
+      const matchLevel = selectedLevelNum == null || (userLevelNum != null && userLevelNum === selectedLevelNum);
+
+      // Join date
       const hasDateFilter = selectedDates.size > 0;
       const matchDate =
         !hasDateFilter ||
@@ -902,40 +722,19 @@ export default function Users() {
           }
         })();
 
-      return matchQ && matchStatus && matchLevel && matchDate;
+      return matchQ && matchStatus && matchTier && matchLevel && matchDate;
     });
-  }, [list, q, status, level, selectedDates]);
+  }, [list, q, status, tier, level, selectedDates]);
 
-  const levelOptions = [
-    'All',
-    'Beginner',
-    'B1','B2','B3','B4',
-    'S1','S2','S3',
-    'G1','G2'
-  ];
-
-  // Calendar handlers
-  const toggleDate = (iso) => {
-    setSelectedDates(prev => {
-      const s = new Set(prev);
-      s.has(iso) ? s.delete(iso) : s.add(iso);
-      return s;
-    });
-  };
-  const clearDates = () => setSelectedDates(new Set());
-
-  /* =================== Export helpers =================== */
-
-  // Build rows exactly like the sample "User Details" sheet,
-  // but use TYPES for Excel: Date for Join Date, Number for Referrals.
+  // ===== Export helpers (unchanged) =====
   function mapUsersToUserDetailsRows(users) {
     return users.map((u) => ({
       'User Id': u.code || u.id || '',
       'User Name': u.name || '',
       'Mail': u.email || '',
-      'Phone Number': u.phone || '',                 // string to preserve leading zeros
-      'Join Date': u.joinDate ? new Date(u.joinDate) : '', // real Date cell
-      'Referrals': Number(u.referrals ?? 0),         // numeric cell
+      'Phone Number': u.phone || '',
+      'Join Date': u.joinDate ? new Date(u.joinDate) : '',
+      'Referrals': Number(u.referrals ?? 0),
       'Tier': u.tier || '',
       'Level': u.level || '',
       'Referrence_Id': u.sponsorCode || u.upline || '',
@@ -943,15 +742,11 @@ export default function Users() {
     }));
   }
 
-  // Auto-fit widths with optional fixed overrides (e.g., cap Join Date)
   function autoFitColumns(rows, header, fixed = {}) {
-    const cols = header.map((h) => {
-      if (fixed[h]) return { key: h, wch: fixed[h] };
-      return { key: h, wch: Math.max(10, String(h).length + 2) };
-    });
+    const cols = header.map((h) => fixed[h] ? { key: h, wch: fixed[h] } : { key: h, wch: Math.max(10, String(h).length + 2) });
     for (const row of rows) {
       header.forEach((h, i) => {
-        if (fixed[h]) return; // respect fixed widths
+        if (fixed[h]) return;
         const s = row[h] == null ? '' : String(row[h]);
         const len = s.length + 2;
         if (len > cols[i].wch) cols[i].wch = Math.min(60, len);
@@ -963,41 +758,19 @@ export default function Users() {
   async function handleExport(usersToExport) {
     try {
       const XLSX = await import('xlsx');
-
-      // 1) Rows & worksheet (Date/Number types come from data)
       const rows = mapUsersToUserDetailsRows(usersToExport);
       const ws = XLSX.utils.json_to_sheet(rows, { skipHeader: false });
-
-      // 2) Fixed header order to match your sample workbook
-      const header = [
-        'User Id',
-        'User Name',
-        'Mail',
-        'Phone Number',
-        'Join Date',
-        'Referrals',
-        'Tier',
-        'Level',
-        'Referrence_Id',
-        'Status',
-      ];
+      const header = ['User Id','User Name','Mail','Phone Number','Join Date','Referrals','Tier','Level','Referrence_Id','Status'];
       XLSX.utils.sheet_add_aoa(ws, [header], { origin: 'A1' });
-
-      // 2b) Column widths (cap Join Date so it doesn't get too wide)
       ws['!cols'] = autoFitColumns(rows, header, { 'Join Date': 12 });
-
-      // 2c) Apply Excel cell formats (date & integer) + autofilter
       const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
       const dateCol = header.indexOf('Join Date');
       const refCol  = header.indexOf('Referrals');
-
-      for (let r = 1; r <= range.e.r; r++) { // skip header at r=0
+      for (let r = 1; r <= range.e.r; r++) {
         if (dateCol >= 0) {
           const addrD = XLSX.utils.encode_cell({ r, c: dateCol });
           const cellD = ws[addrD];
-          if (cellD) {
-            cellD.z = 'yyyy-mm-dd'; // or 'dd-mmm-yyyy'
-          }
+          if (cellD) cellD.z = 'yyyy-mm-dd';
         }
         if (refCol >= 0) {
           const addrN = XLSX.utils.encode_cell({ r, c: refCol });
@@ -1011,12 +784,8 @@ export default function Users() {
         }
       }
       ws['!autofilter'] = { ref: ws['!ref'] };
-
-      // 3) Single-sheet workbook (ignore Payments)
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'User Details');
-
-      // 4) Trigger download
       XLSX.writeFile(wb, 'MLM_Users_Data.xlsx');
     } catch (e) {
       console.error(e);
@@ -1024,19 +793,17 @@ export default function Users() {
     }
   }
 
-  if (loading) {
-    return <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 animate-pulse">Loading users…</div>;
-  }
+  // ===== UI =====
+  if (loading) return <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 animate-pulse">Loading users…</div>;
   if (err) {
     return (
       <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
         <div className="font-semibold mb-1">Couldn't load users</div>
         <div className="text-sm opacity-80">{err}</div>
-        <button onClick={load} className="mt-3 rounded px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]">Retry</button>
+        <button onClick={loadUsers} className="mt-3 rounded px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]">Retry</button>
       </div>
     );
   }
-
   if (success) {
     return (
       <div className="p-4 rounded-xl border border-green-200 bg-green-50">
@@ -1060,22 +827,6 @@ export default function Users() {
               <div className={`text-sm ${syncResult.success ? 'text-green-700' : 'text-red-700'}`}>
                 {syncResult.message}
               </div>
-              {syncResult.success && (
-                <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium text-green-800">Total Users</div>
-                    <div className="text-green-700">{syncResult.totalUsers}</div>
-                  </div>
-                  <div>
-                    <div className="font-medium text-green-800">Discrepancies Found</div>
-                    <div className="text-green-700">{syncResult.discrepanciesFound}</div>
-                  </div>
-                  <div>
-                    <div className="font-medium text-green-800">Users Updated</div>
-                    <div className="text-green-700">{syncResult.usersUpdated}</div>
-                  </div>
-                </div>
-              )}
             </div>
             <button 
               onClick={() => setSyncResult(null)} 
@@ -1091,14 +842,9 @@ export default function Users() {
       <div className="flex items-center gap-3">
         <h2 className="text-2xl font-semibold flex-1">User Management</h2>
         <div className="flex items-center gap-2">
-          <span className="text-sm opacity-70">
-            {selectedUsers.size} selected
-          </span>
+          <span className="text-sm opacity-70">{selectedUsers.size} selected</span>
           {selectedUsers.size > 0 && (
-            <button
-              onClick={clearUserSelection}
-              className="text-xs px-2 py-1 rounded border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-            >
+            <button onClick={clearUserSelection} className="text-xs px-2 py-1 rounded border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]">
               Clear
             </button>
           )}
@@ -1120,9 +866,7 @@ export default function Users() {
               Syncing...
             </>
           ) : (
-            <>
-              🔄 Sync Referrals
-            </>
+            <>🔄 Sync Referrals</>
           )}
         </button>
         <button
@@ -1165,38 +909,6 @@ export default function Users() {
       <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-medium">Filters & Selection</h3>
-          {filtered.length > 0 && (
-            <button
-              onClick={selectAllUsers}
-              className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)] text-sm"
-            >
-              Select All ({filtered.length})
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-stretch">
-          <div className="flex items-center gap-2">
-            <span>🔍</span>
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search users…"
-              className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] transition-colors hover:border-[rgba(var(--accent-1),0.5)]"
-            />
-          </div>
-
-          <select value={status} onChange={(e) => setStatus(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]">
-            <option>All</option><option>Active</option><option>Pending</option><option>Suspended</option>
-          </select>
-
-          <select value={level} onChange={(e) => setLevel(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]">
-            {[
-              'All','Beginner','B1','B2','B3','B4','S1','S2','S3','G1','G2'
-            ].map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
-
           {/* Calendar trigger + popover */}
           <div className="relative">
             <button
@@ -1214,10 +926,64 @@ export default function Users() {
               open={calOpen}
               onClose={() => setCalOpen(false)}
               selectedDates={selectedDates}
-              onToggleDate={toggleDate}
-              onClear={clearDates}
+              onToggleDate={(iso) => setSelectedDates(prev => { const s = new Set(prev); s.has(iso) ? s.delete(iso) : s.add(iso); return s; })}
+              onClear={() => setSelectedDates(new Set())}
             />
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-stretch">
+          {/* Search */}
+          <div className="flex items-center gap-2 md:col-span-2">
+            <span>🔍</span>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search users…"
+              className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] transition-colors hover:border-[rgba(var(--accent-1),0.5)]"
+            />
+          </div>
+
+          {/* Status (UPPER values) */}
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="PENDING">Pending</option>
+            <option value="SUSPENDED">Suspended</option>
+          </select>
+
+          {/* Tier (dynamic) */}
+          <select
+            value={tier}
+            onChange={(e) => { setTier(e.target.value); setLevel('ALL'); }} // reset level when tier changes
+            className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+            disabled={tierLoading && !tierStructure}
+          >
+            {dynamicTierOptions.map(t => (
+              <option key={t} value={t}>
+                {t === 'ALL' ? 'All Tiers' : titleCase(t)}
+              </option>
+            ))}
+          </select>
+
+          {/* Level (dynamic; shows levels for selected tier or all) */}
+          <select
+            value={level}
+            onChange={(e) => setLevel(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+          >
+            {dynamicLevelOptions.map(l => (
+              <option key={l} value={l}>
+                {l === 'ALL' ? 'All Levels' : l}
+              </option>
+            ))}
+          </select>
+
+          
         </div>
 
         {/* Selected-date chips */}
@@ -1228,7 +994,7 @@ export default function Users() {
                 {new Date(iso).toLocaleDateString('en-IN', { dateStyle: 'medium' })}
                 <button
                   className="opacity-60 hover:opacity-100"
-                  onClick={() => toggleDate(iso)}
+                  onClick={() => setSelectedDates(prev => { const s = new Set(prev); s.delete(iso); return s; })}
                   aria-label={`Remove ${iso}`}
                   title="Remove date"
                 >
@@ -1238,7 +1004,7 @@ export default function Users() {
             ))}
             <button
               className="text-xs rounded px-2 py-1 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-              onClick={clearDates}
+              onClick={() => setSelectedDates(new Set())}
               title="Clear all dates"
             >
               Clear All
@@ -1260,10 +1026,10 @@ export default function Users() {
           </div>
           <div className="col-span-3">User</div>
           <div className="col-span-2">Tier</div>
-          <div className="col-span-2">Referrals</div>
+          <div className="col-span-1">Referrals</div>
           <div className="col-span-2">Earnings</div>
           <div className="col-span-1">Status</div>
-          <div className="col-span-1 text-right">Actions</div>
+          <div className="col-span-2 flex justify-center">Actions</div>
         </div>
 
         {filtered.map((u) => (
@@ -1293,57 +1059,45 @@ export default function Users() {
             </div>
             <div className="col-span-3">
               <div className="font-medium">{u.name}</div>
-              <div className="text-sm opacity-80 break-all">{u.email}</div>
-              <div className="text-xs opacity-60">{u.code}</div>
-              <div className="mt-1 text-xs opacity-60">Joined: {fmtDate(u.joinDate)}</div>
+              
             </div>
 
             <div className="col-span-2 flex items-center gap-2">
               {u.tier && (
-                <span data-tier={String(u.tier).toLowerCase()} className="px-2 py-0.5 text-xs rounded-full border">{u.tier}</span>
+                <span data-tier={String(u.tier).toLowerCase()} className="px-2 py-0.5 text-xs rounded-full border">
+                  {u.tier}
+                </span>
               )}
               {u.level && <Chip>{u.level}</Chip>}
               {!u.tier && !u.level && <span className="text-sm opacity-60">—</span>}
             </div>
 
-            <div className="col-span-2 flex items-center">{Number(u.referrals || 0).toLocaleString('en-IN')}</div>
+            <div className="col-span-1 flex items-center">{Number(u.referrals || 0).toLocaleString('en-IN')}</div>
             <div className="col-span-2 flex items-center">{fmtINR(u.earnings)}</div>
 
             <div className="col-span-1 flex items-center">
               <StatusPill value={u.status} />
             </div>
 
-            <div className="col-span-1 flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
-              <button
-                title="Edit User"
-                onClick={() => setEditingUser(u)}
-                className="hover:opacity-100 opacity-80"
-              >
-                ✏️
-              </button>
+            <div className="col-span-2 flex items-center gap-3 justify-center " onClick={(e) => e.stopPropagation()}>
+              <button title="Edit User" onClick={() => setEditingUser(u)} className="hover:opacity-100 opacity-80">✏️</button>
               <button
                 title="Suspend"
                 onClick={() => confirmUserAction(u, 'suspend')}
-                disabled={u.status === 'Suspended'}
-                className={`hover:opacity-100 ${u.status === 'Suspended' ? 'opacity-40 cursor-not-allowed' : 'opacity-80'}`}
+                disabled={normUpper(u.status) === 'SUSPENDED'}
+                className={`hover:opacity-100 ${normUpper(u.status) === 'SUSPENDED' ? 'opacity-40 cursor-not-allowed' : 'opacity-80'}`}
               >
                 🚫
               </button>
               <button
                 title="Activate"
                 onClick={() => confirmUserAction(u, 'activate')}
-                disabled={u.status === 'Active'}
-                className={`hover:opacity-100 ${u.status === 'Active' ? 'opacity-40 cursor-not-allowed' : 'opacity-80'}`}
+                disabled={normUpper(u.status) === 'ACTIVE'}
+                className={`hover:opacity-100 ${normUpper(u.status) === 'ACTIVE' ? 'opacity-40 cursor-not-allowed' : 'opacity-80'}`}
               >
                 ✅
               </button>
-              <button
-                title="Delete User"
-                onClick={() => confirmUserAction(u, 'delete')}
-                className="hover:opacity-100 opacity-80 text-red-600 hover:text-red-700"
-              >
-                🗑️
-              </button>
+              <button title="Delete User" onClick={() => confirmUserAction(u, 'delete')} className="hover:opacity-100 opacity-80 text-red-600 hover:text-red-700">🗑️</button>
             </div>
           </div>
         ))}
@@ -1366,17 +1120,11 @@ export default function Users() {
                 <input
                   type="checkbox"
                   checked={selectedUsers.has(u.id)}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    toggleUserSelection(u.id);
-                  }}
+                  onChange={(e) => { e.stopPropagation(); toggleUserSelection(u.id); }}
                   className="w-4 h-4 mt-1"
                 />
-              <div className="min-w-0">
-                <div className="font-medium truncate">{u.name}</div>
-                <div className="text-sm opacity-80 truncate">{u.email}</div>
-                <div className="text-xs opacity-60">{u.code}</div>
-                <div className="mt-1 text-xs opacity-60">Joined: {fmtDate(u.joinDate)}</div>
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{u.name}</div>
                 </div>
               </div>
               <StatusPill value={u.status} />
