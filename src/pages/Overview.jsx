@@ -379,10 +379,29 @@ export default function Overview() {
         if (usersRes.ok) {
           const usersJson = await usersRes.json();
           if (mounted) {
+            // Compute user growth vs last month using createdAt if available
+            const now = new Date();
+            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+
+            const countInRange = (start, end) =>
+              usersJson.filter((u) => {
+                const ts = u.createdAt || u.created_at || u.registeredAt || u.createdDate;
+                if (!ts) return false;
+                const d = new Date(ts);
+                return d >= start && d < end;
+              }).length;
+
+            const lastMonth = countInRange(startOfLastMonth, startOfThisMonth);
+            const prevMonth = countInRange(startOfPrevMonth, startOfLastMonth);
+            const usersGrowthPct = ((lastMonth - prevMonth) / Math.max(1, prevMonth)) * 100;
+
             setDashboardData((prev) => ({
               ...prev,
               totalUsers: usersJson.length,
               totalUsersCount: usersJson.length,
+              usersGrowthPct,
             }));
           }
         }
@@ -395,9 +414,26 @@ export default function Overview() {
         if (pendingRes.ok) {
           const pendingJson = await pendingRes.json();
           if (mounted) {
+            // Growth: last month vs previous month based on createdAt
+            const now = new Date();
+            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+            const inRange = (arr, start, end) =>
+              arr.filter((c) => {
+                const ts = c.createdAt || c.created_at || c.timestamp || c.dateCreated;
+                if (!ts) return false;
+                const d = new Date(ts);
+                return d >= start && d < end;
+              }).length;
+            const last = inRange(pendingJson, startOfLastMonth, startOfThisMonth);
+            const prev = inRange(pendingJson, startOfPrevMonth, startOfLastMonth);
+            const pendingGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+
             setDashboardData((prev) => ({
               ...prev,
-              pendingCommissionsCount: pendingJson.length,
+              pendingCommissionsCount: Array.isArray(pendingJson) ? pendingJson.length : 0,
+              pendingGrowthPct,
             }));
           }
         }
@@ -410,9 +446,25 @@ export default function Overview() {
         if (paidRes.ok) {
           const paidJson = await paidRes.json();
           if (mounted) {
+            const now = new Date();
+            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+            const inRange = (arr, start, end) =>
+              arr.filter((c) => {
+                const ts = c.createdAt || c.created_at || c.timestamp || c.dateCreated;
+                if (!ts) return false;
+                const d = new Date(ts);
+                return d >= start && d < end;
+              }).length;
+            const last = inRange(paidJson, startOfLastMonth, startOfThisMonth);
+            const prev = inRange(paidJson, startOfPrevMonth, startOfLastMonth);
+            const paidGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+
             setDashboardData((prev) => ({
               ...prev,
               paidCommissionsCount: Array.isArray(paidJson) ? paidJson.length : 0,
+              paidGrowthPct,
             }));
           }
         }
@@ -522,19 +574,28 @@ export default function Overview() {
           id: "totalUsers",
           label: "Total Users",
           value: dashboardData.totalUsers || dashboardData.totalUsersCount || 0,
-          delta: null,
+          delta: dashboardData.usersGrowthPct != null ? {
+            direction: (dashboardData.usersGrowthPct ?? 0) >= 0 ? "up" : "down",
+            vsLastMonthPct: Math.abs(dashboardData.usersGrowthPct ?? 0),
+          } : null,
         },
         {
           id: "pendingCommissions",
           label: "Pending Commissions",
           value: dashboardData.pendingCommissionsCount || 0,
-          delta: null,
+          delta: dashboardData.pendingGrowthPct != null ? {
+            direction: (dashboardData.pendingGrowthPct ?? 0) >= 0 ? "up" : "down",
+            vsLastMonthPct: Math.abs(dashboardData.pendingGrowthPct ?? 0),
+          } : null,
         },
         {
           id: "paidCommissions",
           label: "Paid Commissions",
           value: dashboardData.paidCommissionsCount || 0,
-          delta: null,
+          delta: dashboardData.paidGrowthPct != null ? {
+            direction: (dashboardData.paidGrowthPct ?? 0) >= 0 ? "up" : "down",
+            vsLastMonthPct: Math.abs(dashboardData.paidGrowthPct ?? 0),
+          } : null,
         },
       ]
     : [];

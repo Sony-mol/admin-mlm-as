@@ -262,7 +262,24 @@ export default function Analytics() {
     {
       title: "Active Users",
       value: analyticsData.activeUsers || 0,
-      change: null,
+      change: (function(){
+        // Compute active user growth from last 2 months using lastActiveAt if available
+        const users = analyticsData.users || [];
+        const now = new Date();
+        const startThis = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startLast = new Date(now.getFullYear(), now.getMonth()-1, 1);
+        const startPrev = new Date(now.getFullYear(), now.getMonth()-2, 1);
+        const countActive = (start, end) => users.filter(u => {
+          const ts = u.lastActiveAt || u.lastLoginAt;
+          if (!ts) return false;
+          const d = new Date(ts);
+          return d >= start && d < end;
+        }).length;
+        const last = countActive(startLast, startThis);
+        const prev = countActive(startPrev, startLast);
+        const pct = ((last - prev) / Math.max(1, prev)) * 100;
+        return isFinite(pct) ? `${pct.toFixed(1)}%` : null;
+      })(),
       trend: "up",
       icon: Users,
       color: "blue"
@@ -270,7 +287,14 @@ export default function Analytics() {
     {
       title: "Conversion Rate",
       value: `${analyticsData.conversionRate?.toFixed(1) || 0}%`,
-      change: null,
+      change: (function(){
+        // If analytics provides lastMonthConversionRate, compare
+        const a = analyticsData.analytics || {};
+        const last = Number(a.thisMonthConversionRate ?? a.conversionRate ?? 0);
+        const prev = Number(a.lastMonthConversionRate ?? 0);
+        const pct = ((last - prev) / Math.max(1, prev)) * 100;
+        return prev ? `${pct.toFixed(1)}%` : null;
+      })(),
       trend: "up",
       icon: Target,
       color: "purple"
@@ -278,7 +302,29 @@ export default function Analytics() {
     {
       title: "Avg Earnings",
       value: `₹${analyticsData.avgEarnings?.toFixed(0) || 0}`,
-      change: null,
+      change: (function(){
+        const perf = analyticsData.performers || [];
+        // Split by month from a possible timestamp on performer record
+        const now = new Date();
+        const startThis = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startLast = new Date(now.getFullYear(), now.getMonth()-1, 1);
+        const startPrev = new Date(now.getFullYear(), now.getMonth()-2, 1);
+        const avgInRange = (start, end) => {
+          const items = perf.filter(p => {
+            const ts = p.updatedAt || p.createdAt || p.timestamp;
+            if (!ts) return false;
+            const d = new Date(ts);
+            return d >= start && d < end;
+          });
+          if (items.length === 0) return 0;
+          const total = items.reduce((s,p)=> s + (parseFloat(p.amount)||0), 0);
+          return total / items.length;
+        };
+        const last = avgInRange(startLast, startThis);
+        const prev = avgInRange(startPrev, startLast);
+        const pct = ((last - prev) / Math.max(1, prev)) * 100;
+        return prev ? `${pct.toFixed(1)}%` : null;
+      })(),
       trend: "up",
       icon: Award,
       color: "orange"
@@ -331,8 +377,21 @@ export default function Analytics() {
           />
           <AnalyticsChart 
             title="User Growth" 
-            data={(analyticsData?.users || []).map((_, idx) => ({ month: idx + 1, value: 1 }))}
-            type="bar"
+            data={(function() {
+              const users = analyticsData?.users || [];
+              // Build monthly count series based on createdAt
+              const buckets = new Map();
+              users.forEach(u => {
+                const ts = u.createdAt || u.created_at || u.registeredAt || u.createdDate;
+                if (!ts) return;
+                const d = new Date(ts);
+                const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                buckets.set(key, (buckets.get(key) || 0) + 1);
+              });
+              const sortedKeys = Array.from(buckets.keys()).sort();
+              return sortedKeys.map(k => ({ month: k, value: buckets.get(k) }));
+            })()}
+            type="line"
             loading={loading}
           />
         </div>
