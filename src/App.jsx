@@ -18,6 +18,7 @@ import UserRewards from './pages/UserRewards';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import TermsManagement from './pages/TermsManagement';
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="rewards" element={<Rewards />} />
             <Route path="user-rewards" element={<UserRewards />} />
         <Route path="admin-management" element={<AdminManagement />} />
+        <Route path="terms-management" element={<TermsManagement />} />
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
       </Route>

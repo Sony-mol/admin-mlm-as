@@ -16,6 +16,7 @@ import {
   Gift,
   Shield,
   Settings,
+  FileText,
 } from "lucide-react";
 
 const links = [
@@ -33,6 +34,7 @@ const links = [
   { to: "/rewards", label: "Rewards", Icon: Gift },
   { to: "/user-rewards", label: "User Rewards", Icon: Award },
   { to: "/admin-management", label: "Admin Management", Icon: Shield },
+  { to: "/terms-management", label: "Terms & Privacy", Icon: FileText },
   { to: "/settings", label: "Settings",        Icon: Settings },
 ];
 
