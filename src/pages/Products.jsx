@@ -734,12 +734,12 @@ export default function Products() {
           category: productData.category,
           price: productData.price,
           stockQuantity: productData.stock, // Map 'stock' to 'stockQuantity'
-          imageUrl: productData.image || productData.imageUrl || editingProduct?.image || uploadedImageUrl
+          imageUrl: productData.image || productData.imageUrl || editingProduct?.image
         };
         
         console.log('📝 Sending to backend:', backendData);
         console.log('🔍 Debug - productData.image:', productData.image);
-        console.log('🔍 Debug - formData:', formData);
+        console.log('🔍 Debug - productData:', productData);
         
         const response = await authFetch(`${API_ENDPOINTS.PRODUCTS}/${editingProduct.id}`, {
           method: 'PUT',
