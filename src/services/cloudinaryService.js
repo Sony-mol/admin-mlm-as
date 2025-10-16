@@ -30,7 +30,7 @@ class CloudinaryService {
       formData.append('file', file);
       formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
       formData.append('folder', 'mlm-products'); // Organize images in a folder
-      formData.append('public_id', `${productName}-${Date.now()}`); // Unique ID
+      formData.append('public_id', `${productName.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}`); // Safe unique ID
       formData.append('transformation', 'w_400,h_400,c_fill,f_auto,q_auto'); // Auto-optimize
 
       // Upload to Cloudinary
@@ -40,7 +40,15 @@ class CloudinaryService {
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Cloudinary upload error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorText: errorText,
+          uploadPreset: CLOUDINARY_UPLOAD_PRESET,
+          cloudName: CLOUDINARY_CLOUD_NAME
+        });
+        throw new Error(`Upload failed: ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
