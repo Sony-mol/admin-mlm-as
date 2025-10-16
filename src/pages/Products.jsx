@@ -442,16 +442,24 @@ const ProductForm = ({ product, onSave, onCancel, authFetch }) => {
     status: product?.status || 'active',
     image: product?.image || null
   });
+  
+  const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
 
   const [showPhotoEditor, setShowPhotoEditor] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(formData);
+    // Ensure the uploaded image URL is included in the form data
+    const dataToSave = {
+      ...formData,
+      image: formData.image || uploadedImageUrl
+    };
+    onSave(dataToSave);
   };
 
   const handleImageUploaded = (imageUrl, publicId = null) => {
     console.log('🖼️ Image uploaded:', imageUrl);
+    setUploadedImageUrl(imageUrl);
     setFormData(prev => ({ 
       ...prev, 
       image: imageUrl,
@@ -726,10 +734,12 @@ export default function Products() {
           category: productData.category,
           price: productData.price,
           stockQuantity: productData.stock, // Map 'stock' to 'stockQuantity'
-          imageUrl: productData.image
+          imageUrl: productData.image || productData.imageUrl || editingProduct?.image || uploadedImageUrl
         };
         
         console.log('📝 Sending to backend:', backendData);
+        console.log('🔍 Debug - productData.image:', productData.image);
+        console.log('🔍 Debug - formData:', formData);
         
         const response = await authFetch(`${API_ENDPOINTS.PRODUCTS}/${editingProduct.id}`, {
           method: 'PUT',
