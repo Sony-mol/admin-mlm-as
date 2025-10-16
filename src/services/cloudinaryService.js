@@ -1,8 +1,8 @@
 // Cloudinary Image Upload Service
 // Handles reliable cloud storage for product images
 
-const CLOUDINARY_CLOUD_NAME = 'your-cloud-name'; // Replace with your Cloudinary cloud name
-const CLOUDINARY_UPLOAD_PRESET = 'your-upload-preset'; // Replace with your upload preset
+const CLOUDINARY_CLOUD_NAME = 'dbwdqllsa'; // Your Cloudinary cloud name
+const CLOUDINARY_UPLOAD_PRESET = 'mlm-products'; // Your upload preset
 
 class CloudinaryService {
   static async uploadImage(file, productName = 'product') {
