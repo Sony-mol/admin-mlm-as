@@ -12,7 +12,8 @@ const Rewards = () => {
     rewardName: '',
     rewardType: 'GIFT',
     rewardValue: 0,
-    description: ''
+    description: '',
+    requiredReferrals: 1
   });
 
   const token = localStorage.getItem('token');
@@ -80,7 +81,8 @@ const Rewards = () => {
         rewardName: '',
         rewardType: 'GIFT',
         rewardValue: 0,
-        description: ''
+        description: '',
+        requiredReferrals: 1
       });
       
       alert(editingReward ? 'Reward updated successfully!' : 'Reward created successfully!');
@@ -96,7 +98,8 @@ const Rewards = () => {
       rewardName: reward.rewardName || '',
       rewardType: reward.rewardType || 'GIFT',
       rewardValue: reward.rewardValue || 0,
-      description: reward.description || ''
+      description: reward.description || '',
+      requiredReferrals: reward.requiredReferrals || 1
     });
     setShowModal(true);
   };
@@ -228,6 +231,7 @@ const Rewards = () => {
                 <th className="text-left p-4 font-medium text-[rgb(var(--fg))]">Reward Name</th>
                 <th className="text-left p-4 font-medium text-[rgb(var(--fg))]">Type</th>
                 <th className="text-left p-4 font-medium text-[rgb(var(--fg))]">Value</th>
+                <th className="text-left p-4 font-medium text-[rgb(var(--fg))]">Required Referrals</th>
                 <th className="text-left p-4 font-medium text-[rgb(var(--fg))]">Description</th>
                 <th className="text-left p-4 font-medium text-[rgb(var(--fg))]">Actions</th>
               </tr>
@@ -244,6 +248,11 @@ const Rewards = () => {
                   </td>
                   <td className="p-4 text-[rgb(var(--fg))]">
                     {reward.rewardValue ? `₹${reward.rewardValue.toLocaleString()}` : 'N/A'}
+                  </td>
+                  <td className="p-4 text-[rgb(var(--fg))]">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {reward.requiredReferrals || 'N/A'} referrals
+                    </span>
                   </td>
                   <td className="p-4 text-[rgb(var(--muted-foreground))] max-w-xs truncate">
                     {reward.description || 'No description'}
@@ -332,6 +341,23 @@ const Rewards = () => {
                   onChange={(e) => handleInputChange('rewardValue', parseFloat(e.target.value) || 0)}
                   className="w-full px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">
+                  Required Referrals *
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.requiredReferrals}
+                  onChange={(e) => handleInputChange('requiredReferrals', parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))] text-[rgb(var(--fg))] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="text-xs text-[rgb(var(--muted-foreground))] mt-1">
+                  Number of paid referrals required to unlock this reward
+                </p>
               </div>
 
               <div>
