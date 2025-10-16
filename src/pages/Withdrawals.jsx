@@ -25,7 +25,9 @@ const Withdrawals = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [statistics, setStatistics] = useState({});
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
+  const [detailedWithdrawal, setDetailedWithdrawal] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
   const [actionType, setActionType] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
@@ -231,6 +233,34 @@ const Withdrawals = () => {
       console.error('Error processing bulk action:', error);
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const fetchDetailedWithdrawal = async (withdrawalId) => {
+    try {
+      setLoadingDetails(true);
+      const token = localStorage.getItem('auth')
+        ? JSON.parse(localStorage.getItem('auth')).accessToken
+        : '';
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      console.log('Fetching detailed withdrawal for ID:', withdrawalId);
+      const response = await fetch(`${WITHDRAWALS_API}/${withdrawalId}`, { headers });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const detailedData = await response.json();
+      console.log('Detailed withdrawal data received:', detailedData);
+      
+      setDetailedWithdrawal(detailedData);
+    } catch (error) {
+      console.error('Error fetching detailed withdrawal:', error);
+      // Fallback to basic withdrawal data
+      setDetailedWithdrawal(selectedWithdrawal);
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -664,6 +694,7 @@ const Withdrawals = () => {
                           onClick={() => {
                             setSelectedWithdrawal(withdrawal);
                             setShowDetailsModal(true);
+                            fetchDetailedWithdrawal(withdrawal.id);
                           }}
                           className="text-blue-600 hover:text-blue-900"
                           title="View details"
@@ -705,128 +736,241 @@ const Withdrawals = () => {
         onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
       />
 
-      {/* Withdrawal Details Modal */}
+      {/* Enhanced Withdrawal Details Modal */}
       {showDetailsModal && selectedWithdrawal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Withdrawal Details</h3>
+          <div className="rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold">Withdrawal Details</h3>
               <button
-                onClick={() => setShowDetailsModal(false)}
-                className="opacity-60 hover:opacity-90"
+                onClick={() => {
+                  setShowDetailsModal(false);
+                  setDetailedWithdrawal(null);
+                }}
+                className="opacity-60 hover:opacity-90 text-2xl"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium opacity-70">Withdrawal ID</label>
-                  <p className="text-sm">#{selectedWithdrawal.id}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium opacity-70">Amount</label>
-                  <p className="text-sm">₹{selectedWithdrawal.amount}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium opacity-70">Status</label>
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                      selectedWithdrawal.status
-                    )}`}
-                  >
-                    {getStatusIcon(selectedWithdrawal.status)}
-                    <span className="ml-1">{selectedWithdrawal.status}</span>
-                  </span>
-                </div>
-                <div>
-                  <label className="text-sm font-medium opacity-70">Payment Method</label>
-                  <p className="text-sm">{selectedWithdrawal.paymentMethod || '—'}</p>
+            {loadingDetails ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-sm opacity-70">Loading detailed information...</p>
                 </div>
               </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Basic Information Card */}
+                <div className="bg-[rgba(var(--fg),0.03)] rounded-lg p-4">
+                  <h4 className="text-lg font-medium mb-4 flex items-center">
+                    <DollarSign className="w-5 h-5 mr-2" />
+                    Basic Information
+                  </h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Withdrawal ID</label>
+                      <p className="text-sm font-mono">#{selectedWithdrawal.id}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Transaction ID</label>
+                      <p className="text-sm font-mono">
+                        {detailedWithdrawal?.transactionId || 'Generating...'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Amount</label>
+                      <p className="text-sm font-semibold text-green-600">
+                        ₹{selectedWithdrawal.amount}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Status</label>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                          selectedWithdrawal.status
+                        )}`}
+                      >
+                        {getStatusIcon(selectedWithdrawal.status)}
+                        <span className="ml-1">{selectedWithdrawal.status}</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-              {/* User Information */}
-              <div className="border-t border-[rgb(var(--border))] pt-4">
-                <h4 className="text-sm font-medium opacity-70 mb-3">User Information</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium opacity-70">Name</label>
-                    <p className="text-sm">{selectedWithdrawal.user?.name || '—'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium opacity-70">Email</label>
-                    <p className="text-sm">{selectedWithdrawal.user?.email || '—'}</p>
-                  </div>
-                  {selectedWithdrawal.phoneNumber && (
+                {/* User Information Card */}
+                <div className="bg-[rgba(var(--fg),0.03)] rounded-lg p-4">
+                  <h4 className="text-lg font-medium mb-4 flex items-center">
+                    <CheckCircle className="w-5 h-5 mr-2" />
+                    User Information
+                  </h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium opacity-70">User ID</label>
+                      <p className="text-sm font-mono">
+                        {detailedWithdrawal?.user?.userId || selectedWithdrawal.user?.id || '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Name</label>
+                      <p className="text-sm">{detailedWithdrawal?.user?.name || selectedWithdrawal.user?.name || '—'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Email</label>
+                      <p className="text-sm">{detailedWithdrawal?.user?.email || selectedWithdrawal.user?.email || '—'}</p>
+                    </div>
                     <div>
                       <label className="text-sm font-medium opacity-70">Phone Number</label>
-                      <p className="text-sm">📞 {selectedWithdrawal.phoneNumber}</p>
+                      <p className="text-sm">
+                        {detailedWithdrawal?.user?.phoneNumber || selectedWithdrawal.phoneNumber || '—'}
+                      </p>
                     </div>
-                  )}
-                  {selectedWithdrawal.accountHolderName && (
                     <div>
-                      <label className="text-sm font-medium opacity-70">Account Holder</label>
-                      <p className="text-sm">{selectedWithdrawal.accountHolderName}</p>
+                      <label className="text-sm font-medium opacity-70">Reference Code</label>
+                      <p className="text-sm font-mono">
+                        {detailedWithdrawal?.user?.referenceCode || '—'}
+                      </p>
                     </div>
-                  )}
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Activation Status</label>
+                      <p className="text-sm">
+                        {detailedWithdrawal?.user?.hasPaidActivation ? '✅ Paid' : '❌ Unpaid'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Details Card */}
+                <div className="bg-[rgba(var(--fg),0.03)] rounded-lg p-4">
+                  <h4 className="text-lg font-medium mb-4 flex items-center">
+                    <AlertCircle className="w-5 h-5 mr-2" />
+                    Payment Details
+                  </h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Payment Method</label>
+                      <p className="text-sm">
+                        {detailedWithdrawal?.paymentMethod || selectedWithdrawal.paymentMethod || '—'}
+                      </p>
+                    </div>
+                    {detailedWithdrawal?.upiId && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">UPI ID</label>
+                        <p className="text-sm font-mono">{detailedWithdrawal.upiId}</p>
+                      </div>
+                    )}
+                    {detailedWithdrawal?.accountNumber && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Account Number</label>
+                        <p className="text-sm font-mono">{detailedWithdrawal.accountNumber}</p>
+                      </div>
+                    )}
+                    {detailedWithdrawal?.ifscCode && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">IFSC Code</label>
+                        <p className="text-sm font-mono">{detailedWithdrawal.ifscCode}</p>
+                      </div>
+                    )}
+                    {detailedWithdrawal?.accountHolderName && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Account Holder</label>
+                        <p className="text-sm">{detailedWithdrawal.accountHolderName}</p>
+                      </div>
+                    )}
+                    {detailedWithdrawal?.bankName && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Bank Name</label>
+                        <p className="text-sm">{detailedWithdrawal.bankName}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Timing Information Card */}
+                <div className="bg-[rgba(var(--fg),0.03)] rounded-lg p-4">
+                  <h4 className="text-lg font-medium mb-4 flex items-center">
+                    <Clock className="w-5 h-5 mr-2" />
+                    Timing Information
+                  </h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Requested At</label>
+                      <p className="text-sm">{fmtDMY(selectedWithdrawal.createdAt)}</p>
+                    </div>
+                    {detailedWithdrawal?.processedAt && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Processed At</label>
+                        <p className="text-sm">{fmtDMY(detailedWithdrawal.processedAt)}</p>
+                      </div>
+                    )}
+                    {detailedWithdrawal?.processingTime && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Processing Time</label>
+                        <p className="text-sm font-semibold">{detailedWithdrawal.processingTime}</p>
+                      </div>
+                    )}
+                    {detailedWithdrawal?.updatedAt && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Last Updated</label>
+                        <p className="text-sm">{fmtDMY(detailedWithdrawal.updatedAt)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Admin Information Card */}
+                <div className="bg-[rgba(var(--fg),0.03)] rounded-lg p-4">
+                  <h4 className="text-lg font-medium mb-4 flex items-center">
+                    <XCircle className="w-5 h-5 mr-2" />
+                    Admin Information
+                  </h4>
+                  <div className="space-y-4">
+                    {detailedWithdrawal?.processedBy && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Processed By Admin ID</label>
+                        <p className="text-sm font-mono">{detailedWithdrawal.processedBy}</p>
+                      </div>
+                    )}
+                    {detailedWithdrawal?.adminNotes && (
+                      <div>
+                        <label className="text-sm font-medium opacity-70">Admin Notes</label>
+                        <p className="text-sm bg-[rgba(var(--fg),0.05)] p-3 rounded border">
+                          {detailedWithdrawal.adminNotes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* System Information Card */}
+                <div className="bg-[rgba(var(--fg),0.03)] rounded-lg p-4">
+                  <h4 className="text-lg font-medium mb-4 flex items-center">
+                    <Search className="w-5 h-5 mr-2" />
+                    System Information
+                  </h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Withdrawal Request ID</label>
+                      <p className="text-sm font-mono">{detailedWithdrawal?.system?.withdrawalRequestId || selectedWithdrawal.id}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Transaction ID</label>
+                      <p className="text-sm font-mono">{detailedWithdrawal?.system?.transactionId || detailedWithdrawal?.transactionId || '—'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium opacity-70">Last System Update</label>
+                      <p className="text-sm">
+                        {detailedWithdrawal?.system?.lastUpdated 
+                          ? new Date(detailedWithdrawal.system.lastUpdated).toLocaleString()
+                          : '—'
+                        }
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {selectedWithdrawal.upiId && (
-                <div>
-                  <label className="text-sm font-medium opacity-70">UPI ID</label>
-                  <p className="text-sm">{selectedWithdrawal.upiId}</p>
-                </div>
-              )}
-
-              {selectedWithdrawal.accountNumber && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium opacity-70">Account Number</label>
-                    <p className="text-sm">{selectedWithdrawal.accountNumber}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium opacity-70">IFSC Code</label>
-                    <p className="text-sm">{selectedWithdrawal.ifscCode}</p>
-                  </div>
-                </div>
-              )}
-
-              {selectedWithdrawal.accountHolderName && (
-                <div>
-                  <label className="text-sm font-medium opacity-70">Account Holder</label>
-                  <p className="text-sm">{selectedWithdrawal.accountHolderName}</p>
-                </div>
-              )}
-
-              {selectedWithdrawal.bankName && (
-                <div>
-                  <label className="text-sm font-medium opacity-70">Bank Name</label>
-                  <p className="text-sm">{selectedWithdrawal.bankName}</p>
-                </div>
-              )}
-
-              {selectedWithdrawal.adminNotes && (
-                <div>
-                  <label className="text-sm font-medium opacity-70">Admin Notes</label>
-                  <p className="text-sm">{selectedWithdrawal.adminNotes}</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium opacity-70">Requested At</label>
-                  <p className="text-sm">{fmtDMY(selectedWithdrawal.createdAt)}</p>
-                </div>
-                {selectedWithdrawal.processedAt && (
-                  <div>
-                    <label className="text-sm font-medium opacity-70">Processed At</label>
-                    <p className="text-sm">{fmtDMY(selectedWithdrawal.processedAt)}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}
