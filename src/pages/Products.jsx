@@ -1,6 +1,7 @@
 // src/pages/Products.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
+import ImageUploader from '../components/ImageUploader';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -449,62 +450,13 @@ const ProductForm = ({ product, onSave, onCancel, authFetch }) => {
     onSave(formData);
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      try {
-        // Validate file type - support all common image formats
-        const supportedTypes = [
-          'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 
-          'image/webp', 'image/bmp', 'image/svg+xml', 'image/tiff'
-        ];
-        
-        const isValidType = supportedTypes.includes(file.type.toLowerCase()) || 
-                           /\.(jpg|jpeg|png|gif|webp|bmp|svg|tiff)$/i.test(file.name);
-        
-        if (!isValidType) {
-          alert('Unsupported file type. Supported formats: JPG, JPEG, PNG, GIF, WebP, BMP, SVG, TIFF');
-          return;
-        }
-        
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert('Image size must be less than 5MB');
-          return;
-        }
-        
-        // Create FormData for file upload
-        const formData = new FormData();
-        formData.append('image', file);
-        
-        // Upload image to backend
-        const response = await authFetch(API_ENDPOINTS.UPLOAD_PRODUCT_IMAGE, {
-          method: 'POST',
-          body: formData
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          console.log('✅ Image uploaded successfully:', result);
-          
-          // Update form data with the uploaded image URL
-          setFormData(prev => ({ 
-            ...prev, 
-            image: result.imageUrl 
-          }));
-          
-          // Show success message
-          alert('Image uploaded successfully!');
-        } else {
-          const errorData = await response.json();
-          console.error('❌ Image upload failed:', errorData);
-          alert('Failed to upload image: ' + (errorData.error || 'Unknown error'));
-        }
-      } catch (error) {
-        console.error('❌ Error uploading image:', error);
-        alert('Failed to upload image: ' + error.message);
-      }
-    }
+  const handleImageUploaded = (imageUrl, publicId = null) => {
+    console.log('🖼️ Image uploaded:', imageUrl);
+    setFormData(prev => ({ 
+      ...prev, 
+      image: imageUrl,
+      imagePublicId: publicId 
+    }));
   };
 
   return (
@@ -526,43 +478,11 @@ const ProductForm = ({ product, onSave, onCancel, authFetch }) => {
           {/* Product Image */}
           <div>
             <label className="block text-sm font-medium text-[rgb(var(--fg))] mb-2">Product Image</label>
-            <div className="flex items-center space-x-4">
-              <div className="w-24 h-24 rounded-lg overflow-hidden bg-[rgba(var(--fg),0.06)]">
-                {formData.image ? (
-                  <img src={formData.image} alt="Product" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 opacity-40" />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/tiff,.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.tiff"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="image-upload"
-                />
-                <label
-                  htmlFor="image-upload"
-                  className="flex items-center space-x-2 px-4 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)] cursor-pointer"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>Upload Image</span>
-                </label>
-                {formData.image && (
-                  <button
-                    type="button"
-                    onClick={() => setShowPhotoEditor(true)}
-                    className="flex items-center space-x-2 px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-[rgba(37,99,235,0.12)]"
-                  >
-                    <Crop className="w-4 h-4" />
-                    <span>Edit Image</span>
-                  </button>
-                )}
-              </div>
-            </div>
+            <ImageUploader
+              onImageUploaded={handleImageUploaded}
+              currentImageUrl={formData.image}
+              productName={formData.name || 'product'}
+            />
           </div>
 
           {/* Product Details */}
