@@ -741,7 +741,7 @@ export default function Products() {
           imageUrl: imageUrl
         };
         
-        console.log('📝 Sending to backend:', backendData);
+        console.log('📝 Sending to backend:', JSON.stringify(backendData, null, 2));
         console.log('🔍 Debug - productData.image:', productData.image);
         console.log('🔍 Debug - productData:', productData);
         
