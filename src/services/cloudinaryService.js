@@ -31,7 +31,7 @@ class CloudinaryService {
       formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
       formData.append('folder', 'mlm-products'); // Organize images in a folder
       formData.append('public_id', `${productName.replace(/[^a-zA-Z0-9]/g, '-')}-${Date.now()}`); // Safe unique ID
-      formData.append('transformation', 'w_400,h_400,c_fill,f_auto,q_auto'); // Auto-optimize
+      // Note: Transformation is handled by the upload preset, not in the request
 
       // Upload to Cloudinary
       const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
