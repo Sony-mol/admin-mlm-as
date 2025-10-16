@@ -723,18 +723,22 @@ export default function Products() {
   const handleSave = async (productData) => {
     try {
       console.log('💾 Saving product...');
+      console.log('🔍 Full productData received:', JSON.stringify(productData, null, 2));
       
       if (editingProduct) {
         // Update existing product
         console.log('📝 Updating product:', editingProduct.id);
         // Transform frontend data to match backend DTO
+        const imageUrl = productData.image || productData.imageUrl || editingProduct?.image;
+        console.log('🖼️ Resolved imageUrl:', imageUrl);
+        
         const backendData = {
           name: productData.name,
           description: productData.description,
           category: productData.category,
           price: productData.price,
           stockQuantity: productData.stock, // Map 'stock' to 'stockQuantity'
-          imageUrl: productData.image || productData.imageUrl || editingProduct?.image
+          imageUrl: imageUrl
         };
         
         console.log('📝 Sending to backend:', backendData);
