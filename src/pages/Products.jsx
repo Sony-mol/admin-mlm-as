@@ -35,63 +35,108 @@ import {
 // Canonical API base (same as backend). Prefer env if provided.
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://asmlmbackend-production.up.railway.app';
 
-// Resolve a sensible default image based on product name
-const getDefaultImage = (productName) => {
-  const defaults = {
-    'Watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&crop=center',
-    'Growth Package': 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop&crop=center',
-    'Eliteeeee Package': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop&crop=center',
-    'Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&crop=center',
-    'car': 'https://images.unsplash.com/photo-1549317336-206569e8475c?w=400&h=400&fit=crop&crop=center',
-    'Bag': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&crop=center',
-    'AC': 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=400&fit=crop&crop=center'
+// Enhanced default image system with better categorization
+const getDefaultImage = (productName, category = '') => {
+  // First, try exact name matches
+  const exactMatches = {
+    'Watch': 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'Camelq Cap': 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'Camelq Bag': 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'Camelq Diary': 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'Growth Package': 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'Eliteeeee Package': 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'Starter Package': 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop&crop=center&auto=format&q=80'
   };
-  return defaults[productName] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop&crop=center';
+
+  if (exactMatches[productName]) {
+    return exactMatches[productName];
+  }
+
+  // Then try category-based matches
+  const categoryMatches = {
+    'electronics': 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'accessories': 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'clothing': 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'home': 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=400&fit=crop&crop=center&auto=format&q=80',
+    'beauty': 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&h=400&fit=crop&crop=center&auto=format&q=80'
+  };
+
+  if (categoryMatches[category.toLowerCase()]) {
+    return categoryMatches[category.toLowerCase()];
+  }
+
+  // Finally, try partial name matches
+  const name = productName.toLowerCase();
+  if (name.includes('watch') || name.includes('smartwatch')) {
+    return 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop&crop=center&auto=format&q=80';
+  }
+  if (name.includes('cap') || name.includes('hat')) {
+    return 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&crop=center&auto=format&q=80';
+  }
+  if (name.includes('bag') || name.includes('backpack')) {
+    return 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&crop=center&auto=format&q=80';
+  }
+  if (name.includes('diary') || name.includes('notebook')) {
+    return 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=400&fit=crop&crop=center&auto=format&q=80';
+  }
+  if (name.includes('package') || name.includes('bundle')) {
+    return 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=400&fit=crop&crop=center&auto=format&q=80';
+  }
+
+  // Ultimate fallback
+  return 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=400&fit=crop&crop=center&auto=format&q=80';
 };
 
-// Build ordered candidate URLs from what is stored in DB (to support legacy shapes)
+// Enhanced image candidate builder with Railway-aware fallback
 const buildProductImageCandidates = (product) => {
-  // Prefer fields similar to the mobile app first
+  const candidates = [];
+  
+  // Get all possible image values from the product
   const rawValues = [
-    product?.imageUrl,         // used by mobile app
-    product?.image,            // legacy/admin
-    product?.image_path,       // possible backend field
+    product?.imageUrl,
+    product?.image,
+    product?.image_path,
   ].filter(Boolean).map(v => String(v).trim()).filter(v => v.length > 0);
 
-  const candidates = [];
-  if (rawValues.length === 0) return candidates;
+  // If no image URLs in database, skip to default
+  if (rawValues.length === 0) {
+    return [getDefaultImage(product.name, product.category)];
+  }
 
   for (const value of rawValues) {
-    // Absolute URL stored in DB
+    // Skip invalid or broken URLs
+    if (!value || value === 'null' || value === 'undefined') continue;
+
+    // Absolute URL stored in DB - use directly
     if (value.startsWith('http')) {
       candidates.push(value);
       continue;
     }
 
-    // If already an API image path
+    // Railway API image path - but we know these are broken due to ephemeral storage
     if (value.startsWith('/api/products/image/')) {
+      // Skip these as they're likely broken on Railway
+      console.warn('⚠️ Skipping Railway ephemeral image URL:', value);
+      // Don't continue - we'll use default image instead
+    }
+
+    // Other relative paths - try but don't rely on them
+    if (value.startsWith('/uploads/')) {
+      const file = value.split('/').pop();
+      candidates.push(`${API_BASE}/api/products/image/${file}`);
       candidates.push(`${API_BASE}${value}`);
     }
 
-    // If relative path like /uploads/products/<file>
-    if (value.startsWith('/uploads/')) {
-      const file = value.split('/').pop();
-      candidates.push(`${API_BASE}/api/products/image/${file}`); // preferred served endpoint
-      candidates.push(`${API_BASE}${value}`); // direct static path (if exposed)
-    }
-
-    // Bare filename or uuid
+    // Bare filename - try API endpoint
     if (!value.includes('/')) {
-      const file = value;
-      candidates.push(`${API_BASE}/api/products/image/${file}`);
-      candidates.push(`${API_BASE}/uploads/products/${file}`);
-    }
-
-    // Safety: last attempt, prefix as-is
-    if (!value.startsWith('/')) {
-      candidates.push(`${API_BASE}/${value}`);
+      candidates.push(`${API_BASE}/api/products/image/${value}`);
+      candidates.push(`${API_BASE}/uploads/products/${value}`);
     }
   }
+
+  // Always add default image as final fallback
+  const defaultImage = getDefaultImage(product.name, product.category);
+  candidates.push(defaultImage);
 
   // Remove duplicates while preserving order
   const seen = new Set();
@@ -107,30 +152,33 @@ const ProductCard = ({ product, onEdit, onDelete, onView }) => (
           const candidates = buildProductImageCandidates(product);
           const cacheKey = product?.updatedAt || product?.id || '';
           let attemptIndex = 0;
+          
           const pick = (idx) => {
-            const base = candidates[idx] || getDefaultImage(product.name);
+            const base = candidates[idx] || getDefaultImage(product.name, product.category);
             return cacheKey ? `${base}?v=${encodeURIComponent(cacheKey)}` : base;
           };
+          
           const initial = pick(0);
+          
           return (
             <img
               src={initial}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               onError={(e) => {
-                // Try next candidate; fallback to default at the end
                 attemptIndex += 1;
                 if (attemptIndex < candidates.length) {
                   const next = pick(attemptIndex);
-                  console.warn('Retrying product image with:', next);
+                  console.warn(`🔄 Retrying product image (${attemptIndex}/${candidates.length}):`, next);
                   e.currentTarget.src = next;
                 } else {
-                  const fallback = getDefaultImage(product.name);
-                  console.error('All image candidates failed. Falling back to default.', candidates);
+                  const fallback = getDefaultImage(product.name, product.category);
+                  console.error('❌ All image candidates failed. Using default image for:', product.name, 'Candidates:', candidates);
                   e.currentTarget.src = fallback;
                 }
               }}
-              onLoad={(e) => console.log('Image loaded successfully:', e.currentTarget.src)}
+              onLoad={(e) => console.log('✅ Image loaded successfully:', e.currentTarget.src)}
+              loading="lazy"
             />
           );
         })()}
