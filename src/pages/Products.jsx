@@ -600,7 +600,7 @@ const ProductForm = ({ product, onSave, onCancel, authFetch }) => {
 };
 
 export default function Products() {
-  const { authFetch } = useAuth();
+  const { authFetch, user: auth, isExpired } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -744,6 +744,9 @@ export default function Products() {
         console.log('📝 Sending to backend:', JSON.stringify(backendData, null, 2));
         console.log('🔍 Debug - productData.image:', productData.image);
         console.log('🔍 Debug - productData:', productData);
+        
+        console.log('🔐 Auth check - user:', auth?.user?.name, 'role:', auth?.user?.role);
+        console.log('🔐 Auth check - hasToken:', !!auth?.accessToken, 'isExpired:', isExpired);
         
         const response = await authFetch(`${API_ENDPOINTS.PRODUCTS}/${editingProduct.id}`, {
           method: 'PUT',
