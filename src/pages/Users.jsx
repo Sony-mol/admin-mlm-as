@@ -1136,7 +1136,7 @@ export default function Users() {
           <div className="col-span-3">User</div>
           <div className="col-span-2">Tier</div>
           <div className="col-span-1">Referrals</div>
-          <div className="col-span-2">Earnings</div>
+          <div className="col-span-2">Total Earning</div>
           <div className="col-span-1">Status</div>
           <div className="col-span-2 flex justify-center">Actions</div>
         </div>
