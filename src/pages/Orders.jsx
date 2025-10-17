@@ -131,7 +131,6 @@ export default function Orders() {
             isFirstOrder: order.isFirstOrder || false,
             
             // Payment details
-            paymentMethod: order.paymentMethod || 'RAZORPAY',
             razorpayPaymentId: order.razorpayPaymentId || null,
             razorpaySignature: order.razorpaySignature || null,
             
