@@ -60,6 +60,7 @@ export default function Commissions() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [q, setQ] = useState('');
+  const [paidSearchQuery, setPaidSearchQuery] = useState('');
 
   // Pending list pagination + filtering
   const [pendingPage, setPendingPage] = useState(1);
@@ -77,13 +78,21 @@ export default function Commissions() {
     return filteredPending.slice(start, start + pendingPageSize);
   }, [filteredPending, pendingPage, pendingPageSize]);
 
-  // Paid list pagination
+  // Paid list pagination + filtering
   const [paidPage, setPaidPage] = useState(1);
   const [paidPageSize, setPaidPageSize] = useState(20);
+  const filteredPaid = useMemo(() => {
+    return paidCommissions.filter((c) => {
+      if (!paidSearchQuery.trim()) return true;
+      const hay = `${c.id} ${c.referrerUserId} ${c.referredUserId}`.toLowerCase();
+      return hay.includes(paidSearchQuery.toLowerCase());
+    });
+  }, [paidCommissions, paidSearchQuery]);
+  
   const paidPaged = useMemo(() => {
     const start = (paidPage - 1) * paidPageSize;
-    return paidCommissions.slice(start, start + paidPageSize);
-  }, [paidCommissions, paidPage, paidPageSize]);
+    return filteredPaid.slice(start, start + paidPageSize);
+  }, [filteredPaid, paidPage, paidPageSize]);
 
   // Load all commission data
   useEffect(() => {
@@ -531,9 +540,23 @@ export default function Commissions() {
           <p className="text-sm opacity-70">Recently approved commissions</p>
         </div>
 
-        {paidCommissions.length === 0 ? (
+        {/* Paid Commissions Search */}
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Search referrer/referred/commission ID..."
+            value={paidSearchQuery}
+            onChange={(e) => {
+              setPaidSearchQuery(e.target.value);
+              setPaidPage(1); // Reset to first page when searching
+            }}
+            className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] placeholder-[rgba(var(--fg),0.5)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {filteredPaid.length === 0 ? (
           <div className="text-center py-8 text-sm opacity-70">
-            No paid commissions yet
+            {paidCommissions.length === 0 ? 'No paid commissions yet' : 'No commissions match your search'}
           </div>
         ) : (
           <>
@@ -574,7 +597,7 @@ export default function Commissions() {
           <Pagination
             page={paidPage}
             pageSize={paidPageSize}
-            total={paidCommissions.length}
+            total={filteredPaid.length}
             onPageChange={setPaidPage}
             onPageSizeChange={(n) => { setPaidPageSize(n); setPaidPage(1); }}
           />
