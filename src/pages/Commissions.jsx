@@ -363,27 +363,27 @@ export default function Commissions() {
         <Stat 
           label="Total Pending" 
           value={fINR(dashboardData.totalPendingAmount || 0)} 
-          sub={`${dashboardData.pendingCommissionsCount || 0} commissions`}
+          sub={`${dashboardData.pendingCommissions || 0} commissions`}
           icon={Clock}
           color="text-yellow-600"
         />
         <Stat 
           label="Total Paid" 
           value={fINR(dashboardData.totalPaidAmount || 0)} 
-          sub={`${dashboardData.paidCommissionsCount || 0} commissions`}
+          sub={`${dashboardData.paidCommissions || 0} commissions`}
           icon={DollarSign}
           color="text-green-600"
         />
         <Stat 
           label="Total Commissions" 
-          value={dashboardData.totalCommissionsCount || 0} 
+          value={dashboardData.paidCommissions || 0} 
           sub="All time"
           icon={TrendingUp}
           color="text-blue-600"
         />
         <Stat 
           label="Active Users" 
-          value={dashboardData.totalCommissionsCount || 0} 
+          value={dashboardData.paidCommissions || 0} 
           sub="With commissions"
           icon={Users}
           color="text-purple-600"
