@@ -377,6 +377,39 @@ function UserFinancials({ userId }) {
   );
 }
 
+function UserEarningsOnly({ userId }) {
+  const [earnings, setEarnings] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [err, setErr] = React.useState(null);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr(null);
+        const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const earnRes = await fetch(`/api/commissions/total/${userId}`, { headers, cache: 'no-store' });
+        const earnJson = earnRes.ok ? await earnRes.json() : {};
+        if (mounted) {
+          setEarnings(earnJson.totalEarnings ?? earnJson.totalCommissions ?? 0);
+        }
+      } catch (e) {
+        if (mounted) setErr(e.message || 'Failed to load earnings');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [userId]);
+
+  if (loading) return <div className="text-sm opacity-70">Loading…</div>;
+  if (err) return <div className="text-sm text-red-600">{err}</div>;
+
+  return <div className="font-medium">{fmtINR(earnings)}</div>;
+}
+
 /* =================== Edit User Modal =================== */
 function EditUserModal({ user, onClose, onSave, loading }) {
   const [formData, setFormData] = useState({
@@ -1182,7 +1215,9 @@ export default function Users() {
             </div>
 
             <div className="col-span-1 flex items-center">{Number(u.referrals || 0).toLocaleString('en-IN')}</div>
-            <div className="col-span-2 flex items-center">{fmtINR(u.earnings)}</div>
+            <div className="col-span-2 flex items-center">
+              <UserEarningsOnly userId={u.userId || u.id} />
+            </div>
 
             <div className="col-span-1 flex items-center">
               <StatusPill value={u.status} />
