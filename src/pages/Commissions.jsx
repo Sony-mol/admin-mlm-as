@@ -383,7 +383,7 @@ export default function Commissions() {
         />
         <Stat 
           label="Active Users" 
-          value={dashboardData.paidCommissions || 0} 
+          value={dashboardData.activeUsers || 0} 
           sub="With commissions"
           icon={Users}
           color="text-purple-600"
