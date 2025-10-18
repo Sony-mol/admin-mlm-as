@@ -66,6 +66,7 @@ export default function Payments() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [paymentStats, setPaymentStats] = useState(null);
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
   const [ptype, setPtype] = useState("All");
@@ -95,6 +96,28 @@ export default function Payments() {
       console.log('💳 Payments Response Status:', paymentsRes.status);
       console.log('💳 Payments Response Headers:', Object.fromEntries(paymentsRes.headers.entries()));
       
+      // Fetch payment statistics
+      console.log('📊 Fetching payment statistics...');
+      const statsRes = await fetch(`${API_ENDPOINTS.PAYMENTS}/statistics`, { headers });
+      console.log('📊 Statistics Response Status:', statsRes.status);
+      
+      let stats = null;
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        console.log('✅ Payment Statistics Received:', statsData);
+        console.log('📊 Statistics Breakdown:', {
+          totalDeposits: statsData.totalDeposits,
+          totalPurchases: statsData.totalPurchases,
+          totalCommissions: statsData.totalCommissions,
+          totalWithdrawals: statsData.totalWithdrawals,
+          pendingPayments: statsData.pendingPayments
+        });
+        setPaymentStats(statsData);
+        stats = statsData;
+      } else {
+        console.log('❌ Statistics API Failed:', statsRes.status, await statsRes.text());
+      }
+      
       if (paymentsRes.ok) {
         const response = await paymentsRes.json();
         console.log('✅ Real Payments Data Received:', response);
@@ -112,7 +135,11 @@ export default function Payments() {
             name: p.userName || null,
             code: p.userId != null ? String(p.userId) : null,
           },
-          type: p.type === 'DEPOSIT' ? 'Payment' : (p.type || 'Payment'),
+          type: p.type === 'COMMISSION' ? 'Commission' : 
+                p.type === 'DEPOSIT' ? 'Payment' : 
+                p.type === 'WITHDRAW' ? 'Withdrawal' :
+                p.type === 'ORDER_PAYMENT' ? 'Order Payment' :
+                (p.type || 'Payment'),
           amount: Number(p.amount) || 0,
           status:
             p.status === 'SUCCESS' || p.status === 'COMPLETED' ? 'Completed' :
@@ -311,12 +338,25 @@ export default function Payments() {
   }, [filtered, page, pageSize]);
 
   const kpis = useMemo(() => {
+    // Use real statistics from backend if available, otherwise fallback to frontend calculation
+    if (paymentStats) {
+      return {
+        total: (paymentStats.totalDeposits ? Number(paymentStats.totalDeposits) : 0) + 
+               (paymentStats.totalPurchases ? Number(paymentStats.totalPurchases) : 0) + 
+               (paymentStats.totalCommissions ? Number(paymentStats.totalCommissions) : 0),
+        pending: paymentStats.pendingPayments || 0,
+        withdrawals: paymentStats.totalWithdrawals ? Number(paymentStats.totalWithdrawals) : 0,
+        commissions: paymentStats.totalCommissions ? Number(paymentStats.totalCommissions) : 0
+      };
+    }
+    
+    // Fallback to frontend calculation
     const total = payments.reduce((sum, p) => sum + p.amount, 0);
     const pending = payments.filter((p) => p.status === "Pending").length;
     const withdrawals = payments.filter((p) => p.type === "Withdrawal").reduce((sum, p) => sum + p.amount, 0);
     const commissions = payments.filter((p) => p.type === "Commission").reduce((sum, p) => sum + p.amount, 0);
     return { total, pending, withdrawals, commissions };
-  }, [payments]);
+  }, [paymentStats, payments]);
 
   return (
     <div className="space-y-6">
@@ -357,11 +397,15 @@ export default function Payments() {
           value={ptype}
           onChange={(e) => setPtype(e.target.value)}
           className="px-4 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))] focus:outline-none focus:ring-2 focus:ring-blue-500"
+          title="Filter by transaction type"
         >
           <option value="All">All Types</option>
-          <option value="Payment">Payment</option>
-          <option value="Commission">Commission</option>
-          <option value="Withdrawal">Withdrawal</option>
+          <option value="Commission" title="MLM commission payments to users">Commission</option>
+          <option value="Order Payment" title="Product purchases and activation fees">Order Payment</option>
+          <option value="Payment" title="General payment transactions">Payment</option>
+          <option value="Withdrawal" title="User withdrawal requests">Withdrawal</option>
+          <option value="Referral Bonus" title="Special referral bonuses">Referral Bonus</option>
+          <option value="Adjustment" title="Manual account adjustments">Adjustment</option>
         </select>
         <div className="flex items-center gap-2">
           <input type="date" value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))]" />
@@ -372,7 +416,39 @@ export default function Payments() {
           <input type="number" inputMode="numeric" placeholder="Min ₹" value={amountMin} onChange={(e)=>setAmountMin(e.target.value)} className="w-28 px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))]" />
           <input type="number" inputMode="numeric" placeholder="Max ₹" value={amountMax} onChange={(e)=>setAmountMax(e.target.value)} className="w-28 px-3 py-2 border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--card))]" />
         </div>
+        <button
+          onClick={() => {
+            setQ("");
+            setStatus("All");
+            setPtype("All");
+            setDateFrom("");
+            setDateTo("");
+            setAmountMin("");
+            setAmountMax("");
+          }}
+          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+        >
+          Clear Filters
+        </button>
       </div>
+
+      {/* Transaction Type Info */}
+      {ptype !== "All" && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-blue-600 font-semibold">ℹ️ Filter Active:</span>
+            <span className="font-medium">{ptype} Transactions</span>
+          </div>
+          <div className="text-sm text-blue-700">
+            {ptype === "Commission" && "Showing MLM commission payments made to users in the referral network"}
+            {ptype === "Order Payment" && "Showing product purchases and MLM activation fee payments"}
+            {ptype === "Payment" && "Showing general payment transactions, often pending orders"}
+            {ptype === "Withdrawal" && "Showing user withdrawal requests from their wallet balance"}
+            {ptype === "Referral Bonus" && "Showing special referral bonus payments"}
+            {ptype === "Adjustment" && "Showing manual account adjustments and corrections"}
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <Card>
