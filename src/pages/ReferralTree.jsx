@@ -55,7 +55,7 @@ function normalizeUsers(arr) {
     tier: u.tier?.name ?? u.tier ?? 'BRONZE',
     level: u.level?.levelNumber ? `Level ${u.level.levelNumber}` : u.level ?? 'Level 1',
     referrals: u.referralCount ?? u.referrals ?? 0,
-    earnings: u.walletBalance ?? u.earnings ?? 0,  // Use wallet balance as earnings
+    earnings: u.totalEarnings ?? u.earnings ?? u.walletBalance ?? 0,  // Use totalEarnings if available, fallback to walletBalance
     status: u.status ?? 'PENDING',
     joinDate: u.createdAt ?? u.joinDate ?? null,
     
@@ -735,58 +735,22 @@ export default function ReferralTree() {
       const json = await res.json();
       let normalized = normalizeUsers(json);
       
-      // ALWAYS enhance with sample data to ensure Gouhar has children
-      normalized = enhanceWithSampleData(normalized);
+      // Use real data only - no sample data enhancement
+      // normalized = enhanceWithSampleData(normalized);
       
-      // FORCE add Gouhar's children if they don't exist
-      const gouharExists = normalized.some(u => u.code === 'REF542909');
-      const gouharChildrenExist = normalized.some(u => u.code === 'REF013' || u.code === 'REF014');
+      // Debug: Log actual earnings data
+      console.log('=== REAL EARNINGS DATA ===');
+      console.log('Total users:', normalized.length);
+      console.log('Sample user earnings:', normalized.slice(0, 5).map(u => ({
+        name: u.name,
+        earnings: u.earnings,
+        walletBalance: u.walletBalance,
+        totalEarnings: u.totalEarnings
+      })));
       
-      if (gouharExists && !gouharChildrenExist) {
-        console.log('FORCING Gouhar children addition');
-        const gouharChildren = [
-          {
-            id: 'SAMPLE013',
-            code: 'REF013',
-            sponsorCode: 'REF542909',
-            name: 'Gouhar Child 1',
-            email: 'gouhar.child1@example.com',
-            tier: 'BRONZE',
-            level: 'Level 1',
-            referrals: 0,
-            earnings: 100,
-            walletBalance: 100,
-            status: 'ACTIVE',
-            isActive: true,
-            totalOrders: 1,
-            networkId: 'NET007',
-            networkName: 'Network 7',
-            networkColor: 'bg-teal-500',
-            isRootUser: false,
-          },
-          {
-            id: 'SAMPLE014',
-            code: 'REF014',
-            sponsorCode: 'REF542909',
-            name: 'Gouhar Child 2',
-            email: 'gouhar.child2@example.com',
-            tier: 'BRONZE',
-            level: 'Level 1',
-            referrals: 0,
-            earnings: 80,
-            walletBalance: 80,
-            status: 'ACTIVE',
-            isActive: true,
-            totalOrders: 1,
-            networkId: 'NET007',
-            networkName: 'Network 7',
-            networkColor: 'bg-teal-500',
-            isRootUser: false,
-          }
-        ];
-        normalized = [...normalized, ...gouharChildren];
-        console.log('FORCED Gouhar children added to normalized users');
-      }
+      const totalEarnings = normalized.reduce((sum, user) => sum + (user.earnings || 0), 0);
+      console.log('Total calculated earnings:', totalEarnings);
+      console.log('=========================');
       
       setUsers(normalized);
       setErr(null);
