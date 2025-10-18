@@ -112,10 +112,15 @@ export default function Payments() {
           totalWithdrawals: statsData.totalWithdrawals,
           pendingPayments: statsData.pendingPayments
         });
+        
+        // Debug: Check if statistics are being used
+        console.log('🔍 Setting payment stats:', statsData);
         setPaymentStats(statsData);
         stats = statsData;
       } else {
-        console.log('❌ Statistics API Failed:', statsRes.status, await statsRes.text());
+        const errorText = await statsRes.text();
+        console.log('❌ Statistics API Failed:', statsRes.status, errorText);
+        console.log('⚠️ Falling back to frontend calculation');
       }
       
       if (paymentsRes.ok) {
@@ -338,9 +343,12 @@ export default function Payments() {
   }, [filtered, page, pageSize]);
 
   const kpis = useMemo(() => {
+    console.log('🔍 KPIs Calculation - paymentStats:', paymentStats);
+    console.log('🔍 KPIs Calculation - payments count:', payments.length);
+    
     // Use real statistics from backend if available, otherwise fallback to frontend calculation
     if (paymentStats) {
-      return {
+      const calculatedKpis = {
         total: (paymentStats.totalDeposits ? Number(paymentStats.totalDeposits) : 0) + 
                (paymentStats.totalPurchases ? Number(paymentStats.totalPurchases) : 0) + 
                (paymentStats.totalCommissions ? Number(paymentStats.totalCommissions) : 0),
@@ -348,14 +356,27 @@ export default function Payments() {
         withdrawals: paymentStats.totalWithdrawals ? Number(paymentStats.totalWithdrawals) : 0,
         commissions: paymentStats.totalCommissions ? Number(paymentStats.totalCommissions) : 0
       };
+      console.log('✅ Using backend statistics:', calculatedKpis);
+      return calculatedKpis;
     }
     
-    // Fallback to frontend calculation
-    const total = payments.reduce((sum, p) => sum + p.amount, 0);
+    // Fallback to frontend calculation - but exclude ₹0 transactions for totals
+    const meaningfulPayments = payments.filter(p => p.amount > 0);
+    const total = meaningfulPayments.reduce((sum, p) => sum + p.amount, 0);
     const pending = payments.filter((p) => p.status === "Pending").length;
     const withdrawals = payments.filter((p) => p.type === "Withdrawal").reduce((sum, p) => sum + p.amount, 0);
     const commissions = payments.filter((p) => p.type === "Commission").reduce((sum, p) => sum + p.amount, 0);
-    return { total, pending, withdrawals, commissions };
+    const fallbackKpis = { total, pending, withdrawals, commissions };
+    console.log('⚠️ Using frontend fallback calculation (excluding ₹0):', fallbackKpis);
+    console.log('🔍 Payment breakdown:', {
+      totalPayments: payments.length,
+      meaningfulPayments: meaningfulPayments.length,
+      totalAmount: total,
+      pendingCount: pending,
+      withdrawalsAmount: withdrawals,
+      commissionsAmount: commissions
+    });
+    return fallbackKpis;
   }, [paymentStats, payments]);
 
   return (
