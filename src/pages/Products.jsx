@@ -875,13 +875,13 @@ export default function Products() {
                 isDataPreFiltered={true}
                 totalRecords={products.length}
               />
-              <button
-                onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Add Product</span>
-              </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Add Product</span>
+            </button>
             </div>
           </div>
         </div>
@@ -1030,7 +1030,7 @@ export default function Products() {
           stickyHeader={true}
           actions={(product) => (
             <ProductActions
-              product={product}
+                product={product}
               onView={(product) => handleView(product)}
               onEdit={(product) => handleEdit(product)}
               onDelete={(product) => handleDelete(product)}

@@ -100,7 +100,7 @@ const EnhancedExportButton = ({
       const options = {
         ...exportOptions,
         format,
-        filters: { ...currentFilters, ...exportOptions.customFilters },
+        filters: isDataPreFiltered ? {} : { ...currentFilters, ...exportOptions.customFilters },
         fields: exportOptions.selectedFields ? exportOptions.selectedFields.map(f => f.key) : null,
         sortBy: exportOptions.sortBy,
         sortOrder: exportOptions.sortOrder,
@@ -111,7 +111,15 @@ const EnhancedExportButton = ({
       const exportFilename = ExportService.generateFilename(filename, format);
       
       // Show progress notification
-      const summary = ExportService.generateExportSummary(data, options.filters, options);
+      const summary = isDataPreFiltered ? {
+        totalRecords: totalRecords || data.length,
+        filteredRecords: data.length,
+        filtersApplied: Object.keys(currentFilters).filter(key => {
+          const value = currentFilters[key];
+          return value && value !== '' && value !== 'ALL' && value !== null && value !== undefined;
+        }).length
+      } : ExportService.generateExportSummary(data, options.filters, options);
+      
       addNotification({
         type: 'info',
         title: 'Export Started',
@@ -124,17 +132,17 @@ const EnhancedExportButton = ({
         ExportService.exportWithMetadata(data, format, exportFilename, options);
       } else {
         // Regular export
-        const filteredData = ExportService.exportFilteredData(data, options);
+        const exportData = isDataPreFiltered ? data : ExportService.exportFilteredData(data, options);
         
         switch (format) {
           case 'csv':
-            ExportService.exportToCSV(filteredData, exportFilename);
+            ExportService.exportToCSV(exportData, exportFilename);
             break;
           case 'excel':
-            ExportService.exportToExcel(filteredData, exportFilename);
+            ExportService.exportToExcel(exportData, exportFilename);
             break;
           case 'json':
-            ExportService.exportToJSON(filteredData, exportFilename);
+            ExportService.exportToJSON(exportData, exportFilename);
             break;
           default:
             throw new Error(`Unsupported export format: ${format}`);
@@ -197,7 +205,11 @@ const EnhancedExportButton = ({
   const summary = isDataPreFiltered ? {
     totalRecords: totalRecords || data.length,
     filteredRecords: data.length,
-    filtersApplied: Object.keys(currentFilters).filter(key => currentFilters[key]).length,
+    filtersApplied: Object.keys(currentFilters).filter(key => {
+      const value = currentFilters[key];
+      // Don't count empty values or default "ALL" values as active filters
+      return value && value !== '' && value !== 'ALL' && value !== null && value !== undefined;
+    }).length,
     exportOptions: {
       format: exportOptions.format || 'csv',
       fields: exportOptions.selectedFields?.length || 'all',

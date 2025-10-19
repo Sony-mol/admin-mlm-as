@@ -506,7 +506,7 @@ export default function Payments() {
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <CreditCard className="h-4 w-4 text-blue-600" />
                 </div>
-                <div className="font-medium">{payment.code}</div>
+                    <div className="font-medium">{payment.code}</div>
               </div>
             )
           },
@@ -519,8 +519,8 @@ export default function Payments() {
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                   <User className="h-4 w-4 text-green-600" />
                 </div>
-                <div>
-                  <div className="font-medium">{payment.user.name || '--'}</div>
+                    <div>
+                      <div className="font-medium">{payment.user.name || '--'}</div>
                   <div className="text-sm text-gray-500">ID: {payment.user.code || '--'}</div>
                 </div>
               </div>
@@ -544,7 +544,7 @@ export default function Payments() {
                 <span className="font-semibold whitespace-nowrap [font-variant-numeric:tabular-nums]">
                   {fINR(payment.amount)}
                 </span>
-              </div>
+                    </div>
             )
           },
           {
@@ -552,10 +552,10 @@ export default function Payments() {
             title: 'Method',
             sortable: true,
             render: (value, payment) => (
-              <div>
-                <div className="font-medium">{payment.method.channel || '--'}</div>
-                <div className="text-sm opacity-70">{payment.method.account || '--'}</div>
-              </div>
+                    <div>
+                      <div className="font-medium">{payment.method.channel || '--'}</div>
+                      <div className="text-sm opacity-70">{payment.method.account || '--'}</div>
+                    </div>
             )
           },
           {
@@ -569,12 +569,12 @@ export default function Payments() {
             title: 'Date',
             sortable: true,
             render: (value, payment) => (
-              <div>
-                <div>{fDate(payment.requestedAt)}</div>
-                {payment.processedAt && (
-                  <div className="text-sm opacity-70">Processed: {fDate(payment.processedAt)}</div>
-                )}
-              </div>
+                    <div>
+                      <div>{fDate(payment.requestedAt)}</div>
+                      {payment.processedAt && (
+                        <div className="text-sm opacity-70">Processed: {fDate(payment.processedAt)}</div>
+                      )}
+                    </div>
             )
           }
         ]}
@@ -599,9 +599,9 @@ export default function Payments() {
           />
         )}
         onRowClick={async (payment) => {
-          setModalItem(payment);
-          await fetchDetailedPayment(payment.id);
-        }}
+                        setModalItem(payment);
+                        await fetchDetailedPayment(payment.id);
+                      }}
         pagination={{
           currentPage: page,
           totalPages: Math.ceil(filtered.length / pageSize),

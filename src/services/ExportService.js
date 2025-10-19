@@ -41,11 +41,14 @@ class ExportService {
       throw new Error('No data to export');
     }
 
+    // Use data as-is (no flattening needed since CSV works fine)
+    const excelData = data;
+    
     // Use provided headers or extract from first object
-    const excelHeaders = headers || Object.keys(data[0]);
+    const excelHeaders = headers || Object.keys(excelData[0]);
     
     // Create worksheet
-    const worksheet = XLSX.utils.json_to_sheet(data, { header: excelHeaders });
+    const worksheet = XLSX.utils.json_to_sheet(excelData, { header: excelHeaders });
     
     // Set column widths
     const columnWidths = excelHeaders.map(header => ({
@@ -57,8 +60,33 @@ class ExportService {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
+
     // Generate and download file
     XLSX.writeFile(workbook, `${filename}.xlsx`);
+  }
+
+  // Flatten nested objects for Excel compatibility
+  static flattenObject(obj, prefix = '') {
+    const flattened = {};
+    
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        const newKey = prefix ? `${prefix}.${key}` : key;
+        
+        if (obj[key] !== null && typeof obj[key] === 'object' && !Array.isArray(obj[key]) && !(obj[key] instanceof Date)) {
+          // Recursively flatten nested objects
+          Object.assign(flattened, this.flattenObject(obj[key], newKey));
+        } else if (Array.isArray(obj[key])) {
+          // Handle arrays by joining with commas
+          flattened[newKey] = obj[key].join(', ');
+        } else {
+          // Handle primitive values, dates, and null
+          flattened[newKey] = obj[key];
+        }
+      }
+    }
+    
+    return flattened;
   }
 
   // Export data to JSON format
@@ -333,8 +361,21 @@ class ExportService {
   static exportToExcelWithMetadata(data, filename, summary, options = {}) {
     const workbook = XLSX.utils.book_new();
     
+    // Use data as-is (no flattening needed since CSV works fine)
+    const excelData = data;
+    
     // Main data sheet
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    
+    // Set column widths for data sheet
+    if (excelData.length > 0) {
+      const headers = Object.keys(excelData[0]);
+      const columnWidths = headers.map(header => ({
+        wch: Math.max(header.length, 15)
+      }));
+      worksheet['!cols'] = columnWidths;
+    }
+    
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
     
     // Summary sheet
