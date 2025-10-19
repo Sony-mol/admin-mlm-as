@@ -3,6 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import LineChartMini from "../components/charts/LineChartMini";
 import PieChartMini from "../components/charts/PieChartMini";
 import ResponsiveCard, { ResponsiveGrid, StatsCard, Section } from "../components/ResponsiveCard";
+import { SkeletonDashboard, SkeletonStatsCard } from "../components/SkeletonLoader";
+import { useNotifications } from "../components/NotificationSystem";
 import {
   TrendingUp,
   Users,
@@ -312,6 +314,7 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
   const [tierOpen, setTierOpen] = useState(false);
   const [tierKeyState, setTierKeyState] = useState(null);
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     let mounted = true;
@@ -551,7 +554,16 @@ export default function Overview() {
           setTierData(null);
         }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          // Show success notification
+          addNotification({
+            type: 'success',
+            title: 'Dashboard Updated',
+            message: 'All dashboard data has been refreshed successfully',
+            duration: 3000
+          });
+        }
       }
     })();
     return () => {
@@ -642,19 +654,10 @@ export default function Overview() {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6 text-[rgb(var(--fg))]">
-        <Header title="Overview" subtitle="Loading dashboard data..." />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <StatCard key={i} loading={true} />
-          ))}
-        </div>
-        <Card loading={true} />
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
+  // Handle error state
   if (!dashboardData) {
     return (
       <div className="space-y-6 text-[rgb(var(--fg))]">
@@ -673,7 +676,7 @@ export default function Overview() {
               </div>
             </div>
             <button
-              onClick={() => location.reload()}
+              onClick={() => window.location.reload()}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <RefreshCw className="w-4 h-4" />

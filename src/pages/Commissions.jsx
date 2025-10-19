@@ -1,6 +1,7 @@
 // src/pages/Commissions.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
+import { SkeletonCommissionsPage } from '../components/SkeletonLoader';
 import { Check, X, Clock, DollarSign, Users, TrendingUp } from 'lucide-react';
 
 // Import API configuration
@@ -330,7 +331,7 @@ export default function Commissions() {
   };
 
   if (loading) {
-    return <Card className="p-4">Loading commission data…</Card>;
+    return <SkeletonCommissionsPage />;
   }
 
   if (!dashboardData) {

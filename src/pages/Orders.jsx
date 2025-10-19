@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
+import { SkeletonOrdersPage } from '../components/SkeletonLoader';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -300,7 +301,7 @@ export default function Orders() {
   }
 
   if (loading) {
-    return <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 animate-pulse">Loading orders…</div>;
+    return <SkeletonOrdersPage />;
   }
   if (err) {
     return (

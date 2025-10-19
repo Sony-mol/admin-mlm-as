@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { SkeletonReferralTreePage } from '../components/SkeletonLoader';
 
 /** 🔁 REAL API (production) */
 const API_USERS = 'https://asmlmbackend-production.up.railway.app/api/users';
@@ -889,37 +890,7 @@ export default function ReferralTree() {
   const zoomOut = () => setZoomLevel(prev => Math.max(prev - 0.2, 0.3));
   const resetZoom = () => setZoomLevel(1);
 
-  if (loading)
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold">Referral Tree</h2>
-          </div>
-        </div>
-
-        {/* Loading KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-1/2 mb-1"></div>
-              <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-            </div>
-          ))}
-        </div>
-
-        {/* Loading Tree */}
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center gap-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span className="text-gray-600">Loading referral tree...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  if (loading) return <SkeletonReferralTreePage />;
   if (err) {
     return (
       <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">

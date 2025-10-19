@@ -1,6 +1,7 @@
 // src/pages/Withdrawals.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import Pagination from '../components/Pagination';
+import { SkeletonWithdrawalsPage } from '../components/SkeletonLoader';
 import { API_ENDPOINTS } from '../config/api';
 import {
   DollarSign,
@@ -362,6 +363,8 @@ const Withdrawals = () => {
       </div>
     );
   }
+
+  if (loading) return <SkeletonWithdrawalsPage />;
 
   return (
     <div className="p-6 text-[rgb(var(--fg))]">

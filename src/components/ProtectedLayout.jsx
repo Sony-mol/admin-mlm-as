@@ -4,6 +4,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import Breadcrumb from './Breadcrumb';
 
 export default function ProtectedLayout() {
   const { user } = useAuth();
@@ -112,6 +113,7 @@ export default function ProtectedLayout() {
           overflow-x-hidden
         ">
           <div className="max-w-7xl mx-auto">
+            <Breadcrumb />
             <Outlet />
           </div>
         </main>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ProtectedLayout from './components/ProtectedLayout';
+import { NotificationProvider, NotificationToast } from './components/NotificationSystem';
 import Overview from './pages/Overview';
 import Analytics from './pages/Analytics';
 import Products from './pages/Products';
@@ -22,7 +23,8 @@ import TermsManagement from './pages/TermsManagement';
 
 export default function App() {
   return (
-    <Routes>
+    <NotificationProvider>
+      <Routes>
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedLayout />}>
         <Route index element={<Overview />} />
@@ -43,6 +45,8 @@ export default function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="profile" element={<Profile />} />
       </Route>
-    </Routes>
+      </Routes>
+      <NotificationToast />
+    </NotificationProvider>
   );
 }

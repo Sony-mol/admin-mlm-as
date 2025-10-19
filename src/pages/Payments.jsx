@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
+import { SkeletonPaymentsPage } from '../components/SkeletonLoader';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -63,7 +64,7 @@ const Modal = ({ open, onClose, children }) => {
 };
 
 export default function Payments() {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
   const [payments, setPayments] = useState([]);
   const [paymentStats, setPaymentStats] = useState(null);
@@ -378,6 +379,8 @@ export default function Payments() {
     });
     return fallbackKpis;
   }, [paymentStats, payments]);
+
+  if (loading) return <SkeletonPaymentsPage />;
 
   return (
     <div className="space-y-6">

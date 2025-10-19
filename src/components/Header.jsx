@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
 import { Menu, UserPen, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { NotificationBell } from './NotificationSystem';
 
 export default function Header({ collapsed = false, onToggle = () => {}, isMobile = false }) {
   const { user, logout } = useAuth();
@@ -67,6 +68,9 @@ export default function Header({ collapsed = false, onToggle = () => {}, isMobil
 
       {/* Right: Settings + Theme toggle + Profile dropdown */}
       <div className="flex items-center gap-2 sm:gap-3 relative">
+        {/* Notifications */}
+        <NotificationBell />
+        
         {/* Settings Button */}
         <Link
           to="/settings"

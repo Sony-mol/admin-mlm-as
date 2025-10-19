@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import ImageUploader from '../components/ImageUploader';
+import { SkeletonProductsPage } from '../components/SkeletonLoader';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -919,9 +920,7 @@ export default function Products() {
 
         {/* Products Grid */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          </div>
+          <SkeletonProductsPage />
         ) : (
           <div className={`grid gap-6 ${
             viewMode === 'grid' 

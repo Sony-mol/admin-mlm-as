@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
+import { SkeletonUsersPage } from '../components/SkeletonLoader';
 import {
   Calendar as CalendarIcon,
   ChevronLeft, ChevronRight,
@@ -931,7 +932,7 @@ export default function Users() {
   }
 
   // ===== UI =====
-  if (loading) return <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 animate-pulse">Loading users…</div>;
+  if (loading) return <SkeletonUsersPage />;
   if (err) {
     return (
       <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
