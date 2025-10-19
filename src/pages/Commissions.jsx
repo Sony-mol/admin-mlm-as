@@ -3,7 +3,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonCommissionsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
-import { Check, X, Clock, DollarSign, Users, TrendingUp } from 'lucide-react';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { CommissionActions } from '../components/TableActions';
+import { Check, X, Clock, IndianRupee, Users, TrendingUp } from 'lucide-react';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -389,7 +391,7 @@ export default function Commissions() {
           label="Total Paid" 
           value={fINR(dashboardData.totalPaidAmount || 0)} 
           sub={`${dashboardData.paidCommissions || 0} commissions`}
-          icon={DollarSign}
+          icon={IndianRupee}
           color="text-green-600"
         />
         <Stat 
@@ -434,113 +436,160 @@ export default function Commissions() {
       )}
 
       {/* Pending Commissions */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-semibold">Pending Commissions</h2>
             <p className="text-sm opacity-70">Awaiting approval</p>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search referrer/referred/user id…"
-              className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]"
-            />
-          {pendingCommissions.length > 0 && (
-            <button
-              onClick={selectAllPending}
-              className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-            >
-              Select All ({pendingCommissions.length})
-            </button>
-          )}
-          </div>
         </div>
 
-        {pendingCommissions.length === 0 ? (
-          <div className="text-center py-8 text-sm opacity-70">
-            No pending commissions
-          </div>
-        ) : (
-          <>
-          <div className="space-y-3">
-            {pendingPaged.map((commission) => (
-              <div
-                key={commission.id}
-                className={`p-4 rounded-lg border transition-all ${
-                  selectedCommissions.has(commission.id)
-                    ? 'bg-[rgba(37,99,235,0.12)] border-[rgba(37,99,235,0.35)]'
-                    : 'border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.02)]'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedCommissions.has(commission.id)}
-                      onChange={() => toggleCommission(commission.id)}
-                      className="w-4 h-4"
-                    />
-                    <div>
-                      <div className="font-medium">
-                        Commission #{commission.id}
-                      </div>
-                      <div className="text-sm opacity-70">
-                        Referrer: User {commission.referrerUserId} → Referred: User {commission.referredUserId}
-                      </div>
-                      <div className="text-xs opacity-60">
-                        Level {commission.referralLevel} • {commission.commissionPercentage}% • {fDate(commission.createdAt)}
-                      </div>
-                      {commission.order && (
-                        <div className="text-xs opacity-60 mt-1">
-                          Order: {commission.order.orderNumber || 'N/A'} • Amount: {fINR(commission.order.totalAmount || 0)}
-                        </div>
-                      )}
-                    </div>
+        <ResponsiveTable
+          columns={[
+            {
+              key: 'id',
+              title: 'Commission',
+              sortable: true,
+              render: (value, commission) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Clock className="h-4 w-4 text-orange-600" />
                   </div>
-                  
-                  <div className="flex items-center gap-3">
-                    <div className="text-right">
-                      <div className="font-semibold text-lg">
-                        {fINR(commission.commissionAmount)}
-                      </div>
-                      <StatusPill value={commission.commissionStatus} />
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => confirmCommissionAction(commission, 'PAID')}
-                        className="p-2 rounded-lg bg-[rgba(22,163,74,0.12)] text-green-700 hover:bg-[rgba(22,163,74,0.2)] transition-colors"
-                        title="Approve & Pay"
-                        disabled={actionLoading}
-                      >
-                        <Check size={16} />
-                      </button>
-                      <button
-                        onClick={() => confirmCommissionAction(commission, 'CANCELLED')}
-                        className="p-2 rounded-lg bg-[rgba(220,38,38,0.12)] text-red-700 hover:bg-[rgba(220,38,38,0.2)] transition-colors"
-                        title="Cancel"
-                        disabled={actionLoading}
-                      >
-                        <X size={16} />
-                      </button>
+                  <div>
+                    <div className="font-medium">Commission #{commission.id}</div>
+                    <div className="text-sm text-gray-500">
+                      Level {commission.referralLevel} • {commission.commissionPercentage}%
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <Pagination
-            page={pendingPage}
-            pageSize={pendingPageSize}
-            total={filteredPending.length}
-            onPageChange={setPendingPage}
-            onPageSizeChange={(n) => { setPendingPageSize(n); setPendingPage(1); }}
-          />
-          </>
-        )}
-      </Card>
+              )
+            },
+            {
+              key: 'referrerUserId',
+              title: 'Referrer',
+              sortable: true,
+              render: (value, commission) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Users className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">User {commission.referrerUserId}</div>
+                    <div className="text-sm text-gray-500">Referrer</div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'referredUserId',
+              title: 'Referred',
+              sortable: true,
+              render: (value, commission) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <Users className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">User {commission.referredUserId}</div>
+                    <div className="text-sm text-gray-500">Referred</div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'commissionAmount',
+              title: 'Amount',
+              sortable: true,
+              render: (value, commission) => (
+                <div className="flex items-center gap-2">
+                  <IndianRupee className="h-4 w-4 text-green-600" />
+                  <span className="font-semibold text-lg">
+                    {fINR(commission.commissionAmount)}
+                  </span>
+                </div>
+              )
+            },
+            {
+              key: 'order',
+              title: 'Order Info',
+              sortable: false,
+              render: (value, commission) => (
+                commission.order ? (
+                  <div>
+                    <div className="font-medium">{commission.order.orderNumber || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{fINR(commission.order.totalAmount || 0)}</div>
+                  </div>
+                ) : (
+                  <span className="text-gray-500">No order</span>
+                )
+              )
+            },
+            {
+              key: 'createdAt',
+              title: 'Date',
+              sortable: true,
+              render: (value) => (
+                <div className="text-sm opacity-80">
+                  {fDate(value)}
+                </div>
+              )
+            }
+          ]}
+          data={pendingPaged}
+          loading={loading}
+          emptyMessage="No pending commissions"
+          searchable={false}
+          filterable={false}
+          selectable={true}
+          bulkActions={[
+            { key: 'approve', label: 'Approve & Pay Selected' },
+            { key: 'cancel', label: 'Cancel Selected' },
+            { key: 'export', label: 'Export Selected' }
+          ]}
+          onBulkAction={(action, selectedIds) => {
+            const selectedCommissions = selectedIds.map(id => pendingCommissions.find(commission => commission.id === id)).filter(Boolean);
+            
+            switch (action) {
+              case 'approve':
+                selectedCommissions.forEach(commission => {
+                  confirmCommissionAction(commission, 'PAID');
+                });
+                break;
+              case 'cancel':
+                selectedCommissions.forEach(commission => {
+                  confirmCommissionAction(commission, 'CANCELLED');
+                });
+                break;
+              case 'export':
+                // Export selected commissions
+                break;
+            }
+          }}
+          selectedRows={selectedCommissions}
+          onRowSelect={(id) => toggleCommission(id)}
+          cardView={true}
+          stickyHeader={true}
+          actions={(commission) => (
+            <CommissionActions
+              commission={commission}
+              onApprove={(commission) => confirmCommissionAction(commission, 'PAID')}
+              onCancel={(commission) => confirmCommissionAction(commission, 'CANCELLED')}
+              onView={(commission) => {/* View details */}}
+            />
+          )}
+          pagination={{
+            currentPage: pendingPage,
+            totalPages: Math.ceil(filteredPending.length / pendingPageSize),
+            start: (pendingPage - 1) * pendingPageSize + 1,
+            end: Math.min(pendingPage * pendingPageSize, filteredPending.length),
+            total: filteredPending.length,
+            hasPrevious: pendingPage > 1,
+            hasNext: pendingPage < Math.ceil(filteredPending.length / pendingPageSize),
+            onPrevious: () => setPendingPage(pendingPage - 1),
+            onNext: () => setPendingPage(pendingPage + 1)
+          }}
+        />
+      </div>
 
       {/* Paid Commissions */}
       <Card>

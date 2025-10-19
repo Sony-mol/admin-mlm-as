@@ -1,6 +1,6 @@
 // TableActions.jsx - Reusable table action components
 import React from 'react';
-import { Eye, Edit, Trash2, Download, MoreHorizontal, User, Mail, Phone, DollarSign, UserCheck, UserX } from 'lucide-react';
+import { Eye, Edit, Trash2, Download, MoreHorizontal, User, Mail, Phone, IndianRupee, UserCheck, UserX } from 'lucide-react';
 
 // Standard action buttons for tables
 export const ActionButton = ({ 
@@ -193,7 +193,7 @@ export const OrderActions = ({ order, onView, onEdit, onCancel, onRefund }) => (
           variant: 'danger'
         }] : []),
         ...(onRefund ? [{
-          icon: DollarSign,
+          icon: IndianRupee,
           label: 'Process Refund',
           onClick: () => onRefund(order)
         }] : [])
@@ -220,7 +220,7 @@ export const PaymentActions = ({ payment, onView, onApprove, onReject, onRefund 
           variant: 'danger'
         }] : []),
         ...(onRefund ? [{
-          icon: DollarSign,
+          icon: IndianRupee,
           label: 'Process Refund',
           onClick: () => onRefund(payment)
         }] : [])
@@ -296,6 +296,22 @@ export const ProductActions = ({ product, onView, onEdit, onDelete, onDuplicate 
   </div>
 );
 
+export const ActivityLogActions = ({ log, onView, onExport }) => (
+  <div className="flex items-center gap-1">
+    <ActionButton icon={Eye} label="View Details" onClick={() => onView(log)} variant="primary" />
+    <ActionButton icon={Download} label="Export Log" onClick={() => onExport(log)} variant="default" />
+  </div>
+);
+
+export const RewardActions = ({ reward, onView, onClaim }) => (
+  <div className="flex items-center gap-1">
+    <ActionButton icon={Eye} label="View Details" onClick={() => onView(reward)} variant="primary" />
+    {reward.status !== 'claimed' && (
+      <ActionButton icon={UserCheck} label="Claim Reward" onClick={() => onClaim(reward)} variant="success" />
+    )}
+  </div>
+);
+
 export default {
   ActionButton,
   ViewAction,
@@ -310,5 +326,7 @@ export default {
   PaymentActions,
   CommissionActions,
   WithdrawalActions,
-  ProductActions
+  ProductActions,
+  ActivityLogActions,
+  RewardActions
 };

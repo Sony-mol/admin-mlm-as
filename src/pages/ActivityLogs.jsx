@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Activity, Search, Filter, Download, Calendar, User, Shield, AlertTriangle, Info, Clock } from "lucide-react";
 import { API_ENDPOINTS } from '../config/api';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { ActivityLogActions } from '../components/TableActions';
 
 const ACTIVITY_LOGS_API = API_ENDPOINTS.ACTIVITY_LOGS;
 const RECENT_ACTIVITY_API = API_ENDPOINTS.RECENT_ACTIVITIES;
@@ -382,153 +384,132 @@ export default function ActivityLogs() {
             <p className="opacity-70">No activity logs found</p>
           </div>
         ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-[rgba(var(--fg),0.05)]">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                      Activity
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                      User/Admin
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                      Severity
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                      Date & Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                      IP Address
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[rgb(var(--border))]">
-                  {logs.map((log) => {
-                    const dateTime = formatDateTime(log.createdAt);
-                    return (
-                      <tr key={log.id} className="hover:bg-[rgba(var(--fg),0.03)]">
-                        <td className="px-6 py-4">
-                          <div>
-                            <p className="text-sm font-medium">{log.actionType?.replace(/_/g, " ") || "--"}</p>
-                            <p className="text-sm opacity-70 max-w-xs truncate">{log.description || "--"}</p>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {log.adminId ? (
-                              <Shield className="w-4 h-4 text-blue-500" />
-                            ) : log.userId ? (
-                              <User className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <Activity className="w-4 h-4 opacity-60" />
-                            )}
-                            <span className="text-sm">
-                              {log.adminId ? `Admin ${log.adminId}` :
-                               log.userId ? `User ${log.userId}` : "System"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {getCategoryIcon(log.category)}
-                            <span className="text-sm">
-                              {log.category?.replace(/_/g, " ") || "--"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {getSeverityIcon(log.severity)}
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(log.severity)}`}>
-                              {log.severity || "INFO"}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 opacity-50" />
-                            <div>
-                              <p className="text-sm">{dateTime.date}</p>
-                              <p className="text-xs opacity-70">{dateTime.time}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm opacity-70 font-mono">{log.ipAddress || "--"}</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="lg:hidden">
-              {logs.map((log) => {
-                const dateTime = formatDateTime(log.createdAt);
-                return (
-                  <div key={log.id} className="p-4 border-b border-[rgb(var(--border))] last:border-b-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {getSeverityIcon(log.severity)}
-                        <span className="text-sm font-medium">{log.actionType?.replace(/_/g, " ") || "--"}</span>
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(log.severity)}`}>
-                        {log.severity || "INFO"}
-                      </span>
+          <ResponsiveTable
+            columns={[
+              {
+                key: 'actionType',
+                title: 'Activity',
+                sortable: true,
+                render: (value, log) => (
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <Activity className="h-4 w-4 text-purple-600" />
                     </div>
-
-                    <p className="text-sm opacity-70 mb-2">{log.description || "--"}</p>
-
-                    <div className="flex items-center justify-between text-xs opacity-70">
-                      <div className="flex items-center gap-4">
-                        <span>
-                          {log.adminId ? `Admin ${log.adminId}` :
-                           log.userId ? `User ${log.userId}` : "System"}
-                        </span>
-                        <span>{log.category?.replace(/_/g, " ") || "--"}</span>
-                      </div>
-                      <span>{dateTime.date} {dateTime.time}</span>
+                    <div>
+                      <div className="font-medium">{log.actionType?.replace(/_/g, " ") || "--"}</div>
+                      <div className="text-sm text-gray-500 max-w-xs truncate">{log.description || "--"}</div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Pagination */}
-            {pagination.totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-[rgb(var(--border))]">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm opacity-80">
-                    Page {pagination.currentPage + 1} of {pagination.totalPages}
+                )
+              },
+              {
+                key: 'userId',
+                title: 'User/Admin',
+                sortable: true,
+                render: (value, log) => (
+                  <div className="flex items-center gap-3">
+                    {log.adminId ? (
+                      <>
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Shield className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <span className="text-sm font-medium">Admin {log.adminId}</span>
+                      </>
+                    ) : log.userId ? (
+                      <>
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium">User {log.userId}</span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                          <Activity className="h-4 w-4 text-gray-600" />
+                        </div>
+                        <span className="text-sm font-medium">System</span>
+                      </>
+                    )}
                   </div>
+                )
+              },
+              {
+                key: 'category',
+                title: 'Category',
+                sortable: true,
+                render: (value, log) => (
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handlePageChange(pagination.currentPage - 1)}
-                      disabled={pagination.currentPage === 0}
-                      className="px-3 py-1 text-sm rounded border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => handlePageChange(pagination.currentPage + 1)}
-                      disabled={pagination.currentPage >= pagination.totalPages - 1}
-                      className="px-3 py-1 text-sm rounded border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
+                    {getCategoryIcon(log.category)}
+                    <span className="text-sm">{log.category?.replace(/_/g, " ") || "--"}</span>
                   </div>
-                </div>
-              </div>
+                )
+              },
+              {
+                key: 'severity',
+                title: 'Severity',
+                sortable: true,
+                render: (value, log) => (
+                  <div className="flex items-center gap-2">
+                    {getSeverityIcon(log.severity)}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(log.severity)}`}>
+                      {log.severity || "INFO"}
+                    </span>
+                  </div>
+                )
+              },
+              {
+                key: 'createdAt',
+                title: 'Date & Time',
+                sortable: true,
+                render: (value, log) => {
+                  const dateTime = formatDateTime(log.createdAt);
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <div className="text-sm">{dateTime.date}</div>
+                        <div className="text-xs text-gray-500">{dateTime.time}</div>
+                      </div>
+                    </div>
+                  );
+                }
+              },
+              {
+                key: 'ipAddress',
+                title: 'IP Address',
+                sortable: true,
+                render: (value) => (
+                  <span className="text-sm opacity-70 font-mono">{value || "--"}</span>
+                )
+              }
+            ]}
+            data={logs}
+            loading={loading}
+            emptyMessage="No activity logs found"
+            searchable={false}
+            filterable={false}
+            selectable={false}
+            cardView={true}
+            stickyHeader={true}
+            actions={(log) => (
+              <ActivityLogActions
+                log={log}
+                onView={(log) => {/* View details */}}
+                onExport={(log) => {/* Export log */}}
+              />
             )}
-          </>
+            pagination={{
+              currentPage: pagination.currentPage + 1,
+              totalPages: pagination.totalPages,
+              start: pagination.currentPage * pagination.size + 1,
+              end: Math.min((pagination.currentPage + 1) * pagination.size, pagination.totalElements),
+              total: pagination.totalElements,
+              hasPrevious: pagination.currentPage > 0,
+              hasNext: pagination.currentPage < pagination.totalPages - 1,
+              onPrevious: () => handlePageChange(pagination.currentPage - 1),
+              onNext: () => handlePageChange(pagination.currentPage + 1)
+            }}
+          />
         )}
       </div>
     </div>

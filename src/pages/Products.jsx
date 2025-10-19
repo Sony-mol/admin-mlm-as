@@ -4,6 +4,8 @@ import Pagination from '../components/Pagination';
 import ImageUploader from '../components/ImageUploader';
 import { SkeletonProductsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { ProductActions } from '../components/TableActions';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -901,67 +903,143 @@ export default function Products() {
                 <option value="beauty">Beauty & Health</option>
               </select>
             </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg ${
-                  viewMode === 'grid' 
-                    ? 'bg-[rgba(37,99,235,0.12)] text-blue-600' 
-                    : 'text-[rgba(var(--fg),0.6)] hover:bg-[rgba(var(--fg),0.05)]'
-                }`}
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg ${
-                  viewMode === 'list' 
-                    ? 'bg-[rgba(37,99,235,0.12)] text-blue-600' 
-                    : 'text-[rgba(var(--fg),0.6)] hover:bg-[rgba(var(--fg),0.05)]'
-                }`}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Products Grid */}
-        {loading ? (
-          <SkeletonProductsPage />
-        ) : (
-          <div className={`grid gap-6 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-              : 'grid-cols-1'
-          }`}>
-            {paged.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onView={handleView}
-              />
-            ))}
-          </div>
-        )}
-
-        <Pagination
-          page={page}
-          pageSize={pageSize}
-          total={filteredProducts.length}
-          onPageChange={setPage}
-          onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+        {/* Enhanced Responsive Table */}
+        <ResponsiveTable
+          columns={[
+            {
+              key: 'name',
+              title: 'Product',
+              sortable: true,
+              render: (value, product) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    {product.image ? (
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Package className="h-6 w-6 text-blue-600" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium">{product.name}</div>
+                    <div className="text-sm text-gray-500">{product.category}</div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'price',
+              title: 'Price',
+              sortable: true,
+              render: (value, product) => (
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                  <span className="font-semibold whitespace-nowrap [font-variant-numeric:tabular-nums]">
+                    ₹{product.price?.toLocaleString() || '0'}
+                  </span>
+                </div>
+              )
+            },
+            {
+              key: 'stock',
+              title: 'Stock',
+              sortable: true,
+              render: (value) => (
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${value > 10 ? 'bg-green-500' : value > 0 ? 'bg-yellow-500' : 'bg-red-500'}`}></div>
+                  <span className="font-medium">{value || 0}</span>
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              sortable: true,
+              render: (value) => (
+                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
+                  value === 'active' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {value === 'active' ? 'Active' : 'Inactive'}
+                </span>
+              )
+            },
+            {
+              key: 'createdAt',
+              title: 'Created',
+              sortable: true,
+              render: (value) => (
+                <div className="text-sm opacity-80">
+                  {value ? new Date(value).toLocaleDateString() : '—'}
+                </div>
+              )
+            }
+          ]}
+          data={paged}
+          loading={loading}
+          emptyMessage="No products found. Try adjusting your search or filter criteria."
+          searchable={false}
+          filterable={false}
+          selectable={true}
+          bulkActions={[
+            { key: 'activate', label: 'Activate Selected' },
+            { key: 'deactivate', label: 'Deactivate Selected' },
+            { key: 'export', label: 'Export Selected' }
+          ]}
+          onBulkAction={(action, selectedIds) => {
+            const selectedProducts = selectedIds.map(id => products.find(product => product.id === id)).filter(Boolean);
+            
+            switch (action) {
+              case 'activate':
+                selectedProducts.forEach(product => {
+                  // Handle activation
+                  console.log('Activate product:', product.id);
+                });
+                break;
+              case 'deactivate':
+                selectedProducts.forEach(product => {
+                  // Handle deactivation
+                  console.log('Deactivate product:', product.id);
+                });
+                break;
+              case 'export':
+                // Export selected products
+                break;
+            }
+          }}
+          selectedRows={new Set()}
+          onRowSelect={() => {}}
+          cardView={true}
+          stickyHeader={true}
+          actions={(product) => (
+            <ProductActions
+              product={product}
+              onView={(product) => handleView(product)}
+              onEdit={(product) => handleEdit(product)}
+              onDelete={(product) => handleDelete(product)}
+              onDuplicate={(product) => {/* Duplicate functionality */}}
+            />
+          )}
+          onRowClick={(product) => handleView(product)}
+          pagination={{
+            currentPage: page,
+            totalPages: Math.ceil(filteredProducts.length / pageSize),
+            start: (page - 1) * pageSize + 1,
+            end: Math.min(page * pageSize, filteredProducts.length),
+            total: filteredProducts.length,
+            hasPrevious: page > 1,
+            hasNext: page < Math.ceil(filteredProducts.length / pageSize),
+            onPrevious: () => setPage(page - 1),
+            onNext: () => setPage(page + 1)
+          }}
         />
-
-        {filteredProducts.length === 0 && !loading && (
-          <div className="text-center py-12">
-            <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
-            <h3 className="text-lg font-medium text-[rgb(var(--fg))] mb-2">No products found</h3>
-            <p className="text-[rgba(var(--fg),0.6)]">Try adjusting your search or filter criteria</p>
-          </div>
-        )}
 
         {/* Product Form Modal */}
         {showForm && (

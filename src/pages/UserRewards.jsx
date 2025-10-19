@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Pagination from '../components/Pagination';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { RewardActions } from '../components/TableActions';
 import { 
   Gift, 
   Users, 
@@ -274,83 +276,119 @@ const UserRewards = () => {
           </div>
         </div>
 
-        {/* Rewards Table */}
-        <div className="overflow-x-auto rounded-lg border border-[rgb(var(--border))]">
-          <table className="min-w-full divide-y divide-[rgb(var(--border))]">
-            <thead className="bg-[rgba(var(--fg),0.05)]">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Reward</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Level</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Progress</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Claimed Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[rgb(var(--border))] bg-[rgb(var(--card))]">
-              {paged.map((reward) => (
-                <tr key={reward.userRewardId} className="hover:bg-[rgba(var(--fg),0.02)]">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-[rgb(var(--fg))]">{reward.userName}</div>
-                      <div className="text-sm text-[rgba(var(--fg),0.7)]">{reward.userEmail}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <span className="text-2xl mr-3">{getRewardTypeIcon(reward.rewardType)}</span>
-                      <div>
-                        <div className="text-sm font-medium text-[rgb(var(--fg))]">{reward.rewardName}</div>
-                        <div className="text-sm text-[rgba(var(--fg),0.7)]">{reward.rewardType}</div>
-                        {reward.rewardValue && (
-                          <div className="text-sm text-green-600">₹{reward.rewardValue}</div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-[rgb(var(--fg))]">Level {reward.levelNumber}</div>
-                    <div className="text-sm text-[rgba(var(--fg),0.7)]">{reward.requiredReferrals} referrals</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-[rgb(var(--fg))]">
-                      {reward.userCurrentReferrals}/{reward.requiredReferrals}
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{
-                          width: `${Math.min((reward.userCurrentReferrals / reward.requiredReferrals) * 100, 100)}%`
-                        }}
-                      ></div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(reward)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-[rgba(var(--fg),0.7)]">
-                    {formatDate(reward.claimedAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-10 text-[rgba(var(--fg),0.7)]">
-            <Gift className="w-12 h-12 mx-auto mb-4 text-[rgba(var(--fg),0.3)]" />
-            <p className="text-lg">No rewards found.</p>
-            <p className="text-sm">Try adjusting your filters or search terms.</p>
-          </div>
-        )}
-
-        <Pagination
-          page={page}
-          pageSize={pageSize}
-          total={filtered.length}
-          onPageChange={setPage}
-          onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+        {/* Enhanced Responsive Table */}
+        <ResponsiveTable
+          columns={[
+            {
+              key: 'userName',
+              title: 'User',
+              sortable: true,
+              render: (value, reward) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Users className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{reward.userName}</div>
+                    <div className="text-sm text-gray-500">{reward.userEmail}</div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'rewardName',
+              title: 'Reward',
+              sortable: true,
+              render: (value, reward) => (
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{getRewardTypeIcon(reward.rewardType)}</span>
+                  <div>
+                    <div className="font-medium">{reward.rewardName}</div>
+                    <div className="text-sm text-gray-500">{reward.rewardType}</div>
+                    {reward.rewardValue && (
+                      <div className="text-sm text-green-600 font-semibold">₹{reward.rewardValue}</div>
+                    )}
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'levelNumber',
+              title: 'Level',
+              sortable: true,
+              render: (value, reward) => (
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-purple-600" />
+                  <div>
+                    <div className="font-medium">Level {reward.levelNumber}</div>
+                    <div className="text-sm text-gray-500">{reward.requiredReferrals} referrals</div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'progress',
+              title: 'Progress',
+              sortable: false,
+              render: (value, reward) => (
+                <div>
+                  <div className="text-sm font-medium mb-1">
+                    {reward.userCurrentReferrals}/{reward.requiredReferrals}
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min((reward.userCurrentReferrals / reward.requiredReferrals) * 100, 100)}%`
+                      }}
+                    ></div>
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              sortable: true,
+              render: (value, reward) => getStatusBadge(reward)
+            },
+            {
+              key: 'claimedAt',
+              title: 'Claimed Date',
+              sortable: true,
+              render: (value, reward) => (
+                <div className="text-sm opacity-80">
+                  {formatDate(reward.claimedAt)}
+                </div>
+              )
+            }
+          ]}
+          data={paged}
+          loading={loading}
+          emptyMessage="No rewards found. Try adjusting your filters or search terms."
+          searchable={false}
+          filterable={false}
+          selectable={false}
+          cardView={true}
+          stickyHeader={true}
+          actions={(reward) => (
+            <RewardActions
+              reward={reward}
+              onView={(reward) => {/* View details */}}
+              onClaim={(reward) => {/* Claim reward */}}
+            />
+          )}
+          pagination={{
+            currentPage: page,
+            totalPages: Math.ceil(filtered.length / pageSize),
+            start: (page - 1) * pageSize + 1,
+            end: Math.min(page * pageSize, filtered.length),
+            total: filtered.length,
+            hasPrevious: page > 1,
+            hasNext: page < Math.ceil(filtered.length / pageSize),
+            onPrevious: () => setPage(page - 1),
+            onNext: () => setPage(page + 1)
+          }}
         />
       </div>
     </div>

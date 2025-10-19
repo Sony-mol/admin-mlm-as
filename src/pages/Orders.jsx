@@ -2,12 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
 import { SkeletonOrdersPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { OrderActions } from '../components/TableActions';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
 
 // Import shared OrderModal component
 import OrderModal from '../components/OrderModal';
+import { Package, User, IndianRupee } from 'lucide-react';
 
 const fmtINR = (n) =>
   Number(n || 0).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
@@ -379,129 +382,123 @@ export default function Orders() {
         </div>
       </div>
 
-      {/* Desktop grid — widen Products via 12-col layout */}
-      <div className="hidden md:block rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] overflow-visible">
-        {/* Header (12 cols) */}
-        <div className="grid grid-cols-12 gap-x-8 items-center px-4 py-3 border-b border-[rgb(var(--border))] text-sm opacity-80">
-          <div className="col-span-2">Order</div>
-          <div className="col-span-2">Customer</div>
-          <div className="col-span-4">Products</div>{/* ← wider */}
-          <div className="col-span-1">Amount</div>
-          <div className="col-span-2 text-center">Status</div>
-          <div className="col-span-1">Date</div>
-        </div>
-
-        {paged.map((o) => (
-          <div
-            key={o.id || o.orderNo}
-            className={[
-              "grid grid-cols-12 gap-x-8 items-center px-4 py-4 my-1",
-              "rounded-xl border border-transparent",
-              "transition-all duration-200 ease-out",
-              "hover:-translate-y-0.5 hover:shadow-lg hover:bg-[rgba(var(--fg),0.03)] hover:border-[rgb(var(--border-hover))]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--accent-1),0.35)]",
-              "border-t border-[rgb(var(--border))]",
-              "cursor-pointer",
-            ].join(" ")}
-            onClick={async () => {
-              setView(o);
-              await fetchDetailedOrder(o.id);
-            }}
-            role="button"
-            aria-label={`View order ${o.orderNo}`}
-          >
-            {/* Order */}
-            <div className="col-span-2 font-medium">{o.orderNo}</div>
-
-            {/* Customer */}
-            <div className="col-span-2 min-w-0">
-              <div className="font-medium truncate">{o.customerName}</div>
-              <div className="text-xs opacity-70 truncate">{o.customerCode}</div>
-            </div>
-
-            {/* Products (wider) */}
-            <div className="col-span-4 text-sm opacity-90 min-w-0">
-              <div className="truncate">{(o.products || []).join(", ")}</div>
-            </div>
-
-            {/* Amount (left-aligned to match Payments) */}
-            <div className="col-span-1 font-semibold whitespace-nowrap [font-variant-numeric:tabular-nums]">
-              {fmtINR(o.amount)}
-            </div>
-
-            {/* Status */}
-            <div className="col-span-2 flex justify-center">
-              <div className="flex flex-col items-center gap-1">
-                <StatusPill value={o.deliveryStatus || 'PENDING'} />
-                {o.timeRemaining !== null && o.status === 'PENDING' && (
-                  <div className={`text-xs ${o.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
-                    {o.isExpired ? '⚠️ Expired' : `⏱️ ${o.timeRemaining}m`}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Date */}
-            <div className="col-span-1 text-sm opacity-80 whitespace-nowrap [font-variant-numeric:tabular-nums]">
-              {fmtDate(o.date)}
-            </div>
-          </div>
-        ))}
-
-        {filtered.length === 0 && (
-          <div className="px-4 py-10 text-center opacity-70">No orders match your filters.</div>
-        )}
-      </div>
-
-      <Pagination
-        page={page}
-        pageSize={pageSize}
-        total={filtered.length}
-        onPageChange={setPage}
-        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
-      />
-
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-3">
-        {paged.map((o) => (
-          <div
-            key={o.id || o.orderNo}
-            className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 active:scale-[0.998] transition"
-            onClick={async () => {
-              setView(o);
-              await fetchDetailedOrder(o.id);
-            }}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="font-medium">{o.orderNo}</div>
-                <div className="text-sm opacity-80">
-                  {o.customerName} <span className="opacity-60">({o.customerCode})</span>
+      {/* Enhanced Responsive Table */}
+      <ResponsiveTable
+        columns={[
+          {
+            key: 'orderNo',
+            title: 'Order',
+            sortable: true,
+            render: (value, order) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Package className="h-4 w-4 text-blue-600" />
                 </div>
-                <div className="mt-1 text-xs opacity-70 truncate">{(o.products || []).join(", ")}</div>
+                <div className="font-medium">{order.orderNo}</div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <StatusPill value={o.status} />
-                {o.timeRemaining !== null && o.status === 'PENDING' && (
-                  <div className={`text-xs ${o.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
-                    {o.isExpired ? '⚠️ Expired' : `⏱️ ${o.timeRemaining}m`}
+            )
+          },
+          {
+            key: 'customerName',
+            title: 'Customer',
+            sortable: true,
+            render: (value, order) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <div className="font-medium">{order.customerName}</div>
+                  <div className="text-sm text-gray-500">{order.customerCode}</div>
+                </div>
+              </div>
+            )
+          },
+          {
+            key: 'products',
+            title: 'Products',
+            sortable: false,
+            render: (value, order) => (
+              <div className="text-sm opacity-90">
+                {(order.products || []).join(", ")}
+              </div>
+            )
+          },
+          {
+            key: 'amount',
+            title: 'Amount',
+            sortable: true,
+            render: (value, order) => (
+              <div className="flex items-center gap-2">
+                <IndianRupee className="h-4 w-4 text-green-600" />
+                <span className="font-semibold whitespace-nowrap [font-variant-numeric:tabular-nums]">
+                  {fmtINR(order.amount)}
+                </span>
+              </div>
+            )
+          },
+          {
+            key: 'status',
+            title: 'Status',
+            sortable: true,
+            render: (value, order) => (
+              <div className="flex flex-col items-center gap-1">
+                <StatusPill value={order.deliveryStatus || 'PENDING'} />
+                {order.timeRemaining !== null && order.status === 'PENDING' && (
+                  <div className={`text-xs ${order.isExpired ? 'text-red-500' : 'text-amber-500'}`}>
+                    {order.isExpired ? '⚠️ Expired' : `⏱️ ${order.timeRemaining}m`}
                   </div>
                 )}
               </div>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="rounded-full px-2 py-0.5 border border-[rgb(var(--border))] text-xs">{fmtINR(o.amount)}</span>
-              <span className="text-xs opacity-70">{fmtDate(o.date)}</span>
-            </div>
-          </div>
-        ))}
-        {filtered.length === 0 && (
-          <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 text-center opacity-70">
-            No orders match your filters.
-          </div>
+            )
+          },
+          {
+            key: 'date',
+            title: 'Date',
+            sortable: true,
+            render: (value, order) => (
+              <div className="text-sm opacity-80 whitespace-nowrap [font-variant-numeric:tabular-nums]">
+                {fmtDate(order.date)}
+              </div>
+            )
+          }
+        ]}
+        data={paged}
+        loading={loading}
+        emptyMessage="No orders match your filters."
+        searchable={false}
+        filterable={false}
+        selectable={false}
+        cardView={true}
+        stickyHeader={true}
+        actions={(order) => (
+          <OrderActions
+            order={order}
+            onView={async (order) => {
+              setView(order);
+              await fetchDetailedOrder(order.id);
+            }}
+            onEdit={(order) => {/* Edit functionality */}}
+            onCancel={(order) => {/* Cancel functionality */}}
+            onRefund={(order) => {/* Refund functionality */}}
+          />
         )}
-      </div>
+        onRowClick={async (order) => {
+          setView(order);
+          await fetchDetailedOrder(order.id);
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages: Math.ceil(filtered.length / pageSize),
+          start: (page - 1) * pageSize + 1,
+          end: Math.min(page * pageSize, filtered.length),
+          total: filtered.length,
+          hasPrevious: page > 1,
+          hasNext: page < Math.ceil(filtered.length / pageSize),
+          onPrevious: () => setPage(page - 1),
+          onNext: () => setPage(page + 1)
+        }}
+      />
 
       {/* Modal */}
       <OrderModal order={view} detailedOrder={detailedOrder} onClose={() => {

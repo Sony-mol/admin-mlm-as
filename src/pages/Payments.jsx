@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
 import { SkeletonPaymentsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { PaymentActions } from '../components/TableActions';
+import { CreditCard, User, IndianRupee } from 'lucide-react';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -480,82 +483,125 @@ export default function Payments() {
         </div>
       )}
 
-      {/* Table */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[rgb(var(--border))]">
-                <th className="text-left py-3 px-4 font-medium">Payment</th>
-                <th className="text-left py-3 px-4 font-medium">User</th>
-                <th className="text-left py-3 px-4 font-medium">Type</th>
-                <th className="text-left py-3 px-4 font-medium">Amount</th>
-                <th className="text-left py-3 px-4 font-medium">Method</th>
-                <th className="text-left py-3 px-4 font-medium">Status</th>
-                <th className="text-left py-3 px-4 font-medium">Date</th>
-                <th className="text-left py-3 px-4 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paged.map((payment) => (
-                <tr key={payment.id} className="border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--muted))]">
-                  <td className="py-3 px-4">
-                    <div className="font-medium">{payment.code}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div>
-                      <div className="font-medium">{payment.user.name || '--'}</div>
-                      <div className="text-sm opacity-70">ID: {payment.user.code || '--'}</div>
-                    </div>
-                  </td>
-
-                  <td className="py-3 px-4">
-                    <div className="font-medium">{payment.type}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="font-medium">{fINR(payment.amount)}</div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div>
-                      <div className="font-medium">{payment.method.channel || '--'}</div>
-                      <div className="text-sm opacity-70">{payment.method.account || '--'}</div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <StatusPill value={payment.status} />
-                  </td>
-                  <td className="py-3 px-4">
-                    <div>
-                      <div>{fDate(payment.requestedAt)}</div>
-                      {payment.processedAt && (
-                        <div className="text-sm opacity-70">Processed: {fDate(payment.processedAt)}</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={async () => {
-                        setModalItem(payment);
-                        await fetchDetailedPayment(payment.id);
-                      }}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      View Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Pagination
-        page={page}
-        pageSize={pageSize}
-        total={filtered.length}
-        onPageChange={setPage}
-        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
+      {/* Enhanced Responsive Table */}
+      <ResponsiveTable
+        columns={[
+          {
+            key: 'code',
+            title: 'Payment',
+            sortable: true,
+            render: (value, payment) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <CreditCard className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="font-medium">{payment.code}</div>
+              </div>
+            )
+          },
+          {
+            key: 'user',
+            title: 'User',
+            sortable: true,
+            render: (value, payment) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <div className="font-medium">{payment.user.name || '--'}</div>
+                  <div className="text-sm text-gray-500">ID: {payment.user.code || '--'}</div>
+                </div>
+              </div>
+            )
+          },
+          {
+            key: 'type',
+            title: 'Type',
+            sortable: true,
+            render: (value) => (
+              <div className="font-medium">{value}</div>
+            )
+          },
+          {
+            key: 'amount',
+            title: 'Amount',
+            sortable: true,
+            render: (value, payment) => (
+              <div className="flex items-center gap-2">
+                <IndianRupee className="h-4 w-4 text-green-600" />
+                <span className="font-semibold whitespace-nowrap [font-variant-numeric:tabular-nums]">
+                  {fINR(payment.amount)}
+                </span>
+              </div>
+            )
+          },
+          {
+            key: 'method',
+            title: 'Method',
+            sortable: true,
+            render: (value, payment) => (
+              <div>
+                <div className="font-medium">{payment.method.channel || '--'}</div>
+                <div className="text-sm opacity-70">{payment.method.account || '--'}</div>
+              </div>
+            )
+          },
+          {
+            key: 'status',
+            title: 'Status',
+            sortable: true,
+            render: (value) => <StatusPill value={value} />
+          },
+          {
+            key: 'date',
+            title: 'Date',
+            sortable: true,
+            render: (value, payment) => (
+              <div>
+                <div>{fDate(payment.requestedAt)}</div>
+                {payment.processedAt && (
+                  <div className="text-sm opacity-70">Processed: {fDate(payment.processedAt)}</div>
+                )}
+              </div>
+            )
+          }
+        ]}
+        data={paged}
+        loading={loading}
+        emptyMessage="No payments match your filters."
+        searchable={false}
+        filterable={false}
+        selectable={false}
+        cardView={true}
+        stickyHeader={true}
+        actions={(payment) => (
+          <PaymentActions
+            payment={payment}
+            onView={async (payment) => {
+              setModalItem(payment);
+              await fetchDetailedPayment(payment.id);
+            }}
+            onApprove={(payment) => {/* Approve functionality */}}
+            onReject={(payment) => {/* Reject functionality */}}
+            onRefund={(payment) => {/* Refund functionality */}}
+          />
+        )}
+        onRowClick={async (payment) => {
+          setModalItem(payment);
+          await fetchDetailedPayment(payment.id);
+        }}
+        pagination={{
+          currentPage: page,
+          totalPages: Math.ceil(filtered.length / pageSize),
+          start: (page - 1) * pageSize + 1,
+          end: Math.min(page * pageSize, filtered.length),
+          total: filtered.length,
+          hasPrevious: page > 1,
+          hasNext: page < Math.ceil(filtered.length / pageSize),
+          onPrevious: () => setPage(page - 1),
+          onNext: () => setPage(page + 1)
+        }}
       />
 
       {/* Enhanced Payment Modal */}

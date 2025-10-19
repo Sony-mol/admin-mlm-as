@@ -3,9 +3,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonWithdrawalsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { WithdrawalActions } from '../components/TableActions';
 import { API_ENDPOINTS } from '../config/api';
 import {
-  DollarSign,
+  IndianRupee,
   Clock,
   CheckCircle,
   XCircle,
@@ -425,7 +427,7 @@ const Withdrawals = () => {
         <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
           <div className="flex items-center">
             <div className="p-2 rounded-lg bg-blue-100">
-              <DollarSign className="w-6 h-6 text-blue-600" />
+              <IndianRupee className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Total Amount</p>
@@ -570,184 +572,165 @@ const Withdrawals = () => {
           )}
         </div>
 
-        {/* Withdrawals Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[rgba(var(--fg),0.05)]">
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedWithdrawals.length === filteredWithdrawals.length &&
-                      filteredWithdrawals.length > 0
-                    }
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedWithdrawals(filteredWithdrawals.map((w) => w.id));
-                      } else {
-                        setSelectedWithdrawals([]);
-                      }
-                    }}
-                    className="rounded border-[rgb(var(--border))]"
-                  />
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                  User
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                  Payment Method
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                  Requested
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium opacity-70 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[rgb(var(--border))]">
-              {loading ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center opacity-70">
-                    Loading withdrawals...
-                  </td>
-                </tr>
-              ) : filteredWithdrawals.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center opacity-70">
-                    No withdrawals found
-                  </td>
-                </tr>
-              ) : (
-                paged.map((withdrawal) => (
-                  <tr key={withdrawal.id} className="hover:bg-[rgba(var(--fg),0.03)]">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedWithdrawals.includes(withdrawal.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedWithdrawals([
-                              ...selectedWithdrawals,
-                              withdrawal.id,
-                            ]);
-                          } else {
-                            setSelectedWithdrawals(
-                              selectedWithdrawals.filter((id) => id !== withdrawal.id)
-                            );
-                          }
-                        }}
-                        className="rounded border-[rgb(var(--border))]"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-[rgb(var(--fg))]">
-                          {withdrawal.user?.name || 'Unknown User'}
-                        </div>
-                        <div className="text-sm opacity-70">
-                          {withdrawal.user?.email || 'No email'}
-                        </div>
-                        {withdrawal.phoneNumber && (
-                          <div className="text-sm opacity-70">
-                            📞 {withdrawal.phoneNumber}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-[rgb(var(--fg))]">
-                        ₹{withdrawal.amount}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-[rgb(var(--fg))]">
-                        {withdrawal.paymentMethod || withdrawal.description || 'Withdrawal via UPI Transfer'}
-                      </div>
-                      {withdrawal.upiId && (
-                        <div className="text-sm opacity-70">
-                          UPI: {withdrawal.upiId}
-                        </div>
-                      )}
-                      {withdrawal.accountNumber && (
-                        <div className="text-sm opacity-70">
-                          A/C: {withdrawal.accountNumber}
-                        </div>
-                      )}
-                      {withdrawal.bankName && (
-                        <div className="text-sm opacity-70">
-                          Bank: {withdrawal.bankName}
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                          withdrawal.status
-                        )}`}
-                      >
-                        {getStatusIcon(withdrawal.status)}
-                        <span className="ml-1">{withdrawal.status}</span>
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm opacity-70">
-                      {fmtDMY(withdrawal.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedWithdrawal(withdrawal);
-                            setShowDetailsModal(true);
-                            fetchDetailedWithdrawal(withdrawal.id);
-                          }}
-                          className="text-blue-600 hover:text-blue-900"
-                          title="View details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-
-                        <select
-                          value={withdrawal.status}
-                          onChange={(e) => {
-                            if (e.target.value !== withdrawal.status) {
-                              setSelectedWithdrawal(withdrawal);
-                              setActionType(e.target.value);
-                              setShowActionModal(true);
-                            }
-                          }}
-                          className="px-2 py-1 text-xs rounded border border-gray-300 bg-white text-gray-700 focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value="PENDING">Pending</option>
-                          <option value="PROCESSING">Processing</option>
-                          <option value="COMPLETED">Completed</option>
-                          <option value="REJECTED">Rejected</option>
-                        </select>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Enhanced Responsive Table */}
+        <ResponsiveTable
+          columns={[
+            {
+              key: 'user',
+              title: 'User',
+              sortable: true,
+              render: (value, withdrawal) => (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <IndianRupee className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="font-medium">{withdrawal.user?.name || 'Unknown User'}</div>
+                    <div className="text-sm text-gray-500">{withdrawal.user?.email || 'No email'}</div>
+                    {withdrawal.phoneNumber && (
+                      <div className="text-sm text-gray-500">📞 {withdrawal.phoneNumber}</div>
+                    )}
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'amount',
+              title: 'Amount',
+              sortable: true,
+              render: (value, withdrawal) => (
+                <div className="flex items-center gap-2">
+                  <IndianRupee className="h-4 w-4 text-green-600" />
+                  <span className="font-semibold text-lg">
+                    ₹{withdrawal.amount}
+                  </span>
+                </div>
+              )
+            },
+            {
+              key: 'paymentMethod',
+              title: 'Payment Method',
+              sortable: true,
+              render: (value, withdrawal) => (
+                <div>
+                  <div className="font-medium">
+                    {withdrawal.paymentMethod || withdrawal.description || 'Withdrawal via UPI Transfer'}
+                  </div>
+                  {withdrawal.upiId && (
+                    <div className="text-sm text-gray-500">UPI: {withdrawal.upiId}</div>
+                  )}
+                  {withdrawal.accountNumber && (
+                    <div className="text-sm text-gray-500">A/C: {withdrawal.accountNumber}</div>
+                  )}
+                  {withdrawal.bankName && (
+                    <div className="text-sm text-gray-500">Bank: {withdrawal.bankName}</div>
+                  )}
+                </div>
+              )
+            },
+            {
+              key: 'status',
+              title: 'Status',
+              sortable: true,
+              render: (value, withdrawal) => (
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                    withdrawal.status
+                  )}`}
+                >
+                  {getStatusIcon(withdrawal.status)}
+                  <span className="ml-1">{withdrawal.status}</span>
+                </span>
+              )
+            },
+            {
+              key: 'createdAt',
+              title: 'Requested',
+              sortable: true,
+              render: (value) => (
+                <div className="text-sm opacity-80">
+                  {fmtDMY(value)}
+                </div>
+              )
+            }
+          ]}
+          data={paged}
+          loading={loading}
+          emptyMessage="No withdrawals found"
+          searchable={false}
+          filterable={false}
+          selectable={true}
+          bulkActions={[
+            { key: 'approve', label: 'Approve Selected' },
+            { key: 'reject', label: 'Reject Selected' },
+            { key: 'export', label: 'Export Selected' }
+          ]}
+          onBulkAction={(action, selectedIds) => {
+            const selectedWithdrawals = selectedIds.map(id => withdrawals.find(withdrawal => withdrawal.id === id)).filter(Boolean);
+            
+            switch (action) {
+              case 'approve':
+                selectedWithdrawals.forEach(withdrawal => {
+                  setSelectedWithdrawal(withdrawal);
+                  setActionType('COMPLETED');
+                  setShowActionModal(true);
+                });
+                break;
+              case 'reject':
+                selectedWithdrawals.forEach(withdrawal => {
+                  setSelectedWithdrawal(withdrawal);
+                  setActionType('REJECTED');
+                  setShowActionModal(true);
+                });
+                break;
+              case 'export':
+                // Export selected withdrawals
+                break;
+            }
+          }}
+          selectedRows={new Set(selectedWithdrawals)}
+          onRowSelect={(id) => {
+            if (selectedWithdrawals.includes(id)) {
+              setSelectedWithdrawals(selectedWithdrawals.filter(wId => wId !== id));
+            } else {
+              setSelectedWithdrawals([...selectedWithdrawals, id]);
+            }
+          }}
+          cardView={true}
+          stickyHeader={true}
+          actions={(withdrawal) => (
+            <WithdrawalActions
+              withdrawal={withdrawal}
+              onView={(withdrawal) => {
+                setSelectedWithdrawal(withdrawal);
+                setShowDetailsModal(true);
+                fetchDetailedWithdrawal(withdrawal.id);
+              }}
+              onApprove={(withdrawal) => {
+                setSelectedWithdrawal(withdrawal);
+                setActionType('COMPLETED');
+                setShowActionModal(true);
+              }}
+              onReject={(withdrawal) => {
+                setSelectedWithdrawal(withdrawal);
+                setActionType('REJECTED');
+                setShowActionModal(true);
+              }}
+            />
+          )}
+          pagination={{
+            currentPage: page,
+            totalPages: Math.ceil(filteredWithdrawals.length / pageSize),
+            start: (page - 1) * pageSize + 1,
+            end: Math.min(page * pageSize, filteredWithdrawals.length),
+            total: filteredWithdrawals.length,
+            hasPrevious: page > 1,
+            hasNext: page < Math.ceil(filteredWithdrawals.length / pageSize),
+            onPrevious: () => setPage(page - 1),
+            onNext: () => setPage(page + 1)
+          }}
+        />
       </div>
-
-      <Pagination
-        page={page}
-        pageSize={pageSize}
-        total={filteredWithdrawals.length}
-        onPageChange={setPage}
-        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
-      />
 
       {/* Enhanced Withdrawal Details Modal */}
       {showDetailsModal && selectedWithdrawal && (
@@ -778,7 +761,7 @@ const Withdrawals = () => {
                 {/* Basic Information Card */}
                 <div className="bg-[rgba(var(--fg),0.03)] rounded-lg p-4">
                   <h4 className="text-lg font-medium mb-4 flex items-center">
-                    <DollarSign className="w-5 h-5 mr-2" />
+                    <IndianRupee className="w-5 h-5 mr-2" />
                     Basic Information
                   </h4>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
