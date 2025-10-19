@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonUsersPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
 import { UserActions } from '../components/TableActions';
 import {
@@ -996,10 +997,23 @@ export default function Users() {
             </button>
           )}
         </div>
-        <ExportButton
-          data={list}
+        <EnhancedExportButton
+          data={filtered}
           dataType="users"
           filename="users"
+          currentFilters={{
+            search: q,
+            tier: tier,
+            status: status,
+            level: level,
+            joinedFrom: joinedFrom,
+            joinedTo: joinedTo
+          }}
+          currentSort={null}
+          showAdvancedOptions={true}
+          defaultFormat="excel"
+          isDataPreFiltered={true}
+          totalRecords={list.length}
         />
         <button
           onClick={syncReferralCounts}
@@ -1246,8 +1260,7 @@ export default function Users() {
         selectable={true}
         bulkActions={[
           { key: 'activate', label: 'Activate Selected' },
-          { key: 'suspend', label: 'Suspend Selected' },
-          { key: 'export', label: 'Export Selected' }
+          { key: 'suspend', label: 'Suspend Selected' }
         ]}
         onBulkAction={(action, selectedIds) => {
           const selectedUsersData = selectedIds.map(id => list.find(user => user.id === id)).filter(Boolean);
@@ -1258,9 +1271,6 @@ export default function Users() {
               break;
             case 'suspend':
               selectedUsersData.forEach(user => confirmUserAction(user, 'suspend'));
-              break;
-            case 'export':
-              // Export selected users
               break;
           }
         }}

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Activity, Search, Filter, Download, Calendar, User, Shield, AlertTriangle, Info, Clock } from "lucide-react";
 import { API_ENDPOINTS } from '../config/api';
 import ResponsiveTable from '../components/ResponsiveTable';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import { ActivityLogActions } from '../components/TableActions';
 
 const ACTIVITY_LOGS_API = API_ENDPOINTS.ACTIVITY_LOGS;
@@ -215,14 +216,24 @@ export default function ActivityLogs() {
             <Activity className="w-4 h-4" />
             Refresh
           </button>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#217346] text-white hover:bg-[#1e6a3f] shadow-sm focus-visible:outline-none focus-visible:ring-2 
-         focus-visible:ring-[#217346]/40 active:scale-[0.98] transition"
-          >
-            <Download className="w-4 h-4" />
-            Export
-          </button>
+          <EnhancedExportButton
+            data={logs}
+            dataType="activity-logs"
+            filename="activity-logs"
+            currentFilters={{
+              search: searchTerm,
+              actionType: filters.actionType,
+              category: filters.category,
+              severity: filters.severity,
+              startDate: filters.startDate,
+              endDate: filters.endDate
+            }}
+            currentSort={null}
+            showAdvancedOptions={true}
+            defaultFormat="excel"
+            isDataPreFiltered={false}
+            totalRecords={pagination.totalElements}
+          />
         </div>
       </div>
 

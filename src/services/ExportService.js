@@ -1,4 +1,4 @@
-// ExportService.js - Comprehensive data export functionality
+// ExportService.js - Enhanced data export functionality with filtering support
 import * as XLSX from 'xlsx';
 
 class ExportService {
@@ -146,6 +146,248 @@ class ExportService {
     }
     
     return true;
+  }
+
+  // Enhanced export with filtering and sorting
+  static exportFilteredData(data, options = {}) {
+    const {
+      filters = {},
+      sortBy = null,
+      sortOrder = 'asc',
+      limit = null,
+      fields = null,
+      customMapping = {}
+    } = options;
+
+    let filteredData = [...data];
+
+    // Apply filters
+    if (Object.keys(filters).length > 0) {
+      filteredData = this.applyFilters(filteredData, filters);
+    }
+
+    // Apply sorting
+    if (sortBy) {
+      filteredData = this.applySorting(filteredData, sortBy, sortOrder);
+    }
+
+    // Apply field selection
+    if (fields && Array.isArray(fields)) {
+      filteredData = this.selectFields(filteredData, fields);
+    }
+
+    // Apply limit
+    if (limit && limit > 0) {
+      filteredData = filteredData.slice(0, limit);
+    }
+
+    // Apply custom field mapping
+    if (Object.keys(customMapping).length > 0) {
+      filteredData = this.applyCustomMapping(filteredData, customMapping);
+    }
+
+    return filteredData;
+  }
+
+  // Apply filters to data
+  static applyFilters(data, filters) {
+    return data.filter(item => {
+      return Object.entries(filters).every(([key, filterValue]) => {
+        if (!filterValue) return true; // Skip empty filters
+
+        const itemValue = this.getNestedValue(item, key);
+
+        // Handle different filter types
+        if (typeof filterValue === 'object' && filterValue !== null) {
+          // Range filter
+          if (filterValue.min !== undefined || filterValue.max !== undefined) {
+            const numValue = Number(itemValue);
+            if (filterValue.min !== undefined && numValue < filterValue.min) return false;
+            if (filterValue.max !== undefined && numValue > filterValue.max) return false;
+            return true;
+          }
+          
+          // Array filter (multiple values)
+          if (Array.isArray(filterValue)) {
+            return filterValue.includes(itemValue);
+          }
+        }
+
+        // String filter (case-insensitive partial match)
+        if (typeof filterValue === 'string') {
+          return String(itemValue).toLowerCase().includes(filterValue.toLowerCase());
+        }
+
+        // Exact match
+        return itemValue === filterValue;
+      });
+    });
+  }
+
+  // Apply sorting to data
+  static applySorting(data, sortBy, sortOrder = 'asc') {
+    return [...data].sort((a, b) => {
+      const aValue = this.getNestedValue(a, sortBy);
+      const bValue = this.getNestedValue(b, sortBy);
+
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+
+      // Handle different data types
+      let comparison = 0;
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        comparison = aValue - bValue;
+      } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+        comparison = aValue.localeCompare(bValue);
+      } else if (aValue instanceof Date && bValue instanceof Date) {
+        comparison = aValue.getTime() - bValue.getTime();
+      } else {
+        comparison = String(aValue).localeCompare(String(bValue));
+      }
+
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  }
+
+  // Select specific fields from data
+  static selectFields(data, fields) {
+    return data.map(item => {
+      const selectedItem = {};
+      fields.forEach(field => {
+        selectedItem[field] = this.getNestedValue(item, field);
+      });
+      return selectedItem;
+    });
+  }
+
+  // Apply custom field mapping
+  static applyCustomMapping(data, customMapping) {
+    return data.map(item => {
+      const mappedItem = {};
+      Object.entries(customMapping).forEach(([originalField, mapping]) => {
+        const value = this.getNestedValue(item, originalField);
+        const transformedValue = mapping.transform ? mapping.transform(value, item) : value;
+        mappedItem[mapping.displayName || originalField] = transformedValue;
+      });
+      return mappedItem;
+    });
+  }
+
+  // Get nested object value using dot notation
+  static getNestedValue(obj, path) {
+    return path.split('.').reduce((current, key) => current?.[key], obj);
+  }
+
+  // Generate export summary
+  static generateExportSummary(data, filters = {}, options = {}) {
+    const totalRecords = data.length;
+    const filteredRecords = this.exportFilteredData(data, { filters }).length;
+    
+    return {
+      totalRecords,
+      filteredRecords,
+      filtersApplied: Object.keys(filters).filter(key => filters[key]).length,
+      exportOptions: {
+        format: options.format || 'csv',
+        fields: options.fields?.length || 'all',
+        sorted: options.sortBy ? `${options.sortBy} (${options.sortOrder})` : 'none',
+        limited: options.limit ? `first ${options.limit}` : 'all'
+      },
+      timestamp: new Date().toISOString(),
+      generatedBy: 'MLM Admin Dashboard'
+    };
+  }
+
+  // Export with metadata and summary
+  static exportWithMetadata(data, format, filename, options = {}) {
+    const { includeSummary = true, includeMetadata = true } = options;
+    
+    const exportData = this.exportFilteredData(data, options);
+    
+    if (includeSummary || includeMetadata) {
+      const summary = this.generateExportSummary(data, options.filters || {}, options);
+      
+      if (format === 'excel') {
+        return this.exportToExcelWithMetadata(exportData, filename, summary, options);
+      } else if (format === 'json') {
+        return this.exportToJSONWithMetadata(exportData, filename, summary, options);
+      }
+    }
+    
+    // Regular export without metadata
+    switch (format) {
+      case 'csv':
+        return this.exportToCSV(exportData, filename);
+      case 'excel':
+        return this.exportToExcel(exportData, filename);
+      case 'json':
+        return this.exportToJSON(exportData, filename);
+      default:
+        throw new Error(`Unsupported export format: ${format}`);
+    }
+  }
+
+  // Export to Excel with metadata sheet
+  static exportToExcelWithMetadata(data, filename, summary, options = {}) {
+    const workbook = XLSX.utils.book_new();
+    
+    // Main data sheet
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+    
+    // Summary sheet
+    const summaryData = [
+      ['Export Summary', ''],
+      ['Total Records', summary.totalRecords],
+      ['Filtered Records', summary.filteredRecords],
+      ['Filters Applied', summary.filtersApplied],
+      ['Export Format', summary.exportOptions.format],
+      ['Fields Exported', summary.exportOptions.fields],
+      ['Sorting', summary.exportOptions.sorted],
+      ['Limit', summary.exportOptions.limited],
+      ['Generated At', new Date(summary.timestamp).toLocaleString()],
+      ['Generated By', summary.generatedBy]
+    ];
+    
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Export Summary');
+    
+    // Filters sheet (if any filters applied)
+    if (summary.filtersApplied > 0) {
+      const filterData = Object.entries(options.filters || {})
+        .filter(([key, value]) => value)
+        .map(([key, value]) => [key, typeof value === 'object' ? JSON.stringify(value) : value]);
+      
+      filterData.unshift(['Filter Field', 'Filter Value']);
+      const filterSheet = XLSX.utils.aoa_to_sheet(filterData);
+      XLSX.utils.book_append_sheet(workbook, filterSheet, 'Applied Filters');
+    }
+    
+    XLSX.writeFile(workbook, `${filename}.xlsx`);
+  }
+
+  // Export to JSON with metadata
+  static exportToJSONWithMetadata(data, filename, summary, options = {}) {
+    const exportPackage = {
+      metadata: {
+        summary,
+        exportedAt: new Date().toISOString(),
+        version: '1.0',
+        source: 'MLM Admin Dashboard'
+      },
+      filters: options.filters || {},
+      data
+    };
+    
+    const jsonContent = JSON.stringify(exportPackage, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   }
 }
 

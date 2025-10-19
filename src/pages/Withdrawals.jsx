@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonWithdrawalsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
 import { WithdrawalActions } from '../components/TableActions';
 import { API_ENDPOINTS } from '../config/api';
@@ -380,10 +381,19 @@ const Withdrawals = () => {
             </h1>
             <p className="opacity-70">Manage user withdrawal requests and payments</p>
           </div>
-          <ExportButton
-            data={withdrawals}
+          <EnhancedExportButton
+            data={filteredWithdrawals}
             dataType="withdrawals"
             filename="withdrawals"
+            currentFilters={{
+              search: searchTerm,
+              status: selectedStatus
+            }}
+            currentSort={null}
+            showAdvancedOptions={true}
+            defaultFormat="excel"
+            isDataPreFiltered={true}
+            totalRecords={withdrawals.length}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
 import { SkeletonOrdersPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
 import { OrderActions } from '../components/TableActions';
 
@@ -321,10 +322,19 @@ export default function Orders() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Orders</h2>
-        <ExportButton
-          data={orders}
+        <EnhancedExportButton
+          data={filtered}
           dataType="orders"
           filename="orders"
+          currentFilters={{
+            search: q,
+            status: status
+          }}
+          currentSort={null}
+          showAdvancedOptions={true}
+          defaultFormat="excel"
+          isDataPreFiltered={true}
+          totalRecords={orders.length}
         />
       </div>
 

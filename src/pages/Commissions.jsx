@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonCommissionsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
 import { CommissionActions } from '../components/TableActions';
 import { Check, X, Clock, IndianRupee, Users, TrendingUp } from 'lucide-react';
@@ -357,10 +358,19 @@ export default function Commissions() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Commission Management</h1>
         <div className="flex items-center gap-3">
-          <ExportButton
-            data={[...pendingCommissions, ...paidCommissions]}
+          <EnhancedExportButton
+            data={[...filteredPending, ...filteredPaid]}
             dataType="commissions"
             filename="commissions"
+            currentFilters={{
+              pendingSearch: q,
+              paidSearch: paidSearchQuery
+            }}
+            currentSort={null}
+            showAdvancedOptions={true}
+            defaultFormat="excel"
+            isDataPreFiltered={true}
+            totalRecords={pendingCommissions.length + paidCommissions.length}
           />
           <div className="flex items-center gap-2">
             <span className="text-sm opacity-70">

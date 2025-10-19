@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
 import { SkeletonPaymentsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
 import { PaymentActions } from '../components/TableActions';
 import { CreditCard, User, IndianRupee } from 'lucide-react';
@@ -390,10 +391,20 @@ export default function Payments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Payments</h1>
-        <ExportButton
-          data={payments}
+        <EnhancedExportButton
+          data={filtered}
           dataType="payments"
           filename="payments"
+          currentFilters={{
+            search: q,
+            status: status,
+            type: ptype
+          }}
+          currentSort={null}
+          showAdvancedOptions={true}
+          defaultFormat="excel"
+          isDataPreFiltered={true}
+          totalRecords={payments.length}
         />
       </div>
 

@@ -4,6 +4,7 @@ import Pagination from '../components/Pagination';
 import ImageUploader from '../components/ImageUploader';
 import { SkeletonProductsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
 import { ProductActions } from '../components/TableActions';
 import { API_ENDPOINTS } from '../config/api';
@@ -860,10 +861,19 @@ export default function Products() {
               <p className="text-[rgba(var(--fg),0.7)] mt-2">Manage your product catalog with photos and details</p>
             </div>
             <div className="flex items-center gap-3">
-              <ExportButton
-                data={products}
+              <EnhancedExportButton
+                data={filteredProducts}
                 dataType="products"
                 filename="products"
+                currentFilters={{
+                  search: searchTerm,
+                  category: filterCategory
+                }}
+                currentSort={null}
+                showAdvancedOptions={true}
+                defaultFormat="excel"
+                isDataPreFiltered={true}
+                totalRecords={products.length}
               />
               <button
                 onClick={() => setShowForm(true)}

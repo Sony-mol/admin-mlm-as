@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Pagination from '../components/Pagination';
 import ResponsiveTable from '../components/ResponsiveTable';
+import EnhancedExportButton from '../components/EnhancedExportButton';
 import { RewardActions } from '../components/TableActions';
 import { 
   Gift, 
@@ -182,13 +183,29 @@ const UserRewards = () => {
               </h1>
               <p className="text-[rgba(var(--fg),0.7)] mt-2">Track and manage user reward claims across all tiers and levels</p>
             </div>
-            <button
-              onClick={handleRefresh}
-              className="flex items-center space-x-2 px-4 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)] text-[rgb(var(--fg))]"
-            >
-              <RefreshCw className="w-5 h-5" />
-              <span>Refresh</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <EnhancedExportButton
+                data={filtered}
+                dataType="user-rewards"
+                filename="user-rewards"
+                currentFilters={{
+                  search: searchTerm,
+                  filter: filter
+                }}
+                currentSort={null}
+                showAdvancedOptions={true}
+                defaultFormat="excel"
+                isDataPreFiltered={true}
+                totalRecords={userRewards.length}
+              />
+              <button
+                onClick={handleRefresh}
+                className="flex items-center space-x-2 px-4 py-2 border border-[rgb(var(--border))] rounded-lg hover:bg-[rgba(var(--fg),0.05)] text-[rgb(var(--fg))]"
+              >
+                <RefreshCw className="w-5 h-5" />
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
         </div>
 
