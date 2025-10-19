@@ -1,0 +1,295 @@
+/* Responsive enhancements for the admin panel */
+
+/* Base responsive utilities */
+.responsive-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.responsive-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+}
+
+.responsive-flex {
+  @apply flex flex-col sm:flex-row gap-4 sm:gap-6;
+}
+
+/* Responsive text sizes */
+.responsive-text-xs {
+  @apply text-xs sm:text-sm;
+}
+
+.responsive-text-sm {
+  @apply text-sm sm:text-base;
+}
+
+.responsive-text-base {
+  @apply text-base sm:text-lg;
+}
+
+.responsive-text-lg {
+  @apply text-lg sm:text-xl;
+}
+
+.responsive-text-xl {
+  @apply text-xl sm:text-2xl;
+}
+
+.responsive-text-2xl {
+  @apply text-2xl sm:text-3xl;
+}
+
+.responsive-text-3xl {
+  @apply text-3xl sm:text-4xl;
+}
+
+/* Responsive spacing */
+.responsive-padding {
+  @apply p-4 sm:p-6 lg:p-8;
+}
+
+.responsive-margin {
+  @apply m-4 sm:m-6 lg:m-8;
+}
+
+.responsive-gap {
+  @apply gap-4 sm:gap-6 lg:gap-8;
+}
+
+/* Responsive cards */
+.responsive-card {
+  @apply rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 sm:p-6 transition-all duration-300 hover:shadow-lg;
+}
+
+.responsive-card-compact {
+  @apply rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-3 sm:p-4 transition-all duration-300 hover:shadow-md;
+}
+
+/* Responsive buttons */
+.responsive-button {
+  @apply px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.responsive-button-sm {
+  @apply px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.responsive-button-lg {
+  @apply px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Responsive inputs */
+.responsive-input {
+  @apply w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--bg))] text-[rgb(var(--fg))] placeholder-[rgba(var(--fg),0.5)] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200;
+}
+
+.responsive-select {
+  @apply w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base border border-[rgb(var(--border))] rounded-lg bg-[rgb(var(--bg))] text-[rgb(var(--fg))] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200;
+}
+
+/* Responsive tables */
+.responsive-table-container {
+  @apply overflow-x-auto rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))];
+}
+
+.responsive-table {
+  @apply min-w-full divide-y divide-[rgb(var(--border))];
+}
+
+.responsive-table-header {
+  @apply bg-[rgba(var(--fg),0.02)];
+}
+
+.responsive-table-header-cell {
+  @apply px-3 py-3 sm:px-6 sm:py-4 text-left text-xs sm:text-sm font-medium text-[rgba(var(--fg),0.6)] uppercase tracking-wider;
+}
+
+.responsive-table-body-cell {
+  @apply px-3 py-4 sm:px-6 sm:py-4 whitespace-nowrap text-sm sm:text-base;
+}
+
+/* Responsive modals */
+.responsive-modal-overlay {
+  @apply fixed inset-0 z-50 overflow-y-auto;
+}
+
+.responsive-modal-container {
+  @apply flex min-h-full items-center justify-center p-4;
+}
+
+.responsive-modal {
+  @apply relative w-full max-w-md sm:max-w-lg lg:max-w-2xl xl:max-w-4xl bg-[rgb(var(--card))] rounded-lg shadow-xl border border-[rgb(var(--border))] transform transition-all duration-300;
+}
+
+/* Responsive navigation */
+.responsive-nav {
+  @apply flex flex-col sm:flex-row gap-2 sm:gap-4;
+}
+
+.responsive-nav-item {
+  @apply px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base rounded-lg transition-all duration-200;
+}
+
+/* Responsive sidebar */
+.responsive-sidebar {
+  @apply fixed left-0 top-0 h-screen w-72 lg:w-72 border-r border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 pb-4 pt-3 z-30 transition-transform duration-300 ease-out flex flex-col;
+}
+
+.responsive-sidebar-mobile {
+  @apply w-[85vw] sm:w-72;
+}
+
+/* Responsive header */
+.responsive-header {
+  @apply sticky top-0 z-10 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-[rgb(var(--border))] bg-[rgb(var(--card))] backdrop-blur-sm shadow-sm;
+}
+
+/* Responsive main content */
+.responsive-main {
+  @apply px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 min-w-0 max-w-full overflow-x-hidden;
+}
+
+/* Responsive stats grid */
+.responsive-stats-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+}
+
+/* Responsive form grid */
+.responsive-form-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
+}
+
+/* Responsive filter grid */
+.responsive-filter-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
+}
+
+/* Responsive charts */
+.responsive-chart {
+  @apply w-full h-64 sm:h-80 lg:h-96;
+}
+
+.responsive-chart-small {
+  @apply w-full h-48 sm:h-64;
+}
+
+/* Responsive badges */
+.responsive-badge {
+  @apply inline-flex items-center px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium rounded-full;
+}
+
+/* Responsive icons */
+.responsive-icon-sm {
+  @apply w-4 h-4 sm:w-5 sm:h-5;
+}
+
+.responsive-icon-md {
+  @apply w-5 h-5 sm:w-6 sm:h-6;
+}
+
+.responsive-icon-lg {
+  @apply w-6 h-6 sm:w-8 sm:h-8;
+}
+
+/* Mobile-first responsive utilities */
+.mobile-only {
+  @apply block sm:hidden;
+}
+
+.tablet-up {
+  @apply hidden sm:block;
+}
+
+.desktop-only {
+  @apply hidden lg:block;
+}
+
+.large-desktop-only {
+  @apply hidden xl:block;
+}
+
+/* Responsive visibility */
+.responsive-visible {
+  @apply block;
+}
+
+.responsive-hidden {
+  @apply hidden;
+}
+
+/* Responsive animations */
+.responsive-transition {
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.responsive-hover {
+  @apply hover:scale-105 hover:shadow-lg;
+}
+
+/* Responsive focus states */
+.responsive-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* Responsive loading states */
+.responsive-loading {
+  @apply animate-pulse bg-[rgba(var(--fg),0.1)] rounded;
+}
+
+/* Responsive error states */
+.responsive-error {
+  @apply border-red-500 bg-red-50 text-red-700;
+}
+
+/* Responsive success states */
+.responsive-success {
+  @apply border-green-500 bg-green-50 text-green-700;
+}
+
+/* Responsive warning states */
+.responsive-warning {
+  @apply border-yellow-500 bg-yellow-50 text-yellow-700;
+}
+
+/* Print styles */
+@media print {
+  .responsive-no-print {
+    @apply hidden;
+  }
+  
+  .responsive-print-only {
+    @apply block;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .responsive-card {
+    @apply border-2;
+  }
+  
+  .responsive-button {
+    @apply border-2;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .responsive-transition {
+    @apply transition-none;
+  }
+  
+  .responsive-hover {
+    @apply hover:scale-100 hover:shadow-none;
+  }
+}
+
+/* Dark mode specific responsive styles */
+@media (prefers-color-scheme: dark) {
+  .responsive-card {
+    @apply shadow-lg;
+  }
+  
+  .responsive-button {
+    @apply shadow-md;
+  }
+}

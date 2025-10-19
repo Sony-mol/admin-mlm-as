@@ -38,12 +38,9 @@ const links = [
   { to: "/settings", label: "Settings",        Icon: Settings },
 ];
 
-export default function Sidebar({ open = true, onNavigate = () => {} }) {
+export default function Sidebar({ open = true, onNavigate = () => {}, isMobile = false }) {
   const handleNavClick = () => {
-    if (
-      typeof window !== "undefined" &&
-      window.matchMedia("(max-width: 767px)").matches
-    ) {
+    if (isMobile) {
       onNavigate(); // collapse on mobile
     }
   };
@@ -53,11 +50,12 @@ export default function Sidebar({ open = true, onNavigate = () => {} }) {
       className={[
         "sidebar",
         "fixed left-0 top-0 h-screen",
-        "w-[85vw] sm:w-72",
+        "w-[85vw] sm:w-72 lg:w-72",
         "border-r border-[rgb(var(--border))] bg-[rgb(var(--card))]",
         "px-3 pb-4 pt-3 z-30",
         "transition-transform duration-300 ease-out",
         "flex flex-col",
+        "shadow-lg lg:shadow-none",
         open ? "translate-x-0" : "-translate-x-full",
       ].join(" ")}
       aria-hidden={!open}

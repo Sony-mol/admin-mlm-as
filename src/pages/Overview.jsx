@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import LineChartMini from "../components/charts/LineChartMini";
 import PieChartMini from "../components/charts/PieChartMini";
+import ResponsiveCard, { ResponsiveGrid, StatsCard, Section } from "../components/ResponsiveCard";
 import {
   TrendingUp,
   Users,
