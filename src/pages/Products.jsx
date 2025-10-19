@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import ImageUploader from '../components/ImageUploader';
 import { SkeletonProductsPage } from '../components/SkeletonLoader';
+import ExportButton from '../components/ExportButton';
 import { API_ENDPOINTS } from '../config/api';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -856,13 +857,20 @@ export default function Products() {
               <h1 className="text-3xl font-bold text-[rgb(var(--fg))]">Product Management</h1>
               <p className="text-[rgba(var(--fg),0.7)] mt-2">Manage your product catalog with photos and details</p>
             </div>
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Add Product</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <ExportButton
+                data={products}
+                dataType="products"
+                filename="products"
+              />
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Add Product</span>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonCommissionsPage } from '../components/SkeletonLoader';
+import ExportButton from '../components/ExportButton';
 import { Check, X, Clock, DollarSign, Users, TrendingUp } from 'lucide-react';
 
 // Import API configuration
@@ -353,18 +354,25 @@ export default function Commissions() {
     <div className="space-y-6 text-[rgb(var(--fg))]">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Commission Management</h1>
-        <div className="flex items-center gap-2">
-          <span className="text-sm opacity-70">
-            {selectedCommissions.size} selected
-          </span>
-          {selectedCommissions.size > 0 && (
-            <button
-              onClick={clearSelection}
-              className="text-xs px-2 py-1 rounded border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-            >
-              Clear
-            </button>
-          )}
+        <div className="flex items-center gap-3">
+          <ExportButton
+            data={[...pendingCommissions, ...paidCommissions]}
+            dataType="commissions"
+            filename="commissions"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm opacity-70">
+              {selectedCommissions.size} selected
+            </span>
+            {selectedCommissions.size > 0 && (
+              <button
+                onClick={clearSelection}
+                className="text-xs px-2 py-1 rounded border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

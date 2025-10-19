@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
 import { SkeletonOrdersPage } from '../components/SkeletonLoader';
+import ExportButton from '../components/ExportButton';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -315,7 +316,14 @@ export default function Orders() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Orders</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Orders</h2>
+        <ExportButton
+          data={orders}
+          dataType="orders"
+          filename="orders"
+        />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">

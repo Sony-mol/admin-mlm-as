@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonWithdrawalsPage } from '../components/SkeletonLoader';
+import ExportButton from '../components/ExportButton';
 import { API_ENDPOINTS } from '../config/api';
 import {
   DollarSign,
@@ -370,10 +371,19 @@ const Withdrawals = () => {
     <div className="p-6 text-[rgb(var(--fg))]">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[rgb(var(--fg))] mb-2">
-          Withdrawal Management
-        </h1>
-        <p className="opacity-70">Manage user withdrawal requests and payments</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-[rgb(var(--fg))] mb-2">
+              Withdrawal Management
+            </h1>
+            <p className="opacity-70">Manage user withdrawal requests and payments</p>
+          </div>
+          <ExportButton
+            data={withdrawals}
+            dataType="withdrawals"
+            filename="withdrawals"
+          />
+        </div>
       </div>
 
       {/* API Status Check */}

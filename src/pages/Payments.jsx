@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Pagination from '../components/Pagination';
 import { SkeletonPaymentsPage } from '../components/SkeletonLoader';
+import ExportButton from '../components/ExportButton';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -386,6 +387,11 @@ export default function Payments() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Payments</h1>
+        <ExportButton
+          data={payments}
+          dataType="payments"
+          filename="payments"
+        />
       </div>
 
       {/* Stats */}

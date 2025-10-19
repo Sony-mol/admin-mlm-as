@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonUsersPage } from '../components/SkeletonLoader';
+import ExportButton from '../components/ExportButton';
 import {
   Calendar as CalendarIcon,
   ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight,
-  X
+  X, Download
 } from 'lucide-react';
 
 import { API_ENDPOINTS } from '../config/api';
@@ -987,6 +988,11 @@ export default function Users() {
             </button>
           )}
         </div>
+        <ExportButton
+          data={list}
+          dataType="users"
+          filename="users"
+        />
         <button
           onClick={syncReferralCounts}
           disabled={syncing}
