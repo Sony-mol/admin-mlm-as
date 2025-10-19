@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Pagination from '../components/Pagination';
 import { SkeletonUsersPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
+import ResponsiveTable from '../components/ResponsiveTable';
+import { UserActions } from '../components/TableActions';
 import {
   Calendar as CalendarIcon,
   ChevronLeft, ChevronRight,
   ChevronsLeft, ChevronsRight,
-  X, Download
+  X, Download, User
 } from 'lucide-react';
 
 import { API_ENDPOINTS } from '../config/api';
@@ -731,15 +733,21 @@ export default function Users() {
   // Deleting users is disabled; function intentionally removed
 
   function confirmUserAction(user, action) {
-    setConfirmAction({
-      user,
-      action,
-      message: action === 'suspend' 
-        ? `Are you sure you want to suspend ${user.name}? They will not be able to access the system.`
-        : action === 'activate'
-        ? `Are you sure you want to activate ${user.name}? They will regain access to the system.`
-        : `Are you sure you want to DELETE ${user.name}? This action cannot be undone and will permanently remove the user and all their data.`
-    });
+    // Close user details modal if open
+    setSelected(null);
+    
+    // Use setTimeout to ensure modal closes before showing confirm modal
+    setTimeout(() => {
+      setConfirmAction({
+        user,
+        action,
+        message: action === 'suspend' 
+          ? `Are you sure you want to suspend ${user.name}? They will not be able to access the system.`
+          : action === 'activate'
+          ? `Are you sure you want to activate ${user.name}? They will regain access to the system.`
+          : `Are you sure you want to DELETE ${user.name}? This action cannot be undone and will permanently remove the user and all their data.`
+      });
+    }, 100);
   }
 
   async function executeConfirmedAction() {
@@ -1162,148 +1170,127 @@ export default function Users() {
         )}
       </div>
 
-      {/* Desktop table */}
-      <div className="hidden md:block rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] overflow-visible">
-        <div className="grid grid-cols-12 px-4 py-3 border-b border-[rgb(var(--border))] text-sm opacity-80">
-          <div className="col-span-1">
-            <input
-              type="checkbox"
-              checked={selectedUsers.size === filtered.length && filtered.length > 0}
-              onChange={(e) => e.target.checked ? selectAllUsers() : clearUserSelection()}
-              className="w-4 h-4"
-            />
-          </div>
-          <div className="col-span-3">User</div>
-          <div className="col-span-2">Tier</div>
-          <div className="col-span-1">Referrals</div>
-          <div className="col-span-2">Total Earning</div>
-          <div className="col-span-1">Status</div>
-          <div className="col-span-2 flex justify-center">Actions</div>
-        </div>
-
-        {paged.map((u) => (
-          <div
-            key={u.id || u.code}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelected(u); } }}
-            onClick={() => setSelected(u)}
-            className={[
-              "grid grid-cols-12 px-4 py-4 my-1",
-              "rounded-xl border border-transparent",
-              "transition-all duration-200 ease-out",
-              "hover:-translate-y-0.5 hover:shadow-lg hover:bg-[rgba(var(--fg),0.03)] hover:border-[rgb(var(--border-hover))]",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(var(--accent-1),0.35)]",
-              "border-t border-[rgb(var(--border))]",
-              "cursor-pointer",
-            ].join(" ")}
-          >
-            <div className="col-span-1 flex items-center" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="checkbox"
-                checked={selectedUsers.has(u.id)}
-                onChange={() => toggleUserSelection(u.id)}
-                className="w-4 h-4"
-              />
-            </div>
-            <div className="col-span-3">
-              <div className="font-medium">{u.name}</div>
-              
-            </div>
-
-            <div className="col-span-2 flex items-center gap-2">
-              {u.tier && (
-                <span data-tier={String(u.tier).toLowerCase()} className="px-2 py-0.5 text-xs rounded-full border">
-                  {u.tier}
-                </span>
-              )}
-              {u.level && <Chip>{u.level}</Chip>}
-              {!u.tier && !u.level && <span className="text-sm opacity-60">—</span>}
-            </div>
-
-            <div className="col-span-1 flex items-center">{Number(u.referrals || 0).toLocaleString('en-IN')}</div>
-            <div className="col-span-2 flex items-center">
-              <UserEarningsOnly userId={u.userId || u.id} />
-            </div>
-
-            <div className="col-span-1 flex items-center">
-              <StatusPill value={u.status} />
-            </div>
-
-            <div className="col-span-2 flex items-center gap-3 justify-center " onClick={(e) => e.stopPropagation()}>
-              {/* Edit action removed */}
-              <button
-                title="Suspend"
-                onClick={() => confirmUserAction(u, 'suspend')}
-                disabled={normUpper(u.status) === 'SUSPENDED'}
-                className={`hover:opacity-100 ${normUpper(u.status) === 'SUSPENDED' ? 'opacity-40 cursor-not-allowed' : 'opacity-80'}`}
-              >
-                🚫
-              </button>
-              <button
-                title="Activate"
-                onClick={() => confirmUserAction(u, 'activate')}
-                disabled={normUpper(u.status) === 'ACTIVE'}
-                className={`hover:opacity-100 ${normUpper(u.status) === 'ACTIVE' ? 'opacity-40 cursor-not-allowed' : 'opacity-80'}`}
-              >
-                ✅
-              </button>
-              {/* Delete action removed */}
-            </div>
-          </div>
-        ))}
-
-        {filtered.length === 0 && (
-          <div className="px-4 py-10 text-center opacity-70">No users match your filters.</div>
-        )}
-      </div>
-
-      <Pagination
-        page={page}
-        pageSize={pageSize}
-        total={filtered.length}
-        onPageChange={setPage}
-        onPageSizeChange={(n) => { setPageSize(n); setPage(1); }}
-      />
-
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-3">
-        {paged.map((u) => (
-          <div
-            key={u.id || u.code}
-            className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.998]"
-            onClick={() => setSelected(u)}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <input
-                  type="checkbox"
-                  checked={selectedUsers.has(u.id)}
-                  onChange={(e) => { e.stopPropagation(); toggleUserSelection(u.id); }}
-                  className="w-4 h-4 mt-1"
-                />
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{u.name}</div>
+      {/* Enhanced Responsive Table */}
+      <ResponsiveTable
+        columns={[
+          {
+            key: 'name',
+            title: 'User',
+            sortable: true,
+            render: (value, user) => (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <div className="font-medium">{user.name}</div>
+                  <div className="text-sm text-gray-500">{user.email}</div>
                 </div>
               </div>
-              <StatusPill value={u.status} />
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {u.tier && <Chip className="!bg-transparent" data-tier={tierKey(u.tier)}>{u.tier}</Chip>}
-              {u.level && <Chip>{u.level}</Chip>}
-              <Chip>{Number(u.referrals || 0).toLocaleString('en-IN')} referrals</Chip>
-              <Chip>{fmtINR(u.earnings)}</Chip>
-            </div>
-          </div>
-        ))}
-
-        {filtered.length === 0 && (
-          <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 text-center opacity-70">
-            No users match your filters.
-          </div>
+            )
+          },
+          {
+            key: 'tier',
+            title: 'Tier',
+            sortable: true,
+            render: (value, user) => (
+              <div className="flex items-center gap-2">
+                {user.tier && (
+                  <span data-tier={String(user.tier).toLowerCase()} className="px-2 py-1 text-xs rounded-full border border-gray-200">
+                    {user.tier}
+                  </span>
+                )}
+                {user.level && (
+                  <span className="px-2 py-1 text-xs rounded-full bg-gray-100">
+                    {user.level}
+                  </span>
+                )}
+                {!user.tier && !user.level && <span className="text-sm opacity-60">—</span>}
+              </div>
+            )
+          },
+          {
+            key: 'referrals',
+            title: 'Referrals',
+            sortable: true,
+            render: (value) => Number(value || 0).toLocaleString('en-IN')
+          },
+          {
+            key: 'totalEarnings',
+            title: 'Total Earnings',
+            sortable: true,
+            render: (value, user) => (
+              <div>
+                <UserEarningsOnly userId={user.userId || user.id} />
+              </div>
+            )
+          },
+          {
+            key: 'status',
+            title: 'Status',
+            sortable: true,
+            render: (value) => <StatusPill value={value} />
+          },
+          {
+            key: 'createdAt',
+            title: 'Joined',
+            sortable: true,
+            render: (value) => value ? new Date(value).toLocaleDateString() : '—'
+          }
+        ]}
+        data={paged}
+        loading={loading}
+        emptyMessage="No users match your filters."
+        searchable={false}
+        filterable={false}
+        selectable={true}
+        bulkActions={[
+          { key: 'activate', label: 'Activate Selected' },
+          { key: 'suspend', label: 'Suspend Selected' },
+          { key: 'export', label: 'Export Selected' }
+        ]}
+        onBulkAction={(action, selectedIds) => {
+          const selectedUsersData = selectedIds.map(id => list.find(user => user.id === id)).filter(Boolean);
+          
+          switch (action) {
+            case 'activate':
+              selectedUsersData.forEach(user => confirmUserAction(user, 'activate'));
+              break;
+            case 'suspend':
+              selectedUsersData.forEach(user => confirmUserAction(user, 'suspend'));
+              break;
+            case 'export':
+              // Export selected users
+              break;
+          }
+        }}
+        selectedRows={selectedUsers}
+        onRowSelect={(selected) => {
+          setSelectedUsers(selected);
+        }}
+        cardView={true}
+        stickyHeader={true}
+        actions={(user) => (
+          <UserActions
+            user={user}
+            onView={(user) => setSelected(user)}
+            onSuspend={(user) => confirmUserAction(user, 'suspend')}
+            onActivate={(user) => confirmUserAction(user, 'activate')}
+          />
         )}
-      </div>
+        onRowClick={(user) => setSelected(user)}
+        pagination={{
+          currentPage: page,
+          totalPages: Math.ceil(filtered.length / pageSize),
+          start: (page - 1) * pageSize + 1,
+          end: Math.min(page * pageSize, filtered.length),
+          total: filtered.length,
+          hasPrevious: page > 1,
+          hasNext: page < Math.ceil(filtered.length / pageSize),
+          onPrevious: () => setPage(page - 1),
+          onNext: () => setPage(page + 1)
+        }}
+      />
 
       {/* Modal */}
       <UserModal user={selected} onClose={() => setSelected(null)} />
