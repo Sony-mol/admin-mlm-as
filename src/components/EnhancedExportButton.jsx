@@ -276,10 +276,10 @@ const EnhancedExportButton = ({
 
       {/* Format Selection Menu */}
       {showFormatMenu && !isExporting && (
-        <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-medium text-gray- thread-900 dark:text-white">Export Format</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <div className="absolute right-0 top-full mt-2 w-72 bg-[rgb(var(--card))] rounded-lg shadow-lg border border-[rgb(var(--border))] z-50">
+          <div className="p-3 border-b border-[rgb(var(--border))]">
+            <h3 className="text-sm font-medium text-[rgb(var(--fg))]">Export Format</h3>
+            <p className="text-xs text-[rgba(var(--fg),0.6)] mt-1">
               Choose your preferred export format
             </p>
           </div>
@@ -299,16 +299,16 @@ const EnhancedExportButton = ({
                     w-full flex items-center gap-3 p-3 rounded-lg transition-colors
                     ${isSelected 
                       ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
-                      : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+                      : 'hover:bg-[rgba(var(--fg),0.05)]'
                     }
                   `}
                 >
                   <IconComponent className={`h-5 w-5 ${format.color}`} />
                   <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    <div className="text-sm font-medium text-[rgb(var(--fg))]">
                       {format.label}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-[rgba(var(--fg),0.6)]">
                       {format.description}
                     </div>
                   </div>
@@ -318,9 +318,9 @@ const EnhancedExportButton = ({
             })}
           </div>
           
-          <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+          <div className="p-3 border-t border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center justify-between text-xs text-[rgba(var(--fg),0.6)]">
                 <div className="flex items-center gap-2">
                   <Database className="h-3 w-3" />
                   <span>{summary.filteredRecords} of {summary.totalRecords} records</span>
@@ -333,7 +333,7 @@ const EnhancedExportButton = ({
                 )}
               </div>
               {summary.filtersApplied > 0 && (
-                <div className="text-xs text-blue-600 dark:text-blue-400">
+                <div className="text-xs text-[rgb(var(--primary))]">
                   Only filtered records will be exported
                 </div>
               )}
@@ -344,13 +344,13 @@ const EnhancedExportButton = ({
 
       {/* Advanced Options Menu */}
       {showAdvancedMenu && !isExporting && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="absolute right-0 top-full mt-2 w-80 bg-[rgb(var(--card))] rounded-lg shadow-lg border border-[rgb(var(--border))] z-50">
+          <div className="p-3 border-b border-[rgb(var(--border))]">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-900 dark:text-white">Advanced Export Options</h3>
+              <h3 className="text-sm font-medium text-[rgb(var(--fg))]">Advanced Export Options</h3>
               <button
                 onClick={() => setShowAdvancedMenu(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-[rgba(var(--fg),0.6)] hover:text-[rgb(var(--fg))]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -360,7 +360,7 @@ const EnhancedExportButton = ({
           <div className="p-4 space-y-4">
             {/* Export Options */}
             <div className="space-y-3">
-              <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Export Options</h4>
+              <h4 className="text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Export Options</h4>
               
               <div className="space-y-2">
                 <label className="flex items-center gap-2">
@@ -368,9 +368,9 @@ const EnhancedExportButton = ({
                     type="checkbox"
                     checked={exportOptions.includeSummary}
                     onChange={(e) => setExportOptions(prev => ({ ...prev, includeSummary: e.target.checked }))}
-                    className="rounded border-gray-300"
+                    className="rounded border-[rgb(var(--border))] bg-[rgb(var(--card))] text-green-600 focus:ring-green-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Include export summary</span>
+                  <span className="text-sm text-[rgb(var(--fg))]">Include export summary</span>
                 </label>
                 
                 <label className="flex items-center gap-2">
@@ -378,9 +378,9 @@ const EnhancedExportButton = ({
                     type="checkbox"
                     checked={exportOptions.includeMetadata}
                     onChange={(e) => setExportOptions(prev => ({ ...prev, includeMetadata: e.target.checked }))}
-                    className="rounded border-gray-300"
+                    className="rounded border-[rgb(var(--border))] bg-[rgb(var(--card))] text-green-600 focus:ring-green-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Include metadata</span>
+                  <span className="text-sm text-[rgb(var(--fg))]">Include metadata</span>
                 </label>
                 
                 <label className="flex items-center gap-2">
@@ -388,9 +388,9 @@ const EnhancedExportButton = ({
                     type="checkbox"
                     checked={exportOptions.includeFilters}
                     onChange={(e) => setExportOptions(prev => ({ ...prev, includeFilters: e.target.checked }))}
-                    className="rounded border-gray-300"
+                    className="rounded border-[rgb(var(--border))] bg-[rgb(var(--card))] text-green-600 focus:ring-green-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Include applied filters</span>
+                  <span className="text-sm text-[rgb(var(--fg))]">Include applied filters</span>
                 </label>
               </div>
             </div>
@@ -398,13 +398,13 @@ const EnhancedExportButton = ({
             {/* Field Selection */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fields</h4>
+                <h4 className="text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Fields</h4>
                 <button
                   onClick={() => setExportOptions(prev => ({ 
                     ...prev, 
                     selectedFields: prev.selectedFields ? null : availableFieldsList 
                   }))}
-                  className="text-xs text-blue-600 hover:text-blue-800"
+                  className="text-xs text-[rgb(var(--primary))] hover:text-[rgb(var(--primary-dark))]"
                 >
                   {exportOptions.selectedFields ? 'Select All' : 'Select None'}
                 </button>
@@ -432,14 +432,14 @@ const EnhancedExportButton = ({
                             }));
                           }
                         }}
-                        className="rounded border-gray-300"
+                        className="rounded border-[rgb(var(--border))] bg-[rgb(var(--card))] text-green-600 focus:ring-green-500"
                       />
-                      <span className="text-gray-700 dark:text-gray-300">{field.label}</span>
+                      <span className="text-[rgb(var(--fg))]">{field.label}</span>
                     </label>
                   );
                 })}
                 {availableFieldsList.length > 10 && (
-                  <div className="text-xs text-gray-500 text-center py-1">
+                  <div className="text-xs text-[rgba(var(--fg),0.5)] text-center py-1">
                     ... and {availableFieldsList.length - 10} more fields
                   </div>
                 )}
@@ -448,13 +448,13 @@ const EnhancedExportButton = ({
 
             {/* Sorting */}
             <div className="space-y-3">
-              <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Sorting</h4>
+              <h4 className="text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Sorting</h4>
               
               <div className="flex gap-2">
                 <select
                   value={exportOptions.sortBy || ''}
                   onChange={(e) => setExportOptions(prev => ({ ...prev, sortBy: e.target.value || null }))}
-                  className="flex-1 text-sm border border-gray-300 rounded px-2 py-1"
+                  className="flex-1 text-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] rounded px-2 py-1"
                 >
                   <option value="">No sorting</option>
                   {availableFieldsList.map(field => (
@@ -468,7 +468,7 @@ const EnhancedExportButton = ({
                       ...prev, 
                       sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc' 
                     }))}
-                    className="flex items-center gap-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                    className="flex items-center gap-1 px-2 py-1 border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] rounded text-sm hover:bg-[rgba(var(--fg),0.05)]"
                   >
                     <ArrowUpDown className="h-3 w-3" />
                     {exportOptions.sortOrder === 'asc' ? 'A-Z' : 'Z-A'}
@@ -479,7 +479,7 @@ const EnhancedExportButton = ({
 
             {/* Limit */}
             <div className="space-y-3">
-              <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Limit Records</h4>
+              <h4 className="text-xs font-medium text-[rgba(var(--fg),0.7)] uppercase tracking-wider">Limit Records</h4>
               
               <input
                 type="number"
@@ -489,16 +489,16 @@ const EnhancedExportButton = ({
                   ...prev, 
                   limit: e.target.value ? parseInt(e.target.value) : null 
                 }))}
-                className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                className="w-full text-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] rounded px-2 py-1 placeholder-[rgba(var(--fg),0.5)]"
                 min="1"
                 max="100000"
               />
             </div>
           </div>
           
-          <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+          <div className="p-3 border-t border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
             <div className="flex items-center justify-between">
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-[rgba(var(--fg),0.6)]">
                 {summary.filteredRecords} records will be exported
               </div>
               <button

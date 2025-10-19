@@ -633,13 +633,15 @@ export default function Products() {
         if (response.ok) {
           const productsData = await response.json();
           console.log('✅ Products fetched successfully:', productsData);
+          console.log('🔍 Product sample data structure:', productsData[0]);
           
           // Transform backend data to match frontend expectations
           const transformedProducts = productsData.map(product => ({
             ...product,
             stock: product.stockQuantity, // Map 'stockQuantity' to 'stock'
             status: product.isActive ? 'active' : 'inactive', // Map 'isActive' to 'status'
-            image: product.imageUrl // Map 'imageUrl' to 'image'
+            image: product.imageUrl, // Map 'imageUrl' to 'image'
+            createdAt: product.createdAt || product.created_at || product.dateCreated || product.createdOn || new Date().toISOString() // Handle various date field names
           }));
           
           setProducts(transformedProducts);

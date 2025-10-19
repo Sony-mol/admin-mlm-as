@@ -556,6 +556,8 @@ export default function Users() {
       const res = await fetch(API_ENDPOINTS.USERS, { headers });
       if (res.ok) {
         const realUsers = await res.json();
+        console.log('✅ Users fetched successfully:', realUsers);
+        console.log('🔍 User sample data structure:', realUsers[0]);
         const transformedUsers = realUsers.map(user => ({
           id: user.id,
           code: user.referenceCode || '--',
@@ -1237,7 +1239,7 @@ export default function Users() {
             render: (value) => <StatusPill value={value} />
           },
           {
-            key: 'createdAt',
+            key: 'joinDate',
             title: 'Joined',
             sortable: true,
             render: (value) => value ? new Date(value).toLocaleDateString() : '—'

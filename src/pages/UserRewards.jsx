@@ -39,6 +39,8 @@ const UserRewards = () => {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ User Rewards fetched successfully:', data);
+        console.log('🔍 Reward sample data structure:', data.allRewards?.[0]);
         setUserRewards(data.allRewards || []);
       } else {
         console.error('Failed to fetch user rewards');
