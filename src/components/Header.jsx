@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ThemeToggle from './ThemeToggle';
-import { Menu, UserPen } from 'lucide-react';
+import { Menu, UserPen, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header({ collapsed = false, onToggle = () => {}, isMobile = false }) {
@@ -65,8 +65,27 @@ export default function Header({ collapsed = false, onToggle = () => {}, isMobil
         )}
       </div>
 
-      {/* Right: Theme toggle + Profile dropdown */}
+      {/* Right: Settings + Theme toggle + Profile dropdown */}
       <div className="flex items-center gap-2 sm:gap-3 relative">
+        {/* Settings Button */}
+        <Link
+          to="/settings"
+          className="
+            inline-flex items-center justify-center 
+            h-9 w-9 
+            rounded-lg 
+            border border-[rgb(var(--border))] 
+            hover:bg-[rgba(var(--fg),0.05)] 
+            active:scale-[0.98] 
+            transition-all duration-200
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+          "
+          title="Settings"
+          aria-label="Settings"
+        >
+          <Settings size={18} strokeWidth={2} aria-hidden="true" />
+        </Link>
+
         <ThemeToggle />
 
         <div className="profile-menu relative">

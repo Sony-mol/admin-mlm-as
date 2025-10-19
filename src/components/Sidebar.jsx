@@ -35,7 +35,6 @@ const links = [
   { to: "/user-rewards", label: "User Rewards", Icon: Award },
   { to: "/admin-management", label: "Admin Management", Icon: Shield },
   { to: "/terms-management", label: "Terms & Privacy", Icon: FileText },
-  { to: "/settings", label: "Settings",        Icon: Settings },
 ];
 
 export default function Sidebar({ open = true, onNavigate = () => {}, isMobile = false }) {
@@ -62,14 +61,36 @@ export default function Sidebar({ open = true, onNavigate = () => {}, isMobile =
       role="dialog"
       aria-modal="true"
     >
-      {/* Brand header */}
-      <div className="mb-3 flex items-center justify-center">
-        <img
-          src="/Logo-300-x-300-px-150-x-150-px.png"
-          alt="CAMGO ADMIN"
-          className="h-24 w-auto"
-          draggable="false"
-        />
+      {/* Enhanced Brand header */}
+      <div className="mb-2 flex items-center justify-center py-4 px-2 sm:py-6">
+        {/* Logo and Text Container - Clickable */}
+        <a 
+          href="https://camelq.net/" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 group hover:opacity-80 transition-opacity duration-300 cursor-pointer"
+          title="Visit CAMELQ Website"
+        >
+          {/* Logo Image */}
+          <div className="relative">
+            <img
+              src="/Logo-300-x-300-px-150-x-150-px.png"
+              alt="CAMELQ SOFTWARE SOLUTIONS"
+              className="h-12 w-12 drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+              draggable="false"
+            />
+          </div>
+          
+          {/* Brand Text - Inline with logo */}
+          <div className="flex flex-col">
+            <h1 className="text-lg font-bold text-[rgb(var(--fg))] tracking-wide leading-tight">
+              CAMELQ
+            </h1>
+            <p className="text-xs text-[rgba(var(--fg),0.7)] font-medium tracking-wider uppercase leading-tight">
+              Software Solutions
+            </p>
+          </div>
+        </a>
       </div>
 
       {/* Scrollable nav list */}

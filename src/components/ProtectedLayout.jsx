@@ -23,10 +23,8 @@ export default function ProtectedLayout() {
       // Open on desktop, closed on mobile
       if (mobile) {
         setSidebarOpen(false);
-        console.log('Mobile detected - sidebar closed');
       } else {
         setSidebarOpen(true);
-        console.log('Desktop detected - sidebar open');
       }
     };
 
@@ -100,10 +98,7 @@ export default function ProtectedLayout() {
       >
         <Header
           collapsed={!sidebarOpen}
-          onToggle={() => {
-            console.log('Toggle clicked - current state:', sidebarOpen, 'isMobile:', isMobile);
-            setSidebarOpen(v => !v);
-          }}
+          onToggle={() => setSidebarOpen(v => !v)}
           isMobile={isMobile}
         />
 
