@@ -52,7 +52,7 @@ export default function Sidebar({ open = true, onNavigate = () => {}, isMobile =
         "fixed left-0 top-0 h-screen",
         "w-[85vw] sm:w-72 lg:w-72",
         "border-r border-[rgb(var(--border))] bg-[rgb(var(--card))]",
-        "px-3 pb-4 pt-3 z-30",
+        "px-3 pb-4 pt-3 z-40",
         "transition-transform duration-300 ease-out",
         "flex flex-col",
         "shadow-lg lg:shadow-none",

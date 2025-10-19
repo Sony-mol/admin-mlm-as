@@ -10,7 +10,7 @@ export default function ProtectedLayout() {
   const location = useLocation();
 
   // Responsive sidebar state management
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed, will be set based on screen size
   const [isMobile, setIsMobile] = useState(false);
 
   // Handle responsive behavior
@@ -19,11 +19,14 @@ export default function ProtectedLayout() {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       
-      // Auto-close sidebar on mobile, auto-open on desktop
-      if (mobile && sidebarOpen) {
+      // Set initial sidebar state based on screen size
+      // Open on desktop, closed on mobile
+      if (mobile) {
         setSidebarOpen(false);
-      } else if (!mobile && !sidebarOpen) {
+        console.log('Mobile detected - sidebar closed');
+      } else {
         setSidebarOpen(true);
+        console.log('Desktop detected - sidebar open');
       }
     };
 
@@ -31,6 +34,22 @@ export default function ProtectedLayout() {
     window.addEventListener('resize', checkScreenSize);
     
     return () => window.removeEventListener('resize', checkScreenSize);
+  }, []); // Empty dependency array for initial setup only
+
+  // Handle window resize events
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      // Auto-open sidebar when switching from mobile to desktop
+      if (!mobile && !sidebarOpen) {
+        setSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [sidebarOpen]);
 
   // Close with ESC or overlay click
@@ -65,7 +84,7 @@ export default function ProtectedLayout() {
       {/* Mobile backdrop with improved UX */}
       {sidebarOpen && isMobile && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />
@@ -81,7 +100,10 @@ export default function ProtectedLayout() {
       >
         <Header
           collapsed={!sidebarOpen}
-          onToggle={() => setSidebarOpen(v => !v)}
+          onToggle={() => {
+            console.log('Toggle clicked - current state:', sidebarOpen, 'isMobile:', isMobile);
+            setSidebarOpen(v => !v);
+          }}
           isMobile={isMobile}
         />
 
