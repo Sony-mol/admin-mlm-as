@@ -41,7 +41,7 @@ export default function ActivityLogs() {
 
   const severities = ["INFO", "WARNING", "ERROR", "CRITICAL"];
 
-  const loadActivityLogs = async () => {
+  const loadActivityLogs = async (forceRefresh = false) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -54,17 +54,31 @@ export default function ActivityLogs() {
       if (filters.severity) params.append("severity", filters.severity);
       if (filters.startDate) params.append("startDate", filters.startDate + "T00:00:00");
       if (filters.endDate) params.append("endDate", filters.endDate + "T23:59:59");
+      
+      // Add cache busting parameter for force refresh
+      if (forceRefresh) {
+        params.append("_t", Date.now().toString());
+      }
 
       const finalUrl = `${ACTIVITY_LOGS_API}?${params}`;
+      console.log('🔄 Loading Activity Logs from:', finalUrl);
+      
       const response = await fetch(finalUrl, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
           "Content-Type": "application/json"
-        }
+        },
+        cache: forceRefresh ? "no-cache" : "default"
       });
 
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Activity Logs data received:', {
+          logsCount: data.logs?.length || 0,
+          totalElements: data.totalElements || 0,
+          sampleLog: data.logs?.[0] // Show first log for debugging
+        });
+        
         setLogs(data.logs || []);
         setPagination(prev => ({
           ...prev,
@@ -72,6 +86,7 @@ export default function ActivityLogs() {
           totalElements: data.totalElements || 0
         }));
       } else {
+        console.error('❌ Failed to load Activity Logs:', response.status, response.statusText);
         setLogs([]);
       }
     } catch {
@@ -184,14 +199,30 @@ export default function ActivityLogs() {
   };
 
   const formatDateTime = (dateTime) => {
-    if (!dateTime) return "--";
+    if (!dateTime) return { date: "--", time: "--" };
     try {
+      // Ensure proper date parsing and IST conversion
       const date = new Date(dateTime);
+      
+      // Debug logging to help identify timezone issues
+      console.log('🔍 Formatting DateTime:', {
+        original: dateTime,
+        parsed: date.toISOString(),
+        ist: date.toLocaleString("en-IN", {timeZone: "Asia/Kolkata"})
+      });
+      
       return {
-        date: date.toLocaleDateString(),
-        time: date.toLocaleTimeString()
+        date: date.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }),
+        time: date.toLocaleTimeString("en-IN", { 
+          timeZone: "Asia/Kolkata",
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        })
       };
-    } catch {
+    } catch (error) {
+      console.error('❌ Error formatting date/time:', error, 'Input:', dateTime);
       return { date: "--", time: "--" };
     }
   };
@@ -207,7 +238,9 @@ export default function ActivityLogs() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
-              loadActivityLogs();
+              console.log('🔄 Force refreshing Activity Logs with fresh data...');
+              // Force refresh with cache busting
+              loadActivityLogs(true);
               loadRecentActivity();
               loadStats();
             }}

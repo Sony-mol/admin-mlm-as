@@ -50,8 +50,10 @@ const fINR = (n) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 }).format(Number(n || 0));
 
 const fDate = (iso) => (iso ? new Date(iso).toLocaleDateString("en-IN", { 
+  timeZone: "Asia/Kolkata",
   dateStyle: "medium"
 }) + " " + new Date(iso).toLocaleTimeString("en-IN", {
+  timeZone: "Asia/Kolkata",
   timeStyle: "short"
 }) : "—");
 

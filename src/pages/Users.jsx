@@ -16,7 +16,7 @@ import { API_ENDPOINTS } from '../config/api';
 
 const fmtINR = (n) =>
   Number(n || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
-const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-US') : '');
+const fmtDate = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { timeZone: "Asia/Kolkata" }) : '');
 
 // Local YYYY-MM-DD (no timezone conversion to UTC)
 const ymdLocal = (d) => {
