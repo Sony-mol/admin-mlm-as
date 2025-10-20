@@ -18,6 +18,17 @@ import {
   PieChart,
   Calendar,
   Clock,
+  Package,
+  ShoppingCart,
+  Wallet,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Settings,
+  UserPlus,
+  FileText,
+  Bell,
+  Zap,
 } from "lucide-react";
 
 // Import API configuration
@@ -311,6 +322,7 @@ export default function Overview() {
   const [dashboardData, setDashboardData] = useState(null);
   const [recentActivityLogs, setRecentActivityLogs] = useState([]);
   const [tierData, setTierData] = useState(null); // normalized: keys lowercased
+  const [extendedStats, setExtendedStats] = useState(null); // New consolidated statistics
   const [loading, setLoading] = useState(true);
   const [tierOpen, setTierOpen] = useState(false);
   const [tierKeyState, setTierKeyState] = useState(null);
@@ -546,6 +558,18 @@ export default function Overview() {
             }));
           }
         }
+
+        // Extended dashboard statistics
+        const statsRes = await fetch(API_ENDPOINTS.DASHBOARD_STATISTICS, {
+          cache: "no-store",
+          headers,
+        });
+        if (statsRes.ok) {
+          const statsJson = await statsRes.json();
+          if (mounted) {
+            setExtendedStats(statsJson);
+          }
+        }
       } catch (e) {
         console.error("💥 Overview Load Error:", e);
         if (mounted) {
@@ -691,7 +715,7 @@ export default function Overview() {
   return (
     <div className="space-y-6 text-[rgb(var(--fg))]">
       <div className="flex items-center justify-between">
-        <Header title="Overview" />
+        <Header title="Overview" subtitle="Welcome back! Here's what's happening with your MLM system." />
         <button
           onClick={() => window.location.reload()}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -700,6 +724,82 @@ export default function Overview() {
           Refresh Data
         </button>
       </div>
+
+      {/* System Health & Alerts */}
+      {extendedStats?.systemHealth && extendedStats.systemHealth.alertCount > 0 && (
+        <Card className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 p-2 rounded-full bg-yellow-100">
+              <Bell className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold text-yellow-900 mb-2">
+                System Alerts ({extendedStats.systemHealth.alertCount})
+              </div>
+              <ul className="space-y-1">
+                {extendedStats.systemHealth.alerts.map((alert, i) => (
+                  <li key={i} className="text-sm text-yellow-800 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    {alert}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Quick Actions Panel */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Zap className="w-5 h-5 text-purple-600" />
+          <div className="font-semibold text-lg">Quick Actions</div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <a
+            href="/users"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
+          >
+            <UserPlus className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-center">Manage Users</span>
+          </a>
+          <a
+            href="/products"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
+          >
+            <Package className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-center">Products</span>
+          </a>
+          <a
+            href="/orders"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
+          >
+            <ShoppingCart className="w-6 h-6 text-orange-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-center">Orders</span>
+          </a>
+          <a
+            href="/withdrawals"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
+          >
+            <Wallet className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-center">Withdrawals</span>
+          </a>
+          <a
+            href="/commissions"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
+          >
+            <DollarSign className="w-6 h-6 text-emerald-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-center">Commissions</span>
+          </a>
+          <a
+            href="/analytics"
+            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
+          >
+            <BarChart3 className="w-6 h-6 text-indigo-600 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium text-center">Analytics</span>
+          </a>
+        </div>
+      </Card>
 
       {/* Enhanced KPIs */}
       {kpis.length > 0 && (
@@ -738,6 +838,150 @@ export default function Overview() {
               />
             );
           })}
+        </section>
+      )}
+
+      {/* Extended Statistics - Orders, Products, Withdrawals */}
+      {extendedStats && (
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Orders Stats */}
+          {extendedStats.orders && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <ShoppingCart className="w-5 h-5 text-orange-600" />
+                <div className="font-semibold text-lg">Orders</div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Total Orders</span>
+                  <span className="font-semibold">{extendedStats.orders.total}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Successful</span>
+                  <span className="font-semibold text-green-600 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    {extendedStats.orders.successful}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Pending</span>
+                  <span className="font-semibold text-yellow-600 flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {extendedStats.orders.pending}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Failed</span>
+                  <span className="font-semibold text-red-600 flex items-center gap-1">
+                    <XCircle className="w-4 h-4" />
+                    {extendedStats.orders.failed}
+                  </span>
+                </div>
+                <div className="pt-3 border-t border-[rgb(var(--border))]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Total Revenue</span>
+                    <span className="font-bold text-green-600">
+                      {INR(Number(extendedStats.orders.totalAmount || 0))}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs text-[rgba(var(--fg),0.6)]">Success Rate</span>
+                    <span className="text-xs font-medium">
+                      {extendedStats.orders.successRate?.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Products Stats */}
+          {extendedStats.products && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Package className="w-5 h-5 text-green-600" />
+                <div className="font-semibold text-lg">Products</div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Total Products</span>
+                  <span className="font-semibold">{extendedStats.products.total}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Active</span>
+                  <span className="font-semibold text-green-600 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    {extendedStats.products.active}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Inactive</span>
+                  <span className="font-semibold text-gray-500">
+                    {extendedStats.products.inactive}
+                  </span>
+                </div>
+                <div className="pt-3 border-t border-[rgb(var(--border))]">
+                  <a
+                    href="/products"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-sm font-medium"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Manage Products
+                  </a>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Withdrawals Stats */}
+          {extendedStats.withdrawals && (
+            <Card className="p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Wallet className="w-5 h-5 text-purple-600" />
+                <div className="font-semibold text-lg">Withdrawals</div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Total Requests</span>
+                  <span className="font-semibold">{extendedStats.withdrawals.total}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Pending</span>
+                  <span className="font-semibold text-yellow-600 flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {extendedStats.withdrawals.pending}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Processing</span>
+                  <span className="font-semibold text-blue-600">
+                    {extendedStats.withdrawals.processing}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-[rgba(var(--fg),0.7)]">Completed</span>
+                  <span className="font-semibold text-green-600 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    {extendedStats.withdrawals.completed}
+                  </span>
+                </div>
+                <div className="pt-3 border-t border-[rgb(var(--border))]">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-[rgba(var(--fg),0.7)]">Pending Amount</span>
+                    <span className="text-sm font-semibold text-yellow-600">
+                      {INR(Number(extendedStats.withdrawals.pendingAmount || 0))}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[rgba(var(--fg),0.7)]">Completed Amount</span>
+                    <span className="text-sm font-semibold text-green-600">
+                      {INR(Number(extendedStats.withdrawals.completedAmount || 0))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
         </section>
       )}
 

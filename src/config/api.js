@@ -73,6 +73,9 @@ export const API_ENDPOINTS = {
   CLAIM_REWARD: getApiUrl('/api/userrewards/claim'),
   GET_ALL_USER_REWARDS: getApiUrl('/api/userrewards/all'),
   GET_REWARD_STATS: getApiUrl('/api/userrewards/stats'),
+  
+  // Admin Dashboard Statistics
+  DASHBOARD_STATISTICS: getApiUrl('/api/admin/dashboard-statistics'),
 };
 
 export default API_BASE_URL;
