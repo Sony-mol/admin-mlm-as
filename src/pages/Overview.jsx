@@ -749,57 +749,7 @@ export default function Overview() {
         </Card>
       )}
 
-      {/* Quick Actions Panel */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Zap className="w-5 h-5 text-purple-600" />
-          <div className="font-semibold text-lg">Quick Actions</div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <a
-            href="/users"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
-          >
-            <UserPlus className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-center">Manage Users</span>
-          </a>
-          <a
-            href="/products"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
-          >
-            <Package className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-center">Products</span>
-          </a>
-          <a
-            href="/orders"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
-          >
-            <ShoppingCart className="w-6 h-6 text-orange-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-center">Orders</span>
-          </a>
-          <a
-            href="/withdrawals"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
-          >
-            <Wallet className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-center">Withdrawals</span>
-          </a>
-          <a
-            href="/commissions"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
-          >
-            <DollarSign className="w-6 h-6 text-emerald-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-center">Commissions</span>
-          </a>
-          <a
-            href="/analytics"
-            className="flex flex-col items-center gap-2 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors group"
-          >
-            <BarChart3 className="w-6 h-6 text-indigo-600 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium text-center">Analytics</span>
-          </a>
-        </div>
-      </Card>
+      {/* Quick Actions removed to avoid duplication with sidebar */}
 
       {/* Enhanced KPIs */}
       {kpis.length > 0 && (
