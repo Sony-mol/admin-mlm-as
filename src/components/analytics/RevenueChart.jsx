@@ -180,11 +180,22 @@ const RevenueChart = () => {
             color: 'rgb(var(--fg))'
           }}
           labelFormatter={(value) => `Date: ${formatDate(value)}`}
-          formatter={(value, name) => [
-            formatCurrency(value),
-            name === 'revenue' ? 'Revenue' : 
-            name === 'expenses' ? 'Expenses' : 'Profit'
-          ]}
+          formatter={(value, name) => {
+            console.log('🔍 Revenue Tooltip Debug:', { value, name });
+            
+            let label = 'Unknown';
+            // Handle both dataKey and name prop values (case insensitive)
+            if (name === 'revenue' || name === 'Revenue') {
+              label = 'Revenue';
+            } else if (name === 'expenses' || name === 'Expenses') {
+              label = 'Expenses';
+            } else if (name === 'profit' || name === 'Profit') {
+              label = 'Profit';
+            }
+            
+            console.log('🎯 Revenue Tooltip Label:', { name, label, value });
+            return [formatCurrency(value), label];
+          }}
         />
         <Legend />
         <Area
@@ -238,11 +249,22 @@ const RevenueChart = () => {
             color: 'rgb(var(--fg))'
           }}
           labelFormatter={(value) => `Date: ${formatDate(value)}`}
-          formatter={(value, name) => [
-            formatCurrency(value),
-            name === 'revenue' ? 'Revenue' : 
-            name === 'expenses' ? 'Expenses' : 'Profit'
-          ]}
+          formatter={(value, name) => {
+            console.log('🔍 Revenue Tooltip Debug:', { value, name });
+            
+            let label = 'Unknown';
+            // Handle both dataKey and name prop values (case insensitive)
+            if (name === 'revenue' || name === 'Revenue') {
+              label = 'Revenue';
+            } else if (name === 'expenses' || name === 'Expenses') {
+              label = 'Expenses';
+            } else if (name === 'profit' || name === 'Profit') {
+              label = 'Profit';
+            }
+            
+            console.log('🎯 Revenue Tooltip Label:', { name, label, value });
+            return [formatCurrency(value), label];
+          }}
         />
         <Legend />
         <Line
