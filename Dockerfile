@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-bookworm AS builder
+FROM ghcr.io/nodejs/node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20-bookworm
+FROM ghcr.io/nodejs/node:20-alpine
 
 WORKDIR /app
 
