@@ -69,27 +69,55 @@ class AnalyticsService {
     }
   }
 
-  // Revenue Analytics
+  // Revenue Analytics - MLM Business Model
   async getRevenueData(timeRange = '30d') {
     try {
+      console.log('🔍 AnalyticsService: Fetching MLM revenue data for range:', timeRange);
+      
       // Use same auth approach as Overview page
       const token = localStorage.getItem("auth")
         ? JSON.parse(localStorage.getItem("auth")).accessToken
         : "";
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       
-      const response = await fetch(API_ENDPOINTS.PAYMENTS, {
-        cache: "no-store",
-        headers,
+      console.log('🔍 AnalyticsService: Making requests to multiple endpoints...');
+      
+      // Fetch data from multiple endpoints for comprehensive MLM analytics
+      const [paymentsRes, ordersRes, commissionsRes, productsRes] = await Promise.all([
+        fetch(API_ENDPOINTS.PAYMENTS, { cache: "no-store", headers }),
+        fetch(API_ENDPOINTS.ORDERS, { cache: "no-store", headers }),
+        fetch(API_ENDPOINTS.PENDING_COMMISSIONS, { cache: "no-store", headers }),
+        fetch(API_ENDPOINTS.PRODUCTS, { cache: "no-store", headers })
+      ]);
+      
+      console.log('🔍 AnalyticsService: Response statuses:', {
+        payments: paymentsRes.status,
+        orders: ordersRes.status,
+        commissions: commissionsRes.status,
+        products: productsRes.status
       });
       
-      if (response.ok) {
-        const payments = await response.json();
-        return this.transformPaymentsToRevenueData(payments, timeRange);
+      if (paymentsRes.ok && ordersRes.ok && commissionsRes.ok && productsRes.ok) {
+        const [payments, orders, commissions, products] = await Promise.all([
+          paymentsRes.json(),
+          ordersRes.json(),
+          commissionsRes.json(),
+          productsRes.json()
+        ]);
+        
+        console.log('✅ AnalyticsService: MLM data received:', {
+          paymentsCount: payments.length || 0,
+          ordersCount: orders.length || 0,
+          commissionsCount: commissions.length || 0,
+          productsCount: products.length || 0
+        });
+        
+        return this.transformMLMRevenueData(payments, orders, commissions, products, timeRange);
       }
-      throw new Error('Failed to fetch revenue data');
+      throw new Error('Failed to fetch MLM revenue data');
     } catch (error) {
-      console.error('Error fetching revenue data:', error);
+      console.error('❌ AnalyticsService: Error fetching MLM revenue data:', error);
+      console.log('🔄 AnalyticsService: Falling back to mock data...');
       return this.getMockRevenueData(timeRange);
     }
   }
@@ -320,6 +348,97 @@ class AnalyticsService {
     return { barData, pieData };
   }
 
+  // MLM Business Model Revenue Transformation
+  transformMLMRevenueData(payments, orders, commissions, products, timeRange) {
+    const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
+    const data = [];
+    
+    // Ensure we have arrays
+    const paymentsList = Array.isArray(payments) ? payments : [];
+    const ordersList = Array.isArray(orders) ? orders : [];
+    const commissionsList = Array.isArray(commissions) ? commissions : [];
+    const productsList = Array.isArray(products) ? products : [];
+    
+    console.log('🔍 MLM Revenue Data Debug:', {
+      totalPayments: paymentsList.length,
+      totalOrders: ordersList.length,
+      totalCommissions: commissionsList.length,
+      totalProducts: productsList.length,
+      paymentSample: paymentsList[0],
+      orderSample: ordersList[0]
+    });
+    
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Filter data for this specific date
+      const dayPayments = paymentsList.filter(payment => {
+        const paymentDate = new Date(payment.createdAt || payment.created_at || payment.date || payment.paymentDate || payment.timestamp).toISOString().split('T')[0];
+        return paymentDate === dateStr;
+      });
+      
+      const dayOrders = ordersList.filter(order => {
+        const orderDate = new Date(order.createdAt || order.created_at || order.date || order.orderDate || order.timestamp).toISOString().split('T')[0];
+        return orderDate === dateStr;
+      });
+      
+      const dayCommissions = commissionsList.filter(commission => {
+        const commissionDate = new Date(commission.createdAt || commission.created_at || commission.date || commission.commissionDate || commission.timestamp).toISOString().split('T')[0];
+        return commissionDate === dateStr;
+      });
+      
+      // Calculate MLM Revenue (User Payments)
+      const revenue = dayPayments.reduce((sum, payment) => {
+        const amount = parseFloat(payment.amount || payment.totalAmount || payment.value || 0);
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+      
+      // Calculate MLM Expenses (Product Costs + Commission Payouts)
+      // Product costs from orders
+      const productCosts = dayOrders.reduce((sum, order) => {
+        // Estimate product cost as 50% of order amount (as per your MLM model)
+        const orderAmount = parseFloat(order.amount || order.totalAmount || order.value || 0);
+        const estimatedProductCost = orderAmount * 0.5; // 50% of order amount
+        return sum + (isNaN(estimatedProductCost) ? 0 : estimatedProductCost);
+      }, 0);
+      
+      // Commission payouts
+      const commissionPayouts = dayCommissions.reduce((sum, commission) => {
+        const amount = parseFloat(commission.amount || commission.commissionAmount || commission.value || 0);
+        return sum + (isNaN(amount) ? 0 : amount);
+      }, 0);
+      
+      // Total expenses = Product costs + Commission payouts
+      const expenses = productCosts + commissionPayouts;
+      
+      // Admin profit = Revenue - Expenses
+      const profit = revenue - expenses;
+      
+      data.push({
+        date: dateStr,
+        revenue,
+        expenses,
+        profit,
+        productCosts,
+        commissionPayouts,
+        cumulative: (i === days - 1 ? 0 : data[data.length - 1]?.cumulative || 0) + profit
+      });
+    }
+    
+    console.log('📊 MLM Revenue Result:', {
+      dataLength: data.length,
+      sampleData: data.slice(0, 3),
+      totalRevenue: data.reduce((sum, day) => sum + day.revenue, 0),
+      totalExpenses: data.reduce((sum, day) => sum + day.expenses, 0),
+      totalProfit: data.reduce((sum, day) => sum + day.profit, 0)
+    });
+    
+    return { data };
+  }
+
+  // Legacy method for backward compatibility
   transformPaymentsToRevenueData(payments, timeRange) {
     const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
     const data = [];
