@@ -174,11 +174,22 @@ const CommissionAnalyticsChart = () => {
             color: 'rgb(var(--fg))'
           }}
           labelFormatter={(value) => `Date: ${formatDate(value)}`}
-          formatter={(value, name) => [
-            formatCurrency(value),
-            name === 'pending' ? 'Pending' : 
-            name === 'paid' ? 'Paid' : 'Total'
-          ]}
+          formatter={(value, name) => {
+            console.log('🔍 Commission Tooltip Debug:', { value, name });
+            
+            let label = 'Unknown';
+            // Handle both dataKey and name prop values (case insensitive)
+            if (name === 'pending' || name === 'Pending') {
+              label = 'Total Pending';
+            } else if (name === 'paid' || name === 'Paid') {
+              label = 'Total Paid';
+            } else if (name === 'total' || name === 'Total') {
+              label = 'Total';
+            }
+            
+            console.log('🎯 Commission Tooltip Label:', { name, label, value });
+            return [formatCurrency(value), label];
+          }}
         />
         <Legend />
         <Bar dataKey="pending" fill="#F59E0B" name="Pending" />
