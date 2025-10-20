@@ -324,6 +324,7 @@ export default function Overview() {
   const [tierData, setTierData] = useState(null); // normalized: keys lowercased
   const [extendedStats, setExtendedStats] = useState(null); // New consolidated statistics
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [tierOpen, setTierOpen] = useState(false);
   const [tierKeyState, setTierKeyState] = useState(null);
   const { addNotification } = useNotifications();
@@ -587,6 +588,7 @@ export default function Overview() {
             message: 'All dashboard data has been refreshed successfully',
             duration: 3000
           });
+          setLastUpdated(new Date());
         }
       }
     })();
@@ -594,6 +596,8 @@ export default function Overview() {
       mounted = false;
     };
   }, []);
+
+  // Auto-refresh removed per request; manual refresh via button only
 
   // Transform backend data to match UI
   const kpis = dashboardData
@@ -716,13 +720,18 @@ export default function Overview() {
     <div className="space-y-6 text-[rgb(var(--fg))]">
       <div className="flex items-center justify-between">
         <Header title="Overview" subtitle="Welcome back! Here's what's happening with your MLM system." />
-        <button
-          onClick={() => window.location.reload()}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="text-xs text-[rgba(var(--fg),0.6)]">
+            {lastUpdated ? `Last updated: ${new Date(lastUpdated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}` : '—'}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* System Health & Alerts */}
@@ -840,6 +849,16 @@ export default function Overview() {
                       {extendedStats.orders.successRate?.toFixed(1)}%
                     </span>
                   </div>
+                  {extendedStats.orders.pending > 0 && (
+                    <div className="mt-3">
+                      <a
+                        href="/orders?status=PENDING"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
+                      >
+                        <Clock className="w-3 h-3" /> Review {extendedStats.orders.pending} pending orders
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
@@ -928,6 +947,16 @@ export default function Overview() {
                       {INR(Number(extendedStats.withdrawals.completedAmount || 0))}
                     </span>
                   </div>
+                  {extendedStats.withdrawals.pending > 0 && (
+                    <div className="mt-3">
+                      <a
+                        href="/withdrawals?status=PENDING"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
+                      >
+                        <Clock className="w-3 h-3" /> Review {extendedStats.withdrawals.pending} pending withdrawals
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
@@ -1005,117 +1034,7 @@ export default function Overview() {
         </Card>
       </section>
 
-      {/* Enhanced Monthly Revenue + Top Performers */}
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Monthly Revenue Chart */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-green-600" />
-              <div className="font-semibold text-lg">Monthly Revenue</div>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-[rgba(var(--fg),0.7)]">
-              <Calendar className="w-4 h-4" />
-              Last 6 months
-            </div>
-          </div>
-
-          {revenue.length > 0 ? (
-            <div className="h-64">
-              <LineChartMini points={revenue} />
-            </div>
-          ) : (
-            <div className="h-64 flex items-center justify-center rounded-lg bg-[rgba(var(--fg),0.05)]">
-              <div className="text-center">
-                <TrendingUp className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
-                <div className="text-sm text-[rgba(var(--fg),0.7)]">
-                  No revenue data available
-                </div>
-                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">
-                  Revenue data will appear here
-                </div>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Top Performers */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" />
-              <div className="font-semibold text-lg">Top Performers</div>
-            </div>
-          <div className="flex items-center gap-3 text-sm text-[rgba(var(--fg),0.7)]">
-            {top.length} {top.length === 1 ? "performer" : "performers"}
-            {top.length > 3 && (
-              <button
-                onClick={() => setShowAllTop((s) => !s)}
-                className="px-3 py-1 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-              >
-                {showAllTop ? "Show top 3" : "View all"}
-              </button>
-            )}
-          </div>
-          </div>
-
-          <div className="space-y-3">
-            {visibleTop.map((t, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors"
-              >
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                    {i + 1}
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-[rgb(var(--fg))] truncate">
-                    {t.name}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[rgba(var(--fg),0.7)]">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        tierKey(t.level) === "gold"
-                          ? "bg-yellow-100 text-yellow-800"
-                          : tierKey(t.level) === "silver"
-                          ? "bg-gray-100 text-gray-800"
-                          : tierKey(t.level) === "bronze"
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {t.level}
-                    </span>
-                    <span>•</span>
-                    <span>
-                      {Number(t.referrals || 0).toLocaleString("en-IN")} referrals
-                    </span>
-                  </div>
-                </div>
-                <div className="flex-shrink-0 text-right">
-                  <div className="font-semibold text-green-600">
-                    {t.currency === "INR"
-                      ? INR(Number(t.amount || 0))
-                      : Number(t.amount || 0).toLocaleString("en-IN")}
-                  </div>
-                  <div className="text-xs text-[rgba(var(--fg),0.6)]">earnings</div>
-                </div>
-              </div>
-            ))}
-            {top.length === 0 && (
-              <div className="text-center py-8 text-[rgba(var(--fg),0.7)]">
-                <Users className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
-                <div className="text-sm">No performers yet</div>
-                <div className="text-xs text-[rgba(var(--fg),0.6)] mt-1">
-                  Top performers will appear here
-                </div>
-              </div>
-            )}
-          </div>
-        </Card>
-      </section>
+      {/* Monthly Revenue and Top Performers removed (available in Analytics page) */}
 
       {/* Enhanced Recent Activities */}
       <section>
