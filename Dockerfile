@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-bullseye AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20-bullseye-slim
+FROM node:20-alpine
 
 WORKDIR /app
 
