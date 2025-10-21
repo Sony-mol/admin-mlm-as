@@ -12,6 +12,8 @@ export const getApiUrl = (path) => {
 export const API_ENDPOINTS = {
   LOGIN: getApiUrl('/api/users/login'),
   REFRESH_TOKEN: getApiUrl('/api/users/refresh-token'),
+  FORGOT_PASSWORD: getApiUrl('/api/users/forgot-password'),
+  RESET_PASSWORD: getApiUrl('/api/users/reset-password'),
   PROFILE: getApiUrl('/api/users/profile'),
   USERS: getApiUrl('/api/users'),
   DASHBOARD: getApiUrl('/api/commissions/admin/dashboard'),

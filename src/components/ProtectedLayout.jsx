@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTokenManager } from '../hooks/useTokenManager';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Breadcrumb from './Breadcrumb';
@@ -9,6 +10,9 @@ import Breadcrumb from './Breadcrumb';
 export default function ProtectedLayout() {
   const { user } = useAuth();
   const location = useLocation();
+  
+  // Initialize token manager for auto-refresh functionality
+  useTokenManager();
 
   // Responsive sidebar state management
   const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed, will be set based on screen size

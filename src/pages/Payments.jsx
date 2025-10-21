@@ -162,7 +162,7 @@ export default function Payments() {
             account: p.razorpayPaymentId || p.razorpayOrderId || null,
           },
           requestedAt: p.createdAt || null,
-          processedAt: p.updatedAt || p.createdAt || null,
+          processedAt: p.processedAt || p.updatedAt || p.createdAt || null,
           description: p.description || `Payment ${p.id}`,
           
           // Razorpay transaction details
@@ -551,12 +551,17 @@ export default function Payments() {
             key: 'method',
             title: 'Method',
             sortable: true,
-            render: (value, payment) => (
-                    <div>
-                      <div className="font-medium">{payment.method.channel || '--'}</div>
-                      <div className="text-sm opacity-70">{payment.method.account || '--'}</div>
-                    </div>
-            )
+            render: (value, payment) => {
+              const channel = payment.method?.channel || payment.paymentMethod || '—';
+              const account = payment.method?.account || payment.razorpayPaymentId || payment.razorpayOrderId || null;
+              const color = channel.toLowerCase() === 'razorpay' ? 'bg-emerald-600' : 'bg-slate-500';
+              return (
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 text-xs rounded-full text-white ${color}`}>{channel}</span>
+                  {account && <span className="text-xs opacity-70 truncate max-w-[160px]" title={account}>{account}</span>}
+                </div>
+              );
+            }
           },
           {
             key: 'status',

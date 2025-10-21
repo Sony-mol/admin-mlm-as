@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Refresh Test - Frontend</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            border-left: 4px solid #007bff;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: #28a745; border-left-color: #28a745; }
+        .error { color: #dc3545; border-left-color: #dc3545; }
+        .info { color: #007bff; border-left-color: #007bff; }
+        .warning { color: #ffc107; border-left-color: #ffc107; }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Token Refresh Test - Frontend</h1>
+        <p>This page tests the token refresh functionality in your admin panel.</p>
+        
+        <div class="test-section">
+            <h3>Step 1: Test Backend Connection</h3>
+            <button onclick="testBackendConnection()">Test Backend</button>
+            <div id="backend-status" class="status info">Click "Test Backend" to check connection</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Step 2: Test Login (Use Your Admin Credentials)</h3>
+            <input type="email" id="email" placeholder="Admin Email" value="admin@mlm.com">
+            <input type="password" id="password" placeholder="Admin Password" value="Admin@123">
+            <button onclick="testLogin()">Test Login</button>
+            <div id="login-status" class="status info">Enter your admin credentials and click "Test Login"</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Step 3: Test Token Refresh</h3>
+            <button onclick="testTokenRefresh()" id="refresh-btn" disabled>Test Token Refresh</button>
+            <div id="refresh-status" class="status info">Login first to enable token refresh test</div>
+        </div>
+
+        <div class="test-section">
+            <h3>Step 4: Test Frontend Auto-Refresh</h3>
+            <button onclick="openAdminPanel()">Open Admin Panel</button>
+            <div id="frontend-status" class="status info">Click to open the admin panel and check console logs</div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Test Logs</h3>
+            <button onclick="clearLogs()">Clear Logs</button>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://asmlmbackend-production.up.railway.app';
+        let currentTokens = null;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+        }
+
+        async function testBackendConnection() {
+            log('Testing backend connection...', 'info');
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/users/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'test', password: 'test' })
+                });
+                
+                if (response.status === 404) {
+                    updateStatus('backend-status', '✅ Backend is running (404 expected for invalid credentials)', 'success');
+                    log('Backend is accessible and responding', 'success');
+                } else {
+                    updateStatus('backend-status', `✅ Backend is running (Status: ${response.status})`, 'success');
+                    log(`Backend responded with status: ${response.status}`, 'success');
+                }
+            } catch (error) {
+                updateStatus('backend-status', `❌ Backend connection failed: ${error.message}`, 'error');
+                log(`Backend connection error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                updateStatus('login-status', '❌ Please enter both email and password', 'error');
+                return;
+            }
+
+            log(`Testing login with email: ${email}`, 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/users/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.accessToken) {
+                    currentTokens = data;
+                    updateStatus('login-status', '✅ Login successful!', 'success');
+                    log('Login successful', 'success');
+                    log(`Access Token: ${data.accessToken ? 'Present' : 'Missing'}`, 'info');
+                    log(`Refresh Token: ${data.refreshToken ? 'Present' : 'Missing'}`, 'info');
+                    log(`User ID: ${data.userId || 'N/A'}`, 'info');
+                    log(`Role: ${data.role || 'N/A'}`, 'info');
+                    
+                    // Enable refresh test button
+                    document.getElementById('refresh-btn').disabled = false;
+                } else {
+                    updateStatus('login-status', `❌ Login failed: ${data.error || 'Unknown error'}`, 'error');
+                    log(`Login failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('login-status', `❌ Login error: ${error.message}`, 'error');
+                log(`Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTokenRefresh() {
+            if (!currentTokens || !currentTokens.refreshToken) {
+                updateStatus('refresh-status', '❌ No refresh token available. Please login first.', 'error');
+                return;
+            }
+
+            log('Testing token refresh...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/users/refresh-token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken: currentTokens.refreshToken })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.accessToken) {
+                    updateStatus('refresh-status', '✅ Token refresh successful!', 'success');
+                    log('Token refresh successful', 'success');
+                    log(`New Access Token: ${data.accessToken ? 'Present' : 'Missing'}`, 'info');
+                    log(`New Refresh Token: ${data.refreshToken ? 'Present' : 'Missing'}`, 'info');
+                    
+                    // Update current tokens
+                    currentTokens = { ...currentTokens, ...data };
+                } else {
+                    updateStatus('refresh-status', `❌ Token refresh failed: ${data.error || 'Unknown error'}`, 'error');
+                    log(`Token refresh failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('refresh-status', `❌ Token refresh error: ${error.message}`, 'error');
+                log(`Token refresh error: ${error.message}`, 'error');
+            }
+        }
+
+        function openAdminPanel() {
+            log('Opening admin panel...', 'info');
+            const adminUrl = 'http://localhost:3000';
+            window.open(adminUrl, '_blank');
+            
+            updateStatus('frontend-status', '✅ Admin panel opened in new tab', 'success');
+            log('Admin panel opened. Now follow these steps:', 'info');
+            log('1. Login with the same credentials you used above', 'info');
+            log('2. Open browser console (F12)', 'info');
+            log('3. Look for these messages:', 'info');
+            log('   🔍 Token Manager: accessToken exists: true isExpired: false', 'info');
+            log('   ⏰ Token Manager: Setting auto-refresh timer for 55 minutes', 'info');
+            log('4. If you see those messages, auto-refresh is working! 🎉', 'success');
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        // Auto-test backend connection on page load
+        window.onload = function() {
+            testBackendConnection();
+        };
+    </script>
+</body>
+</html>

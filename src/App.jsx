@@ -19,6 +19,8 @@ import UserRewards from './pages/UserRewards';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import TermsManagement from './pages/TermsManagement';
 
 export default function App() {
@@ -26,6 +28,8 @@ export default function App() {
     <NotificationProvider>
       <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedLayout />}>
         <Route index element={<Overview />} />
         <Route path="analytics" element={<Analytics />} />
