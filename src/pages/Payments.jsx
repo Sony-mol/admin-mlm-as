@@ -554,7 +554,7 @@ export default function Payments() {
           }
         ]}
         data={paged}
-        loading={loading}
+        loading={loading.payments}
         emptyMessage="No payments match your filters."
         searchable={false}
         filterable={false}

@@ -254,7 +254,7 @@ export default function OrderModal({ order, detailedOrder, onClose, onUpdateStat
             </div>
             <div>
               <div>Created:</div>
-              <div>{fmtDate(displayOrder.date)}</div>
+              <div>{fmtDate(displayOrder.date || displayOrder.createdAt)}</div>
             </div>
             <div>
               <div>Last Updated:</div>

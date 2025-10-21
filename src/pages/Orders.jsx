@@ -262,7 +262,13 @@ export default function Orders() {
           products: detailedData.products?.map(p => p.name) || ['MLM Activation Package'],
           timeRemaining: detailedData.timing?.timeRemaining,
           isExpired: detailedData.timing?.isExpired,
-          description: detailedData.description
+          description: detailedData.description,
+          
+          // 🔧 FIX: Map amount and date fields for OrderModal
+          amount: detailedData.totalAmount || detailedData.amount || 0,
+          date: detailedData.createdAt || detailedData.date,
+          totalAmount: detailedData.totalAmount || detailedData.amount || 0,
+          createdAt: detailedData.createdAt || detailedData.date
         };
         
         setDetailedOrder(transformedDetailedOrder);
