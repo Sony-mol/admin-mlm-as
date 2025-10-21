@@ -557,7 +557,7 @@ export default function Commissions() {
             }
           ]}
           data={pendingPaged}
-          loading={loading}
+          loading={loading.pending}
           emptyMessage="No pending commissions"
           searchable={false}
           filterable={false}
