@@ -69,7 +69,10 @@ const Modal = ({ open, onClose, children }) => {
 };
 
 export default function Payments() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    payments: true,
+    stats: true
+  });
   const [err, setErr] = useState(null);
   const [payments, setPayments] = useState([]);
   const [paymentStats, setPaymentStats] = useState(null);
@@ -86,48 +89,19 @@ export default function Payments() {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderData, setOrderData] = useState(null);
 
+  // ⚡ PROGRESSIVE LOADING - Load payments and stats in parallel
   async function load() {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-      const headers = { 'Authorization': `Bearer ${token}` };
-      
-      console.log('🔍 PAYMENTS PAGE - Starting API calls...');
-      console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-      console.log('📡 Headers:', headers);
-      
-      // Fetch real payment data from backend
-      console.log('💳 Fetching real payments from:', API_ENDPOINTS.PAYMENTS);
-      const paymentsRes = await fetch(API_ENDPOINTS.PAYMENTS, { headers });
-      console.log('💳 Payments Response Status:', paymentsRes.status);
-      console.log('💳 Payments Response Headers:', Object.fromEntries(paymentsRes.headers.entries()));
-      
-      // Fetch payment statistics
-      console.log('📊 Fetching payment statistics...');
-      const statsRes = await fetch(`${API_ENDPOINTS.PAYMENTS}/statistics`, { headers });
-      console.log('📊 Statistics Response Status:', statsRes.status);
-      
-      let stats = null;
-      if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        console.log('✅ Payment Statistics Received:', statsData);
-        console.log('📊 Statistics Breakdown:', {
-          totalDeposits: statsData.totalDeposits,
-          totalPurchases: statsData.totalPurchases,
-          totalCommissions: statsData.totalCommissions,
-          totalWithdrawals: statsData.totalWithdrawals,
-          pendingPayments: statsData.pendingPayments
-        });
-        
-        // Debug: Check if statistics are being used
-        console.log('🔍 Setting payment stats:', statsData);
-        setPaymentStats(statsData);
-        stats = statsData;
-      } else {
-        const errorText = await statsRes.text();
-        console.log('❌ Statistics API Failed:', statsRes.status, errorText);
-        console.log('⚠️ Falling back to frontend calculation');
-      }
+    const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+    const headers = { 'Authorization': `Bearer ${token}` };
+    
+    console.log('🔍 PAYMENTS PAGE - Starting parallel API calls...');
+
+    // Load payments
+    (async () => {
+      try {
+        console.log('💳 Fetching real payments from:', API_ENDPOINTS.PAYMENTS);
+        const paymentsRes = await fetch(API_ENDPOINTS.PAYMENTS, { headers });
+        console.log('💳 Payments Response Status:', paymentsRes.status);
       
       if (paymentsRes.ok) {
         const response = await paymentsRes.json();
@@ -193,39 +167,34 @@ export default function Payments() {
         setErr(null);
         console.log('✅ Payments loaded successfully:', transformedPayments.length);
       } else {
-          console.log('❌ Payments API Failed:', paymentsRes.status, await paymentsRes.text());
-          // Fallback to mock data if API fails
-          const mockPayments = [
-            {
-              id: 1,
-              code: 'PAY001',
-              user: {
-                name: 'Test User 1',
-                code: 'REF209825',
-                tier: 'Gold',
-                level: 'G1'
-              },
-              type: 'Commission',
-              amount: 250.00,
-              status: 'Approved',
-              method: {
-                channel: 'Razorpay',
-                account: 'pay_1_1759476962585'
-              },
-              requestedAt: '2024-01-20T14:45:00Z',
-              processedAt: '2024-01-20T15:00:00Z',
-              description: 'MLM Commission - Level 1 referral (10%)'
-            }
-          ];
-          setPayments(mockPayments);
-          setErr(null);
-        }
-      
+        console.log('❌ Payments API Failed:', paymentsRes.status);
+      }
     } catch (e) {
+      console.error('💥 Payments Load Error:', e);
       setErr(e.message || "Failed to load payments");
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, payments: false }));
     }
+    })();
+
+    // Load statistics
+    (async () => {
+      try {
+        console.log('📊 Fetching payment statistics...');
+        const statsRes = await fetch(`${API_ENDPOINTS.PAYMENTS}/statistics`, { headers });
+        console.log('📊 Statistics Response Status:', statsRes.status);
+        
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          console.log('✅ Payment Statistics Received:', statsData);
+          setPaymentStats(statsData);
+        }
+      } catch (e) {
+        console.error('💥 Stats Load Error:', e);
+      } finally {
+        setLoading(prev => ({ ...prev, stats: false }));
+      }
+    })();
   }
   useEffect(() => { load(); }, []);
 
@@ -385,7 +354,8 @@ export default function Payments() {
     return fallbackKpis;
   }, [paymentStats, payments]);
 
-  if (loading) return <SkeletonPaymentsPage />;
+  // Show structure immediately - no loading blocker
+  const isLoading = loading.payments || loading.stats;
 
   return (
     <div className="space-y-6">

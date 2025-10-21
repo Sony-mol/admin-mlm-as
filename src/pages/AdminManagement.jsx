@@ -20,7 +20,7 @@ import { API_ENDPOINTS } from '../config/api';
 
 const AdminManagement = () => {
   const [admins, setAdmins] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({ admins: true });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -53,7 +53,7 @@ const AdminManagement = () => {
 
   const fetchAdmins = async () => {
     try {
-      setLoading(true);
+      setLoading({ admins: true });
 
       const token = localStorage.getItem('auth')
         ? JSON.parse(localStorage.getItem('auth')).accessToken
@@ -85,7 +85,7 @@ const AdminManagement = () => {
       setError('Failed to load admins');
       setAdmins([]); // no fake fallback
     } finally {
-      setLoading(false);
+      setLoading({ admins: false });
     }
   };
 
@@ -369,15 +369,6 @@ const AdminManagement = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 text-[rgb(var(--fg))]">
@@ -443,7 +434,42 @@ const AdminManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgb(var(--border))]">
-              {admins.length === 0 ? (
+              {loading.admins ? (
+                // Skeleton loaders for table rows
+                Array.from({ length: 3 }).map((_, index) => (
+                  <tr key={index} className="hover:bg-[rgba(var(--fg),0.03)]">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse"></div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="h-4 bg-gray-200 rounded animate-pulse w-24 mb-1"></div>
+                          <div className="h-3 bg-gray-200 rounded animate-pulse w-32 mb-1"></div>
+                          <div className="h-3 bg-gray-200 rounded animate-pulse w-20"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-6 bg-gray-200 rounded-full animate-pulse w-16"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-6 bg-gray-200 rounded-full animate-pulse w-20"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : admins.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center opacity-70">
                     No admins found

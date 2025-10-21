@@ -13,7 +13,11 @@ export default function ActivityLogs() {
   const [logs, setLogs] = useState([]);
   const [recentLogs, setRecentLogs] = useState([]);
   const [stats, setStats] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    logs: true,
+    recent: true,
+    stats: true
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
     actionType: "",
@@ -43,7 +47,7 @@ export default function ActivityLogs() {
 
   const loadActivityLogs = async (forceRefresh = false) => {
     try {
-      setLoading(true);
+      setLoading(prev => ({ ...prev, logs: true }));
       const params = new URLSearchParams({
         page: pagination.currentPage.toString(),
         size: pagination.size.toString()
@@ -55,7 +59,6 @@ export default function ActivityLogs() {
       if (filters.startDate) params.append("startDate", filters.startDate + "T00:00:00");
       if (filters.endDate) params.append("endDate", filters.endDate + "T23:59:59");
       
-      // Add cache busting parameter for force refresh
       if (forceRefresh) {
         params.append("_t", Date.now().toString());
       }
@@ -73,12 +76,7 @@ export default function ActivityLogs() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Activity Logs data received:', {
-          logsCount: data.logs?.length || 0,
-          totalElements: data.totalElements || 0,
-          sampleLog: data.logs?.[0] // Show first log for debugging
-        });
-        
+        console.log('✅ Activity Logs data received');
         setLogs(data.logs || []);
         setPagination(prev => ({
           ...prev,
@@ -86,18 +84,18 @@ export default function ActivityLogs() {
           totalElements: data.totalElements || 0
         }));
       } else {
-        console.error('❌ Failed to load Activity Logs:', response.status, response.statusText);
         setLogs([]);
       }
     } catch {
       setLogs([]);
     } finally {
-      setLoading(false);
+      setLoading(prev => ({ ...prev, logs: false }));
     }
   };
 
   const loadRecentActivity = async () => {
     try {
+      setLoading(prev => ({ ...prev, recent: true }));
       const response = await fetch(RECENT_ACTIVITY_API, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -112,11 +110,14 @@ export default function ActivityLogs() {
       }
     } catch {
       setRecentLogs([]);
+    } finally {
+      setLoading(prev => ({ ...prev, recent: false }));
     }
   };
 
   const loadStats = async () => {
     try {
+      setLoading(prev => ({ ...prev, stats: true }));
       const response = await fetch(ACTIVITY_STATS_API, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -131,9 +132,12 @@ export default function ActivityLogs() {
       }
     } catch {
       setStats({});
+    } finally {
+      setLoading(prev => ({ ...prev, stats: false }));
     }
   };
 
+  // ⚡ PROGRESSIVE LOADING - All 3 API calls run in parallel
   useEffect(() => {
     loadActivityLogs();
     loadRecentActivity();

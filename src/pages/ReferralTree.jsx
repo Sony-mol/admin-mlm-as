@@ -890,21 +890,8 @@ export default function ReferralTree() {
   const zoomOut = () => setZoomLevel(prev => Math.max(prev - 0.2, 0.3));
   const resetZoom = () => setZoomLevel(1);
 
-  if (loading) return <SkeletonReferralTreePage />;
-  if (err) {
-    return (
-      <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-        <div className="font-semibold mb-1">Couldn’t load referral data</div>
-        <div className="text-sm opacity-80">{err}</div>
-        <button
-          onClick={load}
-          className="mt-3 rounded px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+  // ⚡ No blocking loader - show structure immediately
+  const showSkeleton = loading && users.length === 0;
 
   return (
     <div className="space-y-6">
@@ -914,25 +901,42 @@ export default function ReferralTree() {
         </div>
       </div>
 
-      {/* KPI CARDS — maintaining original theme */}
+      {/* KPI CARDS — Show skeleton while loading */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
-          <div className="text-sm opacity-80">Total Network Users</div>
-          <div className="text-3xl font-semibold mt-2">
-            {stats.totalUsers.toLocaleString('en-IN')}
-          </div>
-          <div className="text-xs opacity-70">Across all levels</div>
-        </div>
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
-          <div className="text-sm opacity-80">Total Network Earnings</div>
-          <div className="text-3xl font-semibold mt-2">{fmtINR(stats.totalEarnings)}</div>
-          <div className="text-xs opacity-70">Combined network value</div>
-        </div>
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
-          <div className="text-sm opacity-80">Active Levels</div>
-          <div className="text-3xl font-semibold mt-2">{stats.activeLevels}</div>
-          <div className="text-xs opacity-70">Maximum depth reached</div>
-        </div>
+        {showSkeleton ? (
+          // Skeleton KPI cards
+          <>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-1/2"></div>
+                  <div className="h-8 bg-[rgba(var(--fg),0.1)] rounded w-2/3"></div>
+                  <div className="h-3 bg-[rgba(var(--fg),0.1)] rounded w-1/3"></div>
+                </div>
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
+              <div className="text-sm opacity-80">Total Network Users</div>
+              <div className="text-3xl font-semibold mt-2">
+                {stats.totalUsers.toLocaleString('en-IN')}
+              </div>
+              <div className="text-xs opacity-70">Across all levels</div>
+            </div>
+            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
+              <div className="text-sm opacity-80">Total Network Earnings</div>
+              <div className="text-3xl font-semibold mt-2">{fmtINR(stats.totalEarnings)}</div>
+              <div className="text-xs opacity-70">Combined network value</div>
+            </div>
+            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
+              <div className="text-sm opacity-80">Active Levels</div>
+              <div className="text-3xl font-semibold mt-2">{stats.activeLevels}</div>
+              <div className="text-xs opacity-70">Maximum depth reached</div>
+            </div>
+          </>
+        )}
       </div>
 
        {/* Enhanced CONTROLS with better UX */}
@@ -1409,20 +1413,47 @@ export default function ReferralTree() {
         
         {/* Tree Content - Full Screen with Zoom */}
         <div className="relative w-full overflow-auto">
-        {topLevel.length === 0 && (
+        {showSkeleton ? (
+          // Skeleton tree while loading
+          <div className="p-12 min-h-[80vh] w-full">
+            <div className="flex flex-col items-center space-y-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse">
+                  <div className="flex flex-col items-center p-4 rounded-xl border-2 border-[rgb(var(--border))] bg-[rgb(var(--card))] w-48">
+                    <div className="w-12 h-12 rounded-full bg-[rgba(var(--fg),0.1)] mb-2"></div>
+                    <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-24 mb-2"></div>
+                    <div className="h-3 bg-[rgba(var(--fg),0.1)] rounded w-16 mb-2"></div>
+                    <div className="flex gap-1">
+                      <div className="h-5 bg-[rgba(var(--fg),0.1)] rounded w-12"></div>
+                      <div className="h-5 bg-[rgba(var(--fg),0.1)] rounded w-12"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : topLevel.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="text-4xl mb-4 opacity-50">🌳</div>
               <h3 className="text-lg font-medium text-gray-700 mb-2">
-                {q.trim() ? 'No matches found' : 'No network data available'}
+                {q.trim() ? 'No matches found' : err ? 'Error loading data' : 'No network data available'}
               </h3>
-              <p className="text-gray-500 text-sm">
-                {q.trim() ? 'Try adjusting your search terms' : 'Start building your referral network'}
+              <p className="text-gray-500 text-sm mb-4">
+                {q.trim() ? 'Try adjusting your search terms' : err ? err : 'Start building your referral network'}
               </p>
+              {err && (
+                <button
+                  onClick={load}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                >
+                  Retry
+                </button>
+              )}
           </div>
-        )}
+        ) : null}
           
-          {/* Conditional Tree Layout */}
-          {treeView === 'vertical' ? (
+          {/* Conditional Tree Layout - Only show if data exists */}
+          {!showSkeleton && topLevel.length > 0 && treeView === 'vertical' ? (
             /* Vertical Tree Layout - Full Screen with Zoom */
             <div 
               className="p-12 min-h-[80vh] w-full"
@@ -1451,7 +1482,7 @@ export default function ReferralTree() {
                 ))}
               </div>
             </div>
-          ) : (
+          ) : !showSkeleton && topLevel.length > 0 ? (
             /* Horizontal List Layout - Fixed */
             <div className="max-h-[70vh] overflow-y-auto">
               {topLevel.map((root, index) => (
@@ -1470,9 +1501,9 @@ export default function ReferralTree() {
             highlight={highlight}
           />
                 </div>
-        ))}
+              ))}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

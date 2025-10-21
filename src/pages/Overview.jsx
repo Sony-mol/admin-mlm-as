@@ -324,7 +324,12 @@ export default function Overview() {
   const [recentActivityLogs, setRecentActivityLogs] = useState([]);
   const [tierData, setTierData] = useState(null); // normalized: keys lowercased
   const [extendedStats, setExtendedStats] = useState(null); // New consolidated statistics
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    kpis: true,
+    activities: true,
+    tiers: true,
+    extended: true,
+  });
   const [lastUpdated, setLastUpdated] = useState(null);
   const [tierOpen, setTierOpen] = useState(false);
   const [tierKeyState, setTierKeyState] = useState(null);
@@ -332,175 +337,200 @@ export default function Overview() {
 
   useEffect(() => {
     let mounted = true;
+    
+    const token = localStorage.getItem("auth")
+      ? JSON.parse(localStorage.getItem("auth")).accessToken
+      : "";
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // ⚡ PROGRESSIVE LOADING - Each API loads independently and updates UI immediately
+    
+    // Load KPI data (dashboard, users, commissions)
     (async () => {
       try {
-        setLoading(true);
+        const [dashboardRes, usersRes, pendingRes, paidRes, revenueRes, performersRes] = 
+          await Promise.allSettled([
+            fetch(COMMISSION_DASHBOARD_API, { cache: "no-store", headers }),
+            fetch(API_ENDPOINTS.USERS, { cache: "no-store", headers }),
+            fetch(API_ENDPOINTS.PENDING_COMMISSIONS, { cache: "no-store", headers }),
+            fetch(API_ENDPOINTS.PAID_COMMISSIONS, { cache: "no-store", headers }),
+            fetch(API_ENDPOINTS.MONTHLY_REVENUE, { cache: "no-store", headers }),
+            fetch(API_ENDPOINTS.TOP_PERFORMERS, { cache: "no-store", headers }),
+          ]);
 
-        const token = localStorage.getItem("auth")
-          ? JSON.parse(localStorage.getItem("auth")).accessToken
-          : "";
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+        if (!mounted) return;
 
-        // Dashboard
-        const dashboardRes = await fetch(COMMISSION_DASHBOARD_API, {
-          cache: "no-store",
-          headers,
-        });
-        if (dashboardRes.ok) {
-          const dashboardJson = await dashboardRes.json();
-          if (mounted) {
-            const dash = dashboardJson || {};
-            const pendingCount = Number(
-              dash.pendingCommissions ?? dash.pendingCount ?? 0
-            );
-            const paidCount = Number(
-              dash.paidCommissions ?? dash.paidCount ?? 0
-            );
-            const totalPendingAmount = parseFloat(
-              (dash.totalPendingAmount ?? 0).toString()
-            ) || 0;
-            const totalPaidAmount = parseFloat(
-              (dash.totalPaidAmount ?? 0).toString()
-            ) || 0;
-            const totalCommissionAmount = totalPendingAmount + totalPaidAmount;
+        // Process dashboard data
+        if (dashboardRes.status === 'fulfilled' && dashboardRes.value.ok) {
+          const dashboardJson = await dashboardRes.value.json();
+          const dash = dashboardJson || {};
+          const pendingCount = Number(dash.pendingCommissions ?? dash.pendingCount ?? 0);
+          const paidCount = Number(dash.paidCommissions ?? dash.paidCount ?? 0);
+          const totalPendingAmount = parseFloat((dash.totalPendingAmount ?? 0).toString()) || 0;
+          const totalPaidAmount = parseFloat((dash.totalPaidAmount ?? 0).toString()) || 0;
+          const totalCommissionAmount = totalPendingAmount + totalPaidAmount;
 
-            setDashboardData((prev) => ({
-              ...prev,
-              ...dash,
-              pendingCommissionsCount: pendingCount,
-              paidCommissionsCount: paidCount,
-              totalCommissionAmount,
-            }));
-          }
+          setDashboardData((prev) => ({
+            ...prev,
+            ...dash,
+            pendingCommissionsCount: pendingCount,
+            paidCommissionsCount: paidCount,
+            totalCommissionAmount,
+          }));
         }
 
-        // Activities (limit 3)
+        // Process users
+        if (usersRes.status === 'fulfilled' && usersRes.value.ok) {
+          const usersJson = await usersRes.value.json();
+          const now = new Date();
+          const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+
+          const countInRange = (start, end) =>
+            usersJson.filter((u) => {
+              const ts = u.createdAt || u.created_at || u.registeredAt || u.createdDate;
+              if (!ts) return false;
+              const d = new Date(ts);
+              return d >= start && d < end;
+            }).length;
+
+          const lastMonth = countInRange(startOfLastMonth, startOfThisMonth);
+          const prevMonth = countInRange(startOfPrevMonth, startOfLastMonth);
+          const usersGrowthPct = ((lastMonth - prevMonth) / Math.max(1, prevMonth)) * 100;
+
+          setDashboardData((prev) => ({
+            ...prev,
+            totalUsers: usersJson.length,
+            totalUsersCount: usersJson.length,
+            usersGrowthPct,
+          }));
+        }
+
+        // Process pending commissions
+        if (pendingRes.status === 'fulfilled' && pendingRes.value.ok) {
+          const pendingJson = await pendingRes.value.json();
+          const now = new Date();
+          const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          
+          const inRange = (arr, start, end) =>
+            arr.filter((c) => {
+              const ts = c.createdAt || c.created_at || c.timestamp || c.dateCreated;
+              if (!ts) return false;
+              const d = new Date(ts);
+              return d >= start && d < end;
+            }).length;
+          
+          const last = inRange(pendingJson, startOfLastMonth, startOfThisMonth);
+          const prev = inRange(pendingJson, startOfPrevMonth, startOfLastMonth);
+          const pendingGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+
+          setDashboardData((prev) => ({
+            ...prev,
+            pendingCommissionsCount: Array.isArray(pendingJson) ? pendingJson.length : 0,
+            pendingGrowthPct,
+          }));
+        }
+
+        // Process paid commissions
+        if (paidRes.status === 'fulfilled' && paidRes.value.ok) {
+          const paidJson = await paidRes.value.json();
+          const now = new Date();
+          const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          
+          const inRange = (arr, start, end) =>
+            arr.filter((c) => {
+              const ts = c.createdAt || c.created_at || c.timestamp || c.dateCreated;
+              if (!ts) return false;
+              const d = new Date(ts);
+              return d >= start && d < end;
+            }).length;
+          
+          const last = inRange(paidJson, startOfLastMonth, startOfThisMonth);
+          const prev = inRange(paidJson, startOfPrevMonth, startOfLastMonth);
+          const paidGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+
+          setDashboardData((prev) => ({
+            ...prev,
+            paidCommissionsCount: Array.isArray(paidJson) ? paidJson.length : 0,
+            paidGrowthPct,
+          }));
+        }
+
+        // Process revenue
+        if (revenueRes.status === 'fulfilled' && revenueRes.value.ok) {
+          const revenueJson = await revenueRes.value.json();
+          const series = Array.isArray(revenueJson) ? revenueJson : [];
+          const last = series.length >= 1 ? Number(series[series.length - 1]?.amount ?? 0) : 0;
+          const prev = series.length >= 2 ? Number(series[series.length - 2]?.amount ?? 0) : 0;
+          const revenueGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+
+          setDashboardData((prev) => ({
+            ...prev,
+            monthlyRevenue: revenueJson,
+            revenueGrowthPct,
+          }));
+        }
+
+        // Process top performers
+        if (performersRes.status === 'fulfilled' && performersRes.value.ok) {
+          const performersJson = await performersRes.value.json();
+          setDashboardData((prev) => ({
+            ...prev,
+            topPerformers: performersJson,
+          }));
+        }
+      } catch (e) {
+        console.error("💥 KPI Load Error:", e);
+      } finally {
+        if (mounted) {
+          setLoading((prev) => ({ ...prev, kpis: false }));
+        }
+      }
+    })();
+
+    // Load recent activities
+    (async () => {
+      try {
         const activitiesRes = await fetch(`${RECENT_ACTIVITIES_API}?size=3`, {
           cache: "no-store",
           headers,
         });
+        if (!mounted) return;
+        
         if (activitiesRes.ok) {
           const activitiesJson = await activitiesRes.json();
-          if (mounted)
-            setRecentActivityLogs(
-              Array.isArray(activitiesJson.logs)
-                ? activitiesJson.logs.slice(0, 3)
-                : []
-            );
+          setRecentActivityLogs(
+            Array.isArray(activitiesJson.logs) ? activitiesJson.logs.slice(0, 3) : []
+          );
         }
-
-        // Real users -> count
-        const usersRes = await fetch(API_ENDPOINTS.USERS, {
-          cache: "no-store",
-          headers,
-        });
-        if (usersRes.ok) {
-          const usersJson = await usersRes.json();
-          if (mounted) {
-            // Compute user growth vs last month using createdAt if available
-            const now = new Date();
-            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-
-            const countInRange = (start, end) =>
-              usersJson.filter((u) => {
-                const ts = u.createdAt || u.created_at || u.registeredAt || u.createdDate;
-                if (!ts) return false;
-                const d = new Date(ts);
-                return d >= start && d < end;
-              }).length;
-
-            const lastMonth = countInRange(startOfLastMonth, startOfThisMonth);
-            const prevMonth = countInRange(startOfPrevMonth, startOfLastMonth);
-            const usersGrowthPct = ((lastMonth - prevMonth) / Math.max(1, prevMonth)) * 100;
-
-            setDashboardData((prev) => ({
-              ...prev,
-              totalUsers: usersJson.length,
-              totalUsersCount: usersJson.length,
-              usersGrowthPct,
-            }));
-          }
+      } catch (e) {
+        console.error("💥 Activities Load Error:", e);
+      } finally {
+        if (mounted) {
+          setLoading((prev) => ({ ...prev, activities: false }));
         }
+      }
+    })();
 
-        // Pending commissions -> count
-        const pendingRes = await fetch(API_ENDPOINTS.PENDING_COMMISSIONS, {
-          cache: "no-store",
-          headers,
-        });
-        if (pendingRes.ok) {
-          const pendingJson = await pendingRes.json();
-          if (mounted) {
-            // Growth: last month vs previous month based on createdAt
-            const now = new Date();
-            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-            const inRange = (arr, start, end) =>
-              arr.filter((c) => {
-                const ts = c.createdAt || c.created_at || c.timestamp || c.dateCreated;
-                if (!ts) return false;
-                const d = new Date(ts);
-                return d >= start && d < end;
-              }).length;
-            const last = inRange(pendingJson, startOfLastMonth, startOfThisMonth);
-            const prev = inRange(pendingJson, startOfPrevMonth, startOfLastMonth);
-            const pendingGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
-
-            setDashboardData((prev) => ({
-              ...prev,
-              pendingCommissionsCount: Array.isArray(pendingJson) ? pendingJson.length : 0,
-              pendingGrowthPct,
-            }));
-          }
-        }
-
-        // Paid commissions -> count
-        const paidRes = await fetch(API_ENDPOINTS.PAID_COMMISSIONS, {
-          cache: "no-store",
-          headers,
-        });
-        if (paidRes.ok) {
-          const paidJson = await paidRes.json();
-          if (mounted) {
-            const now = new Date();
-            const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
-            const inRange = (arr, start, end) =>
-              arr.filter((c) => {
-                const ts = c.createdAt || c.created_at || c.timestamp || c.dateCreated;
-                if (!ts) return false;
-                const d = new Date(ts);
-                return d >= start && d < end;
-              }).length;
-            const last = inRange(paidJson, startOfLastMonth, startOfThisMonth);
-            const prev = inRange(paidJson, startOfPrevMonth, startOfLastMonth);
-            const paidGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
-
-            setDashboardData((prev) => ({
-              ...prev,
-              paidCommissionsCount: Array.isArray(paidJson) ? paidJson.length : 0,
-              paidGrowthPct,
-            }));
-          }
-        }
-
-        // Tier level breakdown (normalize keys + shapes)
+    // Load tier data
+    (async () => {
+      try {
         const tierRes = await fetch(TIER_LEVEL_BREAKDOWN_API, {
           cache: "no-store",
           headers,
         });
+        if (!mounted) return;
+        
         if (tierRes.ok) {
           const tierJson = await tierRes.json();
           const normalized = Object.fromEntries(
             Object.entries(tierJson || {}).map(([k, v]) => {
-              const pieArray = Array.isArray(v?.pie)
-                ? v.pie
-                : Array.isArray(v?.distribution)
-                ? v.distribution
-                : [];
+              const pieArray = Array.isArray(v?.pie) ? v.pie : Array.isArray(v?.distribution) ? v.distribution : [];
               const levelsArray = Array.isArray(v?.levels) ? v.levels : [];
 
               return [
@@ -513,59 +543,33 @@ export default function Overview() {
                   levels: levelsArray.map((l) => ({
                     level: Number(l.level ?? l.levelNumber ?? 0) || 0,
                     reward: String(l.reward ?? l.rewardName ?? ""),
-                    referrals:
-                      Number(l.referrals ?? l.requiredReferrals ?? 0) || 0,
+                    referrals: Number(l.referrals ?? l.requiredReferrals ?? 0) || 0,
                     image: l.image ?? l.img ?? "",
                   })),
                 },
               ];
             })
           );
-          if (mounted) setTierData(normalized);
+          setTierData(normalized);
         }
-
-        // Monthly revenue
-        const revenueRes = await fetch(API_ENDPOINTS.MONTHLY_REVENUE, {
-          cache: "no-store",
-          headers,
-        });
-        if (revenueRes.ok) {
-          const revenueJson = await revenueRes.json();
-          if (mounted) {
-            // Compute growth vs last month from last two points
-            const series = Array.isArray(revenueJson) ? revenueJson : [];
-            const last = series.length >= 1 ? Number(series[series.length - 1]?.amount ?? 0) : 0;
-            const prev = series.length >= 2 ? Number(series[series.length - 2]?.amount ?? 0) : 0;
-            const revenueGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
-
-            setDashboardData((prev) => ({
-              ...prev,
-              monthlyRevenue: revenueJson,
-              revenueGrowthPct,
-            }));
-          }
+      } catch (e) {
+        console.error("💥 Tier Load Error:", e);
+      } finally {
+        if (mounted) {
+          setLoading((prev) => ({ ...prev, tiers: false }));
         }
+      }
+    })();
 
-        // Top performers
-        const performersRes = await fetch(API_ENDPOINTS.TOP_PERFORMERS, {
-          cache: "no-store",
-          headers,
-        });
-        if (performersRes.ok) {
-          const performersJson = await performersRes.json();
-          if (mounted) {
-            setDashboardData((prev) => ({
-              ...prev,
-              topPerformers: performersJson,
-            }));
-          }
-        }
-
-        // Extended dashboard statistics
+    // Load extended statistics
+    (async () => {
+      try {
         const statsRes = await fetch(API_ENDPOINTS.DASHBOARD_STATISTICS, {
           cache: "no-store",
           headers,
         });
+        if (!mounted) return;
+        
         if (statsRes.ok) {
           const statsJson = await statsRes.json();
           
@@ -589,21 +593,13 @@ export default function Overview() {
             console.error('Error fetching reward claims stats:', e);
           }
           
-          if (mounted) {
-            setExtendedStats(statsJson);
-          }
+          setExtendedStats(statsJson);
         }
       } catch (e) {
-        console.error("💥 Overview Load Error:", e);
-        if (mounted) {
-          setDashboardData(null);
-          setRecentActivityLogs([]);
-          setTierData(null);
-        }
+        console.error("💥 Extended Stats Load Error:", e);
       } finally {
         if (mounted) {
-          setLoading(false);
-          // Show success notification
+          setLoading((prev) => ({ ...prev, extended: false }));
           addNotification({
             type: 'success',
             title: 'Dashboard Updated',
@@ -614,6 +610,7 @@ export default function Overview() {
         }
       }
     })();
+
     return () => {
       mounted = false;
     };
@@ -703,40 +700,7 @@ export default function Overview() {
     setTierOpen(true);
   };
 
-  if (loading) {
-    return <SkeletonDashboard />;
-  }
-
-  // Handle error state
-  if (!dashboardData) {
-    return (
-      <div className="space-y-6 text-[rgb(var(--fg))]">
-        <Header title="Overview" />
-        <Card className="p-8 text-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="p-4 rounded-full bg-red-50 text-red-600">
-              <Activity className="w-8 h-8" />
-            </div>
-            <div>
-              <div className="font-semibold text-lg mb-2">
-                Couldn't load overview
-              </div>
-              <div className="text-sm text-[rgba(var(--fg),0.7)] mb-4">
-                Please check your authentication and try again.
-              </div>
-            </div>
-            <button
-              onClick={() => window.location.reload()}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Retry
-            </button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
+  // No global loading check - show structure immediately!
 
   return (
     <div className="space-y-6 text-[rgb(var(--fg))]">
@@ -782,10 +746,10 @@ export default function Overview() {
 
       {/* Quick Actions removed to avoid duplication with sidebar */}
 
-      {/* Enhanced KPIs */}
-      {kpis.length > 0 && (
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          {kpis.map((k, i) => {
+      {/* Enhanced KPIs - Always show structure, populate when data arrives */}
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        {kpis.length > 0 ? (
+          kpis.map((k, i) => {
             const isUp = k.delta ? (k.delta.direction ?? "up") === "up" : true;
             const deltaPct = k.delta ? Math.abs(k.delta.vsLastMonthPct ?? 0).toFixed(1) : null;
             const val =
@@ -818,13 +782,37 @@ export default function Overview() {
                 icon={getIcon(k.id)}
               />
             );
-          })}
-        </section>
-      )}
+          })
+        ) : (
+          // Skeleton cards while loading
+          <>
+            <StatCard title="Total Commissions" value="—" icon={DollarSign} loading={loading.kpis} />
+            <StatCard title="Total Users" value="—" icon={Users} loading={loading.kpis} />
+            <StatCard title="Pending Commissions" value="—" icon={Clock} loading={loading.kpis} />
+            <StatCard title="Paid Commissions" value="—" icon={TrendingUp} loading={loading.kpis} />
+          </>
+        )}
+      </section>
 
-      {/* Extended Statistics - Orders, Products, Withdrawals, Reward Claims */}
-      {extendedStats && (
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Extended Statistics - Orders, Products, Withdrawals, Reward Claims - Always show structure */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {!extendedStats && loading.extended ? (
+          // Skeleton for extended stats
+          <>
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="p-6">
+                <div className="animate-pulse space-y-3">
+                  <div className="h-6 bg-[rgba(var(--fg),0.1)] rounded w-1/2"></div>
+                  <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-3/4"></div>
+                  <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-2/3"></div>
+                  <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-1/2"></div>
+                </div>
+              </Card>
+            ))}
+          </>
+        ) : null}
+        {extendedStats && (
+          <>
           {/* Orders Stats */}
           {extendedStats.orders && (
             <Card className="p-6">
@@ -1036,10 +1024,11 @@ export default function Overview() {
               </div>
             </div>
           </Card>
-        </section>
-      )}
+          </>
+        )}
+      </section>
 
-      {/* Enhanced Tiers (dynamic) */}
+      {/* Enhanced Tiers - Always show structure */}
       <section>
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
@@ -1056,7 +1045,18 @@ export default function Overview() {
             </div>
           </div>
 
-          {tiers && Object.keys(tiers).length > 0 ? (
+          {loading.tiers && !tiers ? (
+            // Skeleton for tiers
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-xl border-2 py-6 px-5 bg-[rgb(var(--card))] animate-pulse">
+                  <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-1/3 mb-4"></div>
+                  <div className="h-8 bg-[rgba(var(--fg),0.1)] rounded w-2/3 mb-2"></div>
+                  <div className="h-3 bg-[rgba(var(--fg),0.1)] rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : tiers && Object.keys(tiers).length > 0 ? (
             (() => {
               const order = ["bronze", "silver", "gold", "platinum"];
               const tierKeys = Object.keys(tiers).sort((a, b) => {
@@ -1111,7 +1111,7 @@ export default function Overview() {
 
       {/* Monthly Revenue and Top Performers removed (available in Analytics page) */}
 
-      {/* Enhanced Recent Activities */}
+      {/* Enhanced Recent Activities - Always show structure */}
       <section>
         <Card className="p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -1119,7 +1119,25 @@ export default function Overview() {
             <div className="font-semibold text-lg">Recent Activities</div>
           </div>
           <div className="space-y-3">
-            {activities.map((a, i) => (
+            {loading.activities && activities.length === 0 ? (
+              // Skeleton for activities
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-4 p-4 rounded-lg border border-[rgb(var(--border))] animate-pulse"
+                  >
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[rgba(var(--fg),0.1)]"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-1/3"></div>
+                      <div className="h-3 bg-[rgba(var(--fg),0.1)] rounded w-2/3"></div>
+                      <div className="h-3 bg-[rgba(var(--fg),0.1)] rounded w-1/4"></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : activities.length > 0 ? (
+              activities.map((a, i) => (
               <div
                 key={i}
                 className="flex items-start gap-4 p-4 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.03)] transition-colors"
@@ -1147,8 +1165,8 @@ export default function Overview() {
                   </div>
                 </div>
               </div>
-            ))}
-            {activities.length === 0 && (
+              ))
+            ) : (
               <div className="text-center py-8 text-[rgba(var(--fg),0.7)]">
                 <Activity className="w-12 h-12 mx-auto mb-3 text-[rgba(var(--fg),0.3)]" />
                 <div className="text-sm">No recent activities</div>

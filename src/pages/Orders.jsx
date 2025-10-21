@@ -49,7 +49,7 @@ function StatusPill({ value }) {
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [err, setErr] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({ orders: true, kpis: true });
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("All");
@@ -62,7 +62,7 @@ export default function Orders() {
 
   async function load() {
     try {
-      setLoading(true);
+      setLoading({ orders: true, kpis: true });
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
       const headers = { 'Authorization': `Bearer ${token}` };
       
@@ -183,7 +183,7 @@ export default function Orders() {
     } catch (e) {
       setErr(e.message || "Failed to load orders");
     } finally {
-      setLoading(false);
+      setLoading({ orders: false, kpis: false });
     }
   }
   useEffect(() => { load(); }, []);
@@ -307,13 +307,10 @@ export default function Orders() {
     }
   }
 
-  if (loading) {
-    return <SkeletonOrdersPage />;
-  }
   if (err) {
     return (
       <div className="p-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-        <div className="font-semibold mb-1">Couldn’t load orders</div>
+        <div className="font-semibold mb-1">Couldn't load orders</div>
         <div className="text-sm opacity-80">{err}</div>
         <button onClick={load} className="mt-3 rounded px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]">Retry</button>
       </div>
@@ -342,19 +339,29 @@ export default function Orders() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        {[
-          ["Total Orders", kpis.total],
-          ["Pending", kpis.pending],
-          ["Processing", kpis.processing],
-          ["Shipped", kpis.shipped],
-          ["Delivered", kpis.delivered],
-          ["Cancelled", kpis.cancelled],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
-            <div className="text-sm opacity-80">{label}</div>
-            <div className="text-3xl font-semibold mt-2">{value}</div>
-          </div>
-        ))}
+        {loading.kpis ? (
+          // Skeleton loaders for KPIs
+          Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+              <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          ))
+        ) : (
+          [
+            ["Total Orders", kpis.total],
+            ["Pending", kpis.pending],
+            ["Processing", kpis.processing],
+            ["Shipped", kpis.shipped],
+            ["Delivered", kpis.delivered],
+            ["Cancelled", kpis.cancelled],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
+              <div className="text-sm opacity-80">{label}</div>
+              <div className="text-3xl font-semibold mt-2">{value}</div>
+            </div>
+          ))
+        )}
       </div>
 
       {/* Controls */}
@@ -476,7 +483,7 @@ export default function Orders() {
           }
         ]}
         data={paged}
-        loading={loading}
+        loading={loading.orders}
         emptyMessage="No orders match your filters."
         searchable={false}
         filterable={false}

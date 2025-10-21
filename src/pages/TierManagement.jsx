@@ -60,7 +60,7 @@ export default function TierManagement() {
   const [tierStructure, setTierStructure] = useState(null);
   const [tierInfo, setTierInfo] = useState({}); // { [tierName]: { id } } <- from TIERS_API_BASE GET
   const [statistics, setStatistics] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({ structure: true, stats: true });
   const [saving, setSaving] = useState(false);
 
   // Modals
@@ -84,7 +84,7 @@ export default function TierManagement() {
 
   async function loadData() {
     try {
-      setLoading(true);
+      setLoading({ structure: true, stats: true });
       const token = getToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -139,7 +139,7 @@ export default function TierManagement() {
       setTierInfo({});
       setStatistics({});
     } finally {
-      setLoading(false);
+      setLoading({ structure: false, stats: false });
     }
   }
 
@@ -351,18 +351,7 @@ export default function TierManagement() {
     popupTimerRef.current = setTimeout(() => setShowPopup(false), 2200);
   };
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 flex items-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span>Loading tier management…</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!tierStructure) {
+  if (!tierStructure && !loading.structure) {
     return (
       <div className="p-6">
         <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6">
@@ -428,45 +417,90 @@ export default function TierManagement() {
 
       {/* Quick stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard
-          icon={Users}
-          title="Total Users"
-          value={
-            Object.values(statistics || {}).reduce(
-              (sum, tierStats) => sum + (tierStats?.totalUsers || 0),
-              0
-            ) || 0
-          }
-          accent="text-green-600"
-        />
-        <StatCard
-          icon={Layers}
-          title="Tiers"
-          value={Object.keys(tierStructure || {}).length}
-          accent="text-purple-600"
-        />
-        <StatCard
-          icon={BarChart3}
-          title="Total Levels"
-          value={Object.values(tierStructure || {}).reduce(
-            (s, lvls) => s + (lvls?.length || 0),
-            0
-          )}
-          accent="text-orange-600"
-        />
+        {loading.stats ? (
+          // Skeleton loaders for stats
+          Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+                <div className="w-7 h-7 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            <StatCard
+              icon={Users}
+              title="Total Users"
+              value={
+                Object.values(statistics || {}).reduce(
+                  (sum, tierStats) => sum + (tierStats?.totalUsers || 0),
+                  0
+                ) || 0
+              }
+              accent="text-green-600"
+            />
+            <StatCard
+              icon={Layers}
+              title="Tiers"
+              value={Object.keys(tierStructure || {}).length}
+              accent="text-purple-600"
+            />
+            <StatCard
+              icon={BarChart3}
+              title="Total Levels"
+              value={Object.values(tierStructure || {}).reduce(
+                (s, lvls) => s + (lvls?.length || 0),
+                0
+              )}
+              accent="text-orange-600"
+            />
+          </>
+        )}
       </div>
 
       {/* Tier Structure */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {Object.entries(tierStructure)
-          .sort(([tierNameA], [tierNameB]) => {
-            // Define tier order: Bronze -> Silver -> Gold -> Others
-            const tierOrder = { 'bronze': 1, 'silver': 2, 'gold': 3, 'platinum': 4 };
-            const orderA = tierOrder[tierNameA.toLowerCase()] || 99;
-            const orderB = tierOrder[tierNameB.toLowerCase()] || 99;
-            return orderA - orderB;
-          })
-          .map(([tierName, levels]) => (
+        {loading.structure ? (
+          // Skeleton loaders for tier structure
+          Array.from({ length: 3 }).map((_, index) => (
+            <div key={index} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-6 bg-gray-200 rounded animate-pulse w-32"></div>
+                <div className="flex gap-2">
+                  <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {Array.from({ length: 2 }).map((_, levelIndex) => (
+                  <div key={levelIndex} className="rounded-lg border border-[rgb(var(--border))] p-3">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="h-5 bg-gray-200 rounded animate-pulse w-16"></div>
+                      <div className="h-6 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        ) : (
+          Object.entries(tierStructure)
+            .sort(([tierNameA], [tierNameB]) => {
+              // Define tier order: Bronze -> Silver -> Gold -> Others
+              const tierOrder = { 'bronze': 1, 'silver': 2, 'gold': 3, 'platinum': 4 };
+              const orderA = tierOrder[tierNameA.toLowerCase()] || 99;
+              const orderB = tierOrder[tierNameB.toLowerCase()] || 99;
+              return orderA - orderB;
+            })
+            .map(([tierName, levels]) => (
           <div key={tierName} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold capitalize">
@@ -538,7 +572,8 @@ export default function TierManagement() {
               )}
             </div>
           </div>
-        ))}
+        ))
+        )}
       </div>
 
       {/* Statistics */}

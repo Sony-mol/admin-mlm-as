@@ -370,7 +370,8 @@ const Withdrawals = () => {
     );
   }
 
-  if (loading) return <SkeletonWithdrawalsPage />;
+  // ⚡ No blocking loader - show structure immediately
+  const showSkeleton = loading && withdrawals.length === 0;
 
   return (
     <div className="p-6 text-[rgb(var(--fg))]">

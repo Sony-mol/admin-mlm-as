@@ -943,9 +943,10 @@ export default function Users() {
     }
   }
 
-  // ===== UI =====
-  if (loading) return <SkeletonUsersPage />;
-  if (err) {
+  // ===== UI ===== Show structure immediately, no loading blocker
+  const showSkeleton = loading && list.length === 0;
+  
+  if (err && list.length === 0) {
     return (
       <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
         <div className="font-semibold mb-1">Couldn't load users</div>

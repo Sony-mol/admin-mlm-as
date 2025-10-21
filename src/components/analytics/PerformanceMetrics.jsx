@@ -16,64 +16,49 @@ const PerformanceMetrics = () => {
     fetchPerformanceMetrics();
   }, []);
 
+  // ⚡ PROGRESSIVE LOADING - Parallel API calls
   const fetchPerformanceMetrics = async () => {
+    const token = localStorage.getItem("auth")
+      ? JSON.parse(localStorage.getItem("auth")).accessToken
+      : "";
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+    
+    console.log('🔍 Performance Metrics - Starting parallel API calls...');
+    
     try {
       setLoading(true);
       setError(null);
       
-      // Use EXACT same approach as Overview page
-      const token = localStorage.getItem("auth")
-        ? JSON.parse(localStorage.getItem("auth")).accessToken
-        : "";
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      // ⚡ Make all API calls in parallel
+      const [dashboardRes, usersRes, topPerformersRes, activitiesRes] = await Promise.allSettled([
+        fetch(API_ENDPOINTS.COMMISSION_DASHBOARD, { cache: "no-store", headers }),
+        fetch(API_ENDPOINTS.USERS, { cache: "no-store", headers }),
+        fetch(API_ENDPOINTS.TOP_PERFORMERS, { cache: "no-store", headers }),
+        fetch(`${API_ENDPOINTS.RECENT_ACTIVITIES}?size=5`, { cache: "no-store", headers }),
+      ]);
       
-      console.log('🔍 Performance Metrics - Starting data fetch...');
-      
-      // Dashboard data (same as Overview page)
-      const dashboardRes = await fetch(API_ENDPOINTS.COMMISSION_DASHBOARD, {
-        cache: "no-store",
-        headers,
-      });
-      
+      // Process dashboard data
       let dashboardData = {};
-      if (dashboardRes.ok) {
-        const dashboardJson = await dashboardRes.json();
-        dashboardData = dashboardJson || {};
-        console.log('✅ Dashboard data fetched:', dashboardData);
-      } else {
-        console.warn('❌ Dashboard API failed:', dashboardRes.status);
+      if (dashboardRes.status === 'fulfilled' && dashboardRes.value.ok) {
+        dashboardData = await dashboardRes.value.json() || {};
+        console.log('✅ Dashboard data fetched');
       }
       
-      // Users data (same as Overview page)
-      const usersRes = await fetch(API_ENDPOINTS.USERS, {
-        cache: "no-store",
-        headers,
-      });
-      
+      // Process users data
       let usersData = [];
       let totalUsers = 0;
       let activeUsers = 0;
-      
-      if (usersRes.ok) {
-        const usersJson = await usersRes.json();
-        usersData = usersJson || [];
+      if (usersRes.status === 'fulfilled' && usersRes.value.ok) {
+        usersData = await usersRes.value.json() || [];
         totalUsers = usersData.length;
         activeUsers = usersData.filter(user => user.status === 'ACTIVE' || user.status === 'active').length;
-        
         console.log('✅ Users data fetched:', { totalUsers, activeUsers });
-      } else {
-        console.warn('❌ Users API failed:', usersRes.status);
       }
       
-      // Top Performers data from dedicated endpoint
+      // Process top performers
       let topPerformers = [];
-      const topPerformersRes = await fetch(API_ENDPOINTS.TOP_PERFORMERS, {
-        cache: "no-store",
-        headers,
-      });
-      
-      if (topPerformersRes.ok) {
-        const topPerformersJson = await topPerformersRes.json();
+      if (topPerformersRes.status === 'fulfilled' && topPerformersRes.value.ok) {
+        const topPerformersJson = await topPerformersRes.value.json();
         topPerformers = Array.isArray(topPerformersJson) ? topPerformersJson
           .map(performer => ({
             name: performer.name || 'Unknown User',
@@ -81,37 +66,27 @@ const PerformanceMetrics = () => {
             earnings: parseFloat(performer.amount) || 0,
             tier: performer.level || 'BRONZE'
           }))
-          .slice(0, 5) // Limit to top 5 performers
-          : [];
-        console.log('✅ Top Performers data fetched:', { topPerformersCount: topPerformers.length });
+          .slice(0, 5) : [];
+        console.log('✅ Top Performers data fetched');
       } else {
-        console.warn('❌ Top Performers API failed:', topPerformersRes.status);
-        // Fallback to processing users data manually
+        // Fallback to users data
         topPerformers = usersData
           .filter(user => (user.referrals || user.referralCount || 0) > 0)
           .sort((a, b) => (b.referrals || b.referralCount || 0) - (a.referrals || a.referralCount || 0))
-          .slice(0, 5) // Limit to top 5 performers
+          .slice(0, 5)
           .map(user => ({
             name: user.fullName || user.name || user.username || 'Unknown User',
             referrals: user.referrals || user.referralCount || 0,
             earnings: user.totalEarnings || user.earnings || user.walletBalance || 0,
             tier: user.tier || user.userTier || user.level || 'BRONZE'
           }));
-        console.log('✅ Fallback Top Performers data processed:', { topPerformersCount: topPerformers.length });
       }
       
-      // Recent activities (enhanced for real data)
-      const activitiesRes = await fetch(`${API_ENDPOINTS.RECENT_ACTIVITIES}?size=5`, {
-        cache: "no-store",
-        headers,
-      });
-      
+      // Process activities
       let recentActivities = [];
-      if (activitiesRes.ok) {
-        const activitiesJson = await activitiesRes.json();
+      if (activitiesRes.status === 'fulfilled' && activitiesRes.value.ok) {
+        const activitiesJson = await activitiesRes.value.json();
         const rawActivities = Array.isArray(activitiesJson.logs) ? activitiesJson.logs : [];
-        
-        // Transform real activity data to display format
         recentActivities = rawActivities.slice(0, 5).map(activity => ({
           type: activity.actionType || 'activity',
           message: activity.description || 'Activity recorded',
@@ -123,16 +98,10 @@ const PerformanceMetrics = () => {
           userId: activity.userId,
           adminId: activity.adminId
         }));
-        
-        console.log('✅ Activities data fetched and transformed:', { 
-          activitiesCount: recentActivities.length,
-          rawActivities: rawActivities.length 
-        });
-      } else {
-        console.warn('❌ Activities API failed:', activitiesRes.status);
+        console.log('✅ Activities data fetched');
       }
       
-      // Calculate metrics (same logic as Overview page)
+      // Calculate metrics
       const pendingCount = Number(dashboardData.pendingCommissions ?? dashboardData.pendingCount ?? 0);
       const paidCount = Number(dashboardData.paidCommissions ?? dashboardData.paidCount ?? 0);
       const totalPendingAmount = parseFloat((dashboardData.totalPendingAmount ?? 0).toString()) || 0;
@@ -140,8 +109,8 @@ const PerformanceMetrics = () => {
       const totalCommissionAmount = totalPendingAmount + totalPaidAmount;
       
       const metrics = {
-        totalUsers: totalUsers,
-        activeUsers: activeUsers,
+        totalUsers,
+        activeUsers,
         newUsersToday: dashboardData.newUsersToday || 0,
         conversionRate: totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : 0,
         avgCommissionPerUser: totalUsers > 0 ? (totalCommissionAmount / totalUsers) : 0,
@@ -150,17 +119,14 @@ const PerformanceMetrics = () => {
         paidCommissions: totalPaidAmount
       };
       
-      console.log('📊 Final Performance Metrics:', metrics);
-      
-      // Set real data (don't use mock data if we have real data)
+      console.log('📊 Performance Metrics loaded successfully');
       setMetrics(metrics);
       setTopPerformers(topPerformers);
       setRecentActivities(recentActivities);
       
     } catch (err) {
-      console.error('Error fetching performance metrics:', err);
+      console.error('💥 Performance Metrics Error:', err);
       setError('Failed to load performance metrics');
-      // Fallback to mock data only on error
       const mockData = generateMockPerformanceMetrics();
       setMetrics(mockData);
       setTopPerformers(mockData.topPerformers);

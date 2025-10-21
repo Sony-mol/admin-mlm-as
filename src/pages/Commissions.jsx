@@ -61,7 +61,11 @@ export default function Commissions() {
   const [dashboardData, setDashboardData] = useState(null);
   const [pendingCommissions, setPendingCommissions] = useState([]);
   const [paidCommissions, setPaidCommissions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({
+    dashboard: true,
+    pending: true,
+    paid: true
+  });
   const [selectedCommissions, setSelectedCommissions] = useState(new Set());
   const [bulkAction, setBulkAction] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
@@ -101,40 +105,41 @@ export default function Commissions() {
     return filteredPaid.slice(start, start + paidPageSize);
   }, [filteredPaid, paidPage, paidPageSize]);
 
-  // Load all commission data
+  // ⚡ PROGRESSIVE LOADING - Load all commission data in parallel
   useEffect(() => {
     let mounted = true;
+    const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+    const headers = { 'Authorization': `Bearer ${token}` };
+
+    console.log('🔍 COMMISSIONS PAGE - Starting parallel API calls...');
+
+    // Load dashboard data
     (async () => {
       try {
-        setLoading(true);
-        const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
-        const headers = { 'Authorization': `Bearer ${token}` };
-
-        console.log('🔍 COMMISSIONS PAGE - Starting API calls...');
-        console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
-        console.log('📡 Headers:', headers);
-
-        // Fetch dashboard data
         console.log('📊 Fetching dashboard data from:', API_ENDPOINTS.COMMISSION_DASHBOARD);
         const dashboardRes = await fetch(API_ENDPOINTS.COMMISSION_DASHBOARD, { headers });
         console.log('📊 Dashboard Response Status:', dashboardRes.status);
-        console.log('📊 Dashboard Response Headers:', Object.fromEntries(dashboardRes.headers.entries()));
         
-        if (dashboardRes.ok) {
+        if (mounted && dashboardRes.ok) {
           const dashboardJson = await dashboardRes.json();
           console.log('✅ Dashboard Data Received:', dashboardJson);
-          if (mounted) setDashboardData(dashboardJson);
-        } else {
-          console.log('❌ Dashboard API Failed:', dashboardRes.status, await dashboardRes.text());
+          setDashboardData(dashboardJson);
         }
+      } catch (e) {
+        console.error('💥 Dashboard Load Error:', e);
+      } finally {
+        if (mounted) setLoading(prev => ({ ...prev, dashboard: false }));
+      }
+    })();
 
-        // Fetch pending commissions
+    // Load pending commissions
+    (async () => {
+      try {
         console.log('⏳ Fetching pending commissions from:', API_ENDPOINTS.PENDING_COMMISSIONS);
         const pendingRes = await fetch(API_ENDPOINTS.PENDING_COMMISSIONS, { headers });
         console.log('⏳ Pending Response Status:', pendingRes.status);
-        console.log('⏳ Pending Response Headers:', Object.fromEntries(pendingRes.headers.entries()));
         
-        if (pendingRes.ok) {
+        if (mounted && pendingRes.ok) {
           const pendingJson = await pendingRes.json();
           console.log('✅ Pending Data Received:', pendingJson);
           const pendingData = Array.isArray(pendingJson) ? pendingJson : [];
@@ -144,18 +149,23 @@ export default function Commissions() {
             const dateB = new Date(b.createdAt || 0);
             return dateB - dateA;
           });
-          if (mounted) setPendingCommissions(pendingData);
-        } else {
-          console.log('❌ Pending API Failed:', pendingRes.status, await pendingRes.text());
+          setPendingCommissions(pendingData);
         }
+      } catch (e) {
+        console.error('💥 Pending Load Error:', e);
+      } finally {
+        if (mounted) setLoading(prev => ({ ...prev, pending: false }));
+      }
+    })();
 
-        // Fetch paid commissions
+    // Load paid commissions
+    (async () => {
+      try {
         console.log('✅ Fetching paid commissions from:', API_ENDPOINTS.PAID_COMMISSIONS);
         const paidRes = await fetch(API_ENDPOINTS.PAID_COMMISSIONS, { headers });
         console.log('✅ Paid Response Status:', paidRes.status);
-        console.log('✅ Paid Response Headers:', Object.fromEntries(paidRes.headers.entries()));
         
-        if (paidRes.ok) {
+        if (mounted && paidRes.ok) {
           const paidJson = await paidRes.json();
           console.log('✅ Paid Data Received:', paidJson);
           const paidData = Array.isArray(paidJson) ? paidJson : [];
@@ -165,17 +175,15 @@ export default function Commissions() {
             const dateB = new Date(b.createdAt || 0);
             return dateB - dateA;
           });
-          if (mounted) setPaidCommissions(paidData);
-        } else {
-          console.log('❌ Paid API Failed:', paidRes.status, await paidRes.text());
+          setPaidCommissions(paidData);
         }
-
       } catch (e) {
-        console.error('💥 Commissions Load Error:', e);
+        console.error('💥 Paid Load Error:', e);
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) setLoading(prev => ({ ...prev, paid: false }));
       }
     })();
+
     return () => { mounted = false; };
   }, []);
 
@@ -336,24 +344,8 @@ export default function Commissions() {
     setSelectedCommissions(new Set());
   };
 
-  if (loading) {
-    return <SkeletonCommissionsPage />;
-  }
-
-  if (!dashboardData) {
-    return (
-      <Card className="p-4">
-        <div className="font-semibold mb-1">Couldn't load commission data</div>
-        <div className="text-sm opacity-70 mb-3">Please check your authentication and try again.</div>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-2 px-3 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
-        >
-          Retry
-        </button>
-      </Card>
-    );
-  }
+  // Show structure immediately with progressive loading
+  const isLoading = loading.dashboard || loading.pending || loading.paid;
 
   return (
     <div className="space-y-6 text-[rgb(var(--fg))]">
@@ -390,36 +382,53 @@ export default function Commissions() {
         </div>
       </div>
 
-      {/* Dashboard Stats */}
+      {/* Dashboard Stats - Show skeleton while loading */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Stat 
-          label="Total Pending" 
-          value={fINR(dashboardData.totalPendingAmount || 0)} 
-          sub={`${dashboardData.pendingCommissions || 0} commissions`}
-          icon={Clock}
-          color="text-yellow-600"
-        />
-        <Stat 
-          label="Total Paid" 
-          value={fINR(dashboardData.totalPaidAmount || 0)} 
-          sub={`${dashboardData.paidCommissions || 0} commissions`}
-          icon={IndianRupee}
-          color="text-green-600"
-        />
-        <Stat 
-          label="Total Commissions" 
-          value={dashboardData.paidCommissions || 0} 
-          sub="All time"
-          icon={TrendingUp}
-          color="text-blue-600"
-        />
-        <Stat 
-          label="Active Users" 
-          value={dashboardData.activeUsers || 0} 
-          sub="With commissions"
-          icon={Users}
-          color="text-purple-600"
-        />
+        {loading.dashboard || !dashboardData ? (
+          // Skeleton stats
+          <>
+            {[1, 2, 3, 4].map(i => (
+              <Card key={i}>
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-[rgba(var(--fg),0.1)] rounded w-1/2"></div>
+                  <div className="h-6 bg-[rgba(var(--fg),0.1)] rounded w-2/3"></div>
+                  <div className="h-3 bg-[rgba(var(--fg),0.1)] rounded w-1/3"></div>
+                </div>
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <Stat 
+              label="Total Pending" 
+              value={fINR(dashboardData.totalPendingAmount || 0)} 
+              sub={`${dashboardData.pendingCommissions || 0} commissions`}
+              icon={Clock}
+              color="text-yellow-600"
+            />
+            <Stat 
+              label="Total Paid" 
+              value={fINR(dashboardData.totalPaidAmount || 0)} 
+              sub={`${dashboardData.paidCommissions || 0} commissions`}
+              icon={IndianRupee}
+              color="text-green-600"
+            />
+            <Stat 
+              label="Total Commissions" 
+              value={dashboardData.paidCommissions || 0} 
+              sub="All time"
+              icon={TrendingUp}
+              color="text-blue-600"
+            />
+            <Stat 
+              label="Active Users" 
+              value={dashboardData.activeUsers || 0} 
+              sub="With commissions"
+              icon={Users}
+              color="text-purple-600"
+            />
+          </>
+        )}
       </div>
 
       {/* Bulk Actions */}

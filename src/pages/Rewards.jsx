@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from '../config/api';
 
 const Rewards = () => {
   const [rewards, setRewards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({ rewards: true });
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingReward, setEditingReward] = useState(null);
@@ -24,7 +24,7 @@ const Rewards = () => {
 
   const fetchRewards = async () => {
     try {
-      setLoading(true);
+      setLoading({ rewards: true });
       const response = await fetch(API_ENDPOINTS.GET_ALL_REWARDS, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -42,7 +42,7 @@ const Rewards = () => {
       console.error('Error fetching rewards:', error);
       alert('Failed to fetch rewards: ' + error.message);
     } finally {
-      setLoading(false);
+      setLoading({ rewards: false });
     }
   };
 
@@ -169,13 +169,6 @@ const Rewards = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -237,51 +230,83 @@ const Rewards = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredRewards.map((reward) => (
-                <tr key={reward.id} className="border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--muted))]">
-                  <td className="p-4 text-[rgb(var(--muted-foreground))]">#{reward.id}</td>
-                  <td className="p-4 font-medium text-[rgb(var(--fg))]">{reward.rewardName || 'N/A'}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRewardTypeColor(reward.rewardType)}`}>
-                      {reward.rewardType}
-                    </span>
-                  </td>
-                  <td className="p-4 text-[rgb(var(--fg))]">
-                    {reward.rewardValue ? `₹${reward.rewardValue.toLocaleString()}` : 'N/A'}
-                  </td>
-                  <td className="p-4 text-[rgb(var(--fg))]">
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {reward.requiredReferrals || 'N/A'} referrals
-                    </span>
-                  </td>
-                  <td className="p-4 text-[rgb(var(--muted-foreground))] max-w-xs truncate">
-                    {reward.description || 'No description'}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleEdit(reward)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit Reward"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(reward.id, reward.rewardName)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Reward"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {loading.rewards ? (
+                // Skeleton loaders for table rows
+                Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index} className="border-b border-[rgb(var(--border))]">
+                    <td className="p-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-8"></div>
+                    </td>
+                    <td className="p-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                    </td>
+                    <td className="p-4">
+                      <div className="h-6 bg-gray-200 rounded-full animate-pulse w-16"></div>
+                    </td>
+                    <td className="p-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                    </td>
+                    <td className="p-4">
+                      <div className="h-6 bg-gray-200 rounded-full animate-pulse w-20"></div>
+                    </td>
+                    <td className="p-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-32"></div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                filteredRewards.map((reward) => (
+                  <tr key={reward.id} className="border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--muted))]">
+                    <td className="p-4 text-[rgb(var(--muted-foreground))]">#{reward.id}</td>
+                    <td className="p-4 font-medium text-[rgb(var(--fg))]">{reward.rewardName || 'N/A'}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRewardTypeColor(reward.rewardType)}`}>
+                        {reward.rewardType}
+                      </span>
+                    </td>
+                    <td className="p-4 text-[rgb(var(--fg))]">
+                      {reward.rewardValue ? `₹${reward.rewardValue.toLocaleString()}` : 'N/A'}
+                    </td>
+                    <td className="p-4 text-[rgb(var(--fg))]">
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {reward.requiredReferrals || 'N/A'} referrals
+                      </span>
+                    </td>
+                    <td className="p-4 text-[rgb(var(--muted-foreground))] max-w-xs truncate">
+                      {reward.description || 'No description'}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEdit(reward)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit Reward"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(reward.id, reward.rewardName)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete Reward"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        {filteredRewards.length === 0 && (
+        {!loading.rewards && filteredRewards.length === 0 && (
           <div className="text-center py-12">
             <div className="text-[rgb(var(--muted-foreground))]">
               {searchTerm ? 'No rewards found matching your search.' : 'No rewards available.'}

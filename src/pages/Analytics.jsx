@@ -7,7 +7,6 @@ import RevenueChart from '../components/analytics/RevenueChart';
 import { SkeletonDashboard } from '../components/SkeletonLoader';
 
 const Analytics = () => {
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState('30d');
   const [selectedCharts, setSelectedCharts] = useState({
@@ -17,21 +16,10 @@ const Analytics = () => {
     revenue: true
   });
 
-  useEffect(() => {
-    // Simulate loading time
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
-
+  // ⚡ No blocking loader - child components handle their own loading
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Simulate refresh
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000);
+    window.location.reload(); // Full refresh to reload all data
   };
 
   const handleExportAll = () => {
@@ -58,10 +46,7 @@ const Analytics = () => {
     { value: '1y', label: 'Last Year' }
   ];
 
-  if (loading) {
-    return <SkeletonDashboard />;
-  }
-
+  // ⚡ No global loading - show structure immediately
   return (
     <div className="p-6 space-y-6">
       {/* Header */}

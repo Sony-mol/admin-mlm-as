@@ -19,7 +19,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://asmlmbackend-prod
 const RewardClaims = () => {
   const [claims, setClaims] = useState([]);
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({ claims: true, stats: true });
   const [processing, setProcessing] = useState(null);
   const [filter, setFilter] = useState('PENDING'); // PENDING, APPROVED, REJECTED, ALL
   const [selectedClaim, setSelectedClaim] = useState(null);
@@ -38,7 +38,7 @@ const RewardClaims = () => {
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      setLoading({ claims: true, stats: true });
       const token = getToken();
       const headers = {
         Authorization: `Bearer ${token}`,
@@ -67,7 +67,7 @@ const RewardClaims = () => {
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
-      setLoading(false);
+      setLoading({ claims: false, stats: false });
     }
   };
 
@@ -190,16 +190,6 @@ const RewardClaims = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center gap-3 p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          <span>Loading reward claims...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -214,69 +204,88 @@ const RewardClaims = () => {
       </div>
 
       {/* Statistics */}
-      {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-blue-500/10">
-                <Gift className="w-6 h-6 text-blue-500" />
-              </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.totalRewards || 0}</div>
-                <div className="text-sm text-[rgb(var(--text-muted))]">Total Rewards</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        {loading.stats ? (
+          // Skeleton loaders for stats
+          Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-lg bg-gray-200 animate-pulse">
+                  <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                </div>
+                <div>
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-12 mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                </div>
               </div>
             </div>
-          </div>
+          ))
+        ) : (
+          stats && (
+            <>
+              <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-lg bg-blue-500/10">
+                    <Gift className="w-6 h-6 text-blue-500" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{stats.totalRewards || 0}</div>
+                    <div className="text-sm text-[rgb(var(--text-muted))]">Total Rewards</div>
+                  </div>
+                </div>
+              </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-yellow-500/10">
-                <Clock className="w-6 h-6 text-yellow-500" />
+              <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-lg bg-yellow-500/10">
+                    <Clock className="w-6 h-6 text-yellow-500" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{stats.pendingClaims || 0}</div>
+                    <div className="text-sm text-[rgb(var(--text-muted))]">Pending</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.pendingClaims || 0}</div>
-                <div className="text-sm text-[rgb(var(--text-muted))]">Pending</div>
-              </div>
-            </div>
-          </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-green-500/10">
-                <CheckCircle className="w-6 h-6 text-green-500" />
+              <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-lg bg-green-500/10">
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{stats.approvedClaims || 0}</div>
+                    <div className="text-sm text-[rgb(var(--text-muted))]">Approved</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.approvedClaims || 0}</div>
-                <div className="text-sm text-[rgb(var(--text-muted))]">Approved</div>
-              </div>
-            </div>
-          </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-red-500/10">
-                <XCircle className="w-6 h-6 text-red-500" />
+              <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-lg bg-red-500/10">
+                    <XCircle className="w-6 h-6 text-red-500" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{stats.rejectedClaims || 0}</div>
+                    <div className="text-sm text-[rgb(var(--text-muted))]">Rejected</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold">{stats.rejectedClaims || 0}</div>
-                <div className="text-sm text-[rgb(var(--text-muted))]">Rejected</div>
-              </div>
-            </div>
-          </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-purple-500/10">
-                <TrendingUp className="w-6 h-6 text-purple-500" />
+              <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-lg bg-purple-500/10">
+                    <TrendingUp className="w-6 h-6 text-purple-500" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">{Math.round(stats.approvalRate || 0)}%</div>
+                    <div className="text-sm text-[rgb(var(--text-muted))]">Approval Rate</div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-2xl font-bold">{Math.round(stats.approvalRate || 0)}%</div>
-                <div className="text-sm text-[rgb(var(--text-muted))]">Approval Rate</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )
+        )}
+      </div>
 
       {/* Filter Tabs */}
       <div className="flex gap-2 border-b border-[rgb(var(--border))]">
@@ -315,7 +324,55 @@ const RewardClaims = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[rgb(var(--border))]">
-              {claims.length === 0 ? (
+              {loading.claims ? (
+                // Skeleton loaders for table rows
+                Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index} className="hover:bg-[rgb(var(--card-hover))] transition-colors">
+                    <td className="px-4 py-3">
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-24 mb-1"></div>
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-32"></div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-28 mb-1"></div>
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-40"></div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                        <div>
+                          <div className="h-4 bg-gray-200 rounded animate-pulse w-16 mb-1"></div>
+                          <div className="h-3 bg-gray-200 rounded animate-pulse w-12"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-6 bg-gray-200 rounded-full animate-pulse w-20"></div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div>
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-12 mb-1"></div>
+                        <div className="h-3 bg-gray-200 rounded animate-pulse w-16"></div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-2">
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : claims.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="px-4 py-12 text-center text-[rgb(var(--text-muted))]">
                     <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />

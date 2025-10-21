@@ -67,7 +67,7 @@ export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState("commissions");
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState({ settings: true, stats: true });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -96,7 +96,7 @@ export default function Settings() {
 
   async function load() {
     try {
-      setLoading(true);
+      setLoading({ settings: true, stats: true });
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
       const headers = { 'Authorization': `Bearer ${token}` };
 
@@ -134,7 +134,7 @@ export default function Settings() {
     } catch (e) {
       setErr(e.message || "Failed to load settings");
     } finally {
-      setLoading(false);
+      setLoading({ settings: false, stats: false });
     }
   }
   useEffect(() => { load(); }, []);
@@ -193,13 +193,10 @@ export default function Settings() {
   const getCurrentValue = (configId, field, originalValue) =>
     (pendingUpdates.get(configId)?.[field] ?? originalValue);
 
-  if (loading) {
-    return <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 animate-pulse">Loading settings…</div>;
-  }
   if (err) {
     return (
       <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))]">
-        <div className="font-semibold mb-1">Couldn’t load settings</div>
+        <div className="font-semibold mb-1">Couldn't load settings</div>
         <div className="text-sm opacity-80">{err}</div>
         <button onClick={load} className="mt-3 rounded px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]">Retry</button>
       </div>
@@ -239,7 +236,29 @@ export default function Settings() {
       {tab === "commissions" && (
         <div className="space-y-6">
           {/* System Statistics */}
-          {Object.keys(systemStats).length > 0 && (
+          {loading.stats ? (
+            <Card className="p-5">
+              <div className="text-lg font-semibold mb-4">📊 System Statistics</div>
+              <div className="grid md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16 mx-auto mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mx-auto"></div>
+                </div>
+                <div className="text-center">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-12 mx-auto mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-16 mx-auto"></div>
+                </div>
+                <div className="text-center">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-12 mx-auto mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-16 mx-auto"></div>
+                </div>
+                <div className="text-center">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16 mx-auto mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-24 mx-auto"></div>
+                </div>
+              </div>
+            </Card>
+          ) : Object.keys(systemStats).length > 0 && (
             <Card className="p-5">
               <div className="text-lg font-semibold mb-4">📊 System Statistics</div>
               <div className="grid md:grid-cols-4 gap-4">
@@ -264,7 +283,33 @@ export default function Settings() {
           )}
 
           {/* Commission Configurations by Tier */}
-          {Object.keys(commissionConfigs)
+          {loading.settings ? (
+            // Skeleton loaders for commission configurations
+            Array.from({ length: 2 }).map((_, index) => (
+              <Card key={index} className="p-5">
+                <div className="text-lg font-semibold mb-4">
+                  <div className="h-6 bg-gray-200 rounded animate-pulse w-64"></div>
+                </div>
+                <div className="space-y-6">
+                  <div>
+                    <div className="h-5 bg-gray-200 rounded animate-pulse w-32 mb-3"></div>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {Array.from({ length: 3 }).map((_, configIndex) => (
+                        <div key={configIndex} className="border border-[rgb(var(--border))] rounded-lg p-4">
+                          <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mb-2"></div>
+                          <div className="space-y-3">
+                            <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                            <div className="h-4 bg-gray-200 rounded animate-pulse w-16"></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))
+          ) : Object.keys(commissionConfigs)
             .sort((tierNameA, tierNameB) => {
               // Define tier order: Bronze -> Silver -> Gold -> Others
               const tierOrder = { 'BRONZE': 1, 'SILVER': 2, 'GOLD': 3, 'PLATINUM': 4 };
