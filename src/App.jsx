@@ -16,6 +16,8 @@ import AdminManagement from './pages/AdminManagement';
 import TierManagement from './pages/TierManagement';
 import Rewards from './pages/Rewards';
 import UserRewards from './pages/UserRewards';
+import RewardClaims from './pages/RewardClaims';
+import CombinedRewardsManagement from './pages/CombinedRewardsManagement';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
@@ -44,6 +46,8 @@ export default function App() {
         <Route path="tier-management" element={<TierManagement />} />
             <Route path="rewards" element={<Rewards />} />
             <Route path="user-rewards" element={<UserRewards />} />
+            <Route path="reward-claims" element={<RewardClaims />} />
+            <Route path="rewards-management" element={<CombinedRewardsManagement />} />
         <Route path="admin-management" element={<AdminManagement />} />
         <Route path="terms-management" element={<TermsManagement />} />
         <Route path="settings" element={<Settings />} />

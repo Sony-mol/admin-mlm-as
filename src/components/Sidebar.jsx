@@ -32,7 +32,7 @@ const links = [
   { to: "/activity-logs", label: "Activity Logs", Icon: Activity },
   { to: "/tier-management", label: "Tier Management", Icon: Award },
   { to: "/rewards", label: "Rewards", Icon: Gift },
-  { to: "/user-rewards", label: "User Rewards", Icon: Award },
+  { to: "/rewards-management", label: "Rewards Management", Icon: Gift },
   { to: "/admin-management", label: "Admin Management", Icon: Shield },
   { to: "/terms-management", label: "Terms & Privacy", Icon: FileText },
 ];

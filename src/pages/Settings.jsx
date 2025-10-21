@@ -264,17 +264,39 @@ export default function Settings() {
           )}
 
           {/* Commission Configurations by Tier */}
-          {Object.keys(commissionConfigs).map(tierName => (
+          {Object.keys(commissionConfigs)
+            .sort((tierNameA, tierNameB) => {
+              // Define tier order: Bronze -> Silver -> Gold -> Others
+              const tierOrder = { 'BRONZE': 1, 'SILVER': 2, 'GOLD': 3, 'PLATINUM': 4 };
+              const orderA = tierOrder[tierNameA.toUpperCase()] || 99;
+              const orderB = tierOrder[tierNameB.toUpperCase()] || 99;
+              return orderA - orderB;
+            })
+            .map(tierName => (
             <Card key={tierName} className="p-5">
               <div className="text-lg font-semibold mb-4">
                 {tierName === 'BRONZE' ? '🥉' : tierName === 'SILVER' ? '🥈' : '🥇'} {tierName} Tier Commission Structure
               </div>
 
-              {Object.keys(commissionConfigs[tierName]).map(levelKey => (
+              {Object.keys(commissionConfigs[tierName])
+                .sort((levelKeyA, levelKeyB) => {
+                  // Extract level numbers from strings like "LEVEL_1", "LEVEL_2", etc.
+                  const extractLevelNumber = (levelKey) => {
+                    const match = levelKey.match(/\d+/);
+                    return match ? parseInt(match[0]) : 0;
+                  };
+                  return extractLevelNumber(levelKeyA) - extractLevelNumber(levelKeyB);
+                })
+                .map(levelKey => (
                 <div key={levelKey} className="mb-6">
                   <div className="text-md font-medium mb-3 opacity-90">{levelKey}</div>
                   <div className="grid md:grid-cols-3 gap-4">
-                    {commissionConfigs[tierName][levelKey].map(config => (
+                    {commissionConfigs[tierName][levelKey]
+                      .sort((configA, configB) => {
+                        // Sort commission levels within each level (Commission Level 1, 2, 3, etc.)
+                        return (configA.commissionLevel || 0) - (configB.commissionLevel || 0);
+                      })
+                      .map(config => (
                       <div key={config.id} className="border border-[rgb(var(--border))] rounded-lg p-4">
                         <div className="text-sm font-medium mb-2">
                           Commission Level {config.commissionLevel}

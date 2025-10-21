@@ -458,7 +458,15 @@ export default function TierManagement() {
 
       {/* Tier Structure */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {Object.entries(tierStructure).map(([tierName, levels]) => (
+        {Object.entries(tierStructure)
+          .sort(([tierNameA], [tierNameB]) => {
+            // Define tier order: Bronze -> Silver -> Gold -> Others
+            const tierOrder = { 'bronze': 1, 'silver': 2, 'gold': 3, 'platinum': 4 };
+            const orderA = tierOrder[tierNameA.toLowerCase()] || 99;
+            const orderB = tierOrder[tierNameB.toLowerCase()] || 99;
+            return orderA - orderB;
+          })
+          .map(([tierName, levels]) => (
           <div key={tierName} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold capitalize">
@@ -538,7 +546,14 @@ export default function TierManagement() {
         <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
           <h3 className="text-lg font-semibold mb-4">Tier Statistics</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {Object.entries(statistics).map(([tierName, tierStats]) => (
+            {Object.entries(statistics)
+              .sort(([tierNameA], [tierNameB]) => {
+                const tierOrder = { 'bronze': 1, 'silver': 2, 'gold': 3, 'platinum': 4 };
+                const orderA = tierOrder[tierNameA.toLowerCase()] || 99;
+                const orderB = tierOrder[tierNameB.toLowerCase()] || 99;
+                return orderA - orderB;
+              })
+              .map(([tierName, tierStats]) => (
               <div key={tierName} className="rounded-lg border border-[rgb(var(--border))] p-3">
                 <h4 className="font-medium capitalize">{tierEmoji(tierName)} {tierName} Tier</h4>
                 <p className="text-sm opacity-70">Total Users: {tierStats.totalUsers || 0}</p>
