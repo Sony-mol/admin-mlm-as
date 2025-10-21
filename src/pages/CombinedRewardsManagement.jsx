@@ -44,16 +44,22 @@ const CombinedRewardsManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, [activeTab, claimFilter, userRewardFilter]);
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchData(false); // Don't show loading for filter changes
+  }, [claimFilter, userRewardFilter]);
 
   const getToken = () => {
     const auth = localStorage.getItem('auth');
     return auth ? JSON.parse(auth).accessToken : '';
   };
 
-  const fetchData = async () => {
+  const fetchData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const token = getToken();
       const headers = {
         Authorization: `Bearer ${token}`,
@@ -104,7 +110,9 @@ const CombinedRewardsManagement = () => {
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -352,18 +360,22 @@ const CombinedRewardsManagement = () => {
           { id: 'STATS', label: 'Statistics', icon: TrendingUp },
         ].map(({ id, label, icon: Icon }) => (
           <button
-            key={id}
-            onClick={() => setActiveTab(id)}
+            key={`tab-${id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              setActiveTab(id);
+            }}
             className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors relative ${
               activeTab === id
-                ? 'text-[rgb(var(--primary))]'
-                : 'text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]'
+                ? 'text-blue-600 bg-blue-50'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
+            type="button"
           >
             <Icon className="w-4 h-4" />
             {label}
             {activeTab === id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[rgb(var(--primary))]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
             )}
           </button>
         ))}
@@ -386,13 +398,17 @@ const CombinedRewardsManagement = () => {
           <div className="flex gap-2">
             {['PENDING', 'APPROVED', 'REJECTED', 'ALL'].map((status) => (
               <button
-                key={status}
-                onClick={() => setClaimFilter(status)}
+                key={`filter-${status}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setClaimFilter(status);
+                }}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   claimFilter === status
-                    ? 'bg-[rgb(var(--primary))] text-white'
-                    : 'bg-[rgb(var(--card-hover))] text-[rgb(var(--text))] hover:bg-[rgb(var(--border))]'
+                    ? 'bg-blue-600 text-white border border-blue-600'
+                    : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                 }`}
+                type="button"
               >
                 {status}
               </button>
