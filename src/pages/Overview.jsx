@@ -572,27 +572,6 @@ export default function Overview() {
         
         if (statsRes.ok) {
           const statsJson = await statsRes.json();
-          
-          // Fetch reward claims statistics
-          try {
-            const rewardStatsRes = await fetch(API_ENDPOINTS.BASE + '/api/userrewards/stats', {
-              cache: "no-store",
-              headers,
-            });
-            if (rewardStatsRes.ok) {
-              const rewardStats = await rewardStatsRes.json();
-              statsJson.rewardClaims = {
-                total: rewardStats.totalRewards || 0,
-                pending: rewardStats.pendingClaims || 0,
-                approved: rewardStats.approvedClaims || 0,
-                rejected: rewardStats.rejectedClaims || 0,
-                approvalRate: rewardStats.approvalRate || 0,
-              };
-            }
-          } catch (e) {
-            console.error('Error fetching reward claims stats:', e);
-          }
-          
           setExtendedStats(statsJson);
         }
       } catch (e) {
@@ -981,27 +960,27 @@ export default function Overview() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[rgba(var(--fg),0.7)]">Total Rewards</span>
-                <span className="font-semibold">{extendedStats?.rewardClaims?.total || 0}</span>
+                <span className="font-semibold">{extendedStats?.rewardClaims?.totalRewards || 0}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[rgba(var(--fg),0.7)]">Pending</span>
                 <span className="font-semibold text-yellow-600 flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  {extendedStats?.rewardClaims?.pending || 0}
+                  {extendedStats?.rewardClaims?.pendingClaims || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[rgba(var(--fg),0.7)]">Approved</span>
                 <span className="font-semibold text-green-600 flex items-center gap-1">
                   <CheckCircle className="w-4 h-4" />
-                  {extendedStats?.rewardClaims?.approved || 0}
+                  {extendedStats?.rewardClaims?.approvedClaims || 0}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[rgba(var(--fg),0.7)]">Rejected</span>
                 <span className="font-semibold text-red-600 flex items-center gap-1">
                   <XCircle className="w-4 h-4" />
-                  {extendedStats?.rewardClaims?.rejected || 0}
+                  {extendedStats?.rewardClaims?.rejectedClaims || 0}
                 </span>
               </div>
               <div className="pt-3 border-t border-[rgb(var(--border))]">
@@ -1011,13 +990,13 @@ export default function Overview() {
                     {extendedStats?.rewardClaims?.approvalRate?.toFixed(1) || 0}%
                   </span>
                 </div>
-                {(extendedStats?.rewardClaims?.pending || 0) > 0 && (
+                {(extendedStats?.rewardClaims?.pendingClaims || 0) > 0 && (
                   <div className="mt-3">
                     <a
                       href="/rewards-management"
                       className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
                     >
-                      <Clock className="w-3 h-3" /> Review {extendedStats.rewardClaims.pending} pending claims
+                      <Clock className="w-3 h-3" /> Review {extendedStats.rewardClaims.pendingClaims} pending claims
                     </a>
                   </div>
                 )}
