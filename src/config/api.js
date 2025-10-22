@@ -73,8 +73,10 @@ export const API_ENDPOINTS = {
   CLAIM_REWARD: getApiUrl('/api/userrewards/claim'),
   GET_ALL_USER_REWARDS: getApiUrl('/api/userrewards/all'),
   GET_REWARD_STATS: getApiUrl('/api/userrewards/stats'),
-  APPROVE_REWARD: getApiUrl('/api/userrewards/approve'),
-  REJECT_REWARD: getApiUrl('/api/userrewards/reject'),
+  GET_PENDING_CLAIMS: getApiUrl('/api/userrewards/pending'),
+  GET_CLAIMS_BY_STATUS: getApiUrl('/api/userrewards/status'),
+  APPROVE_REWARD: getApiUrl('/api/userrewards'),
+  REJECT_REWARD: getApiUrl('/api/userrewards'),
   
   // Admin Dashboard Statistics
   DASHBOARD_STATISTICS: getApiUrl('/api/admin/dashboard-statistics'),

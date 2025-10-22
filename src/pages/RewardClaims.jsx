@@ -47,9 +47,9 @@ const RewardClaims = () => {
       };
 
       // Fetch claims by status
-      const endpoint = filter === 'ALL' 
-        ? API_ENDPOINTS.GET_ALL_USER_REWARDS
-        : API_ENDPOINTS.GET_USER_REWARDS;
+        const endpoint = filter === 'ALL' 
+          ? API_ENDPOINTS.GET_ALL_USER_REWARDS
+          : `${API_ENDPOINTS.GET_CLAIMS_BY_STATUS}/${filter}`;
       
       const [claimsRes, statsRes] = await Promise.all([
         fetch(endpoint, { headers }),
@@ -94,7 +94,7 @@ const RewardClaims = () => {
       const token = getToken();
 
       const response = await fetch(
-        API_ENDPOINTS.APPROVE_REWARD,
+        `${API_ENDPOINTS.APPROVE_REWARD}/${selectedClaim.userRewardId}/approve`,
         {
           method: 'POST',
           headers: {
@@ -133,7 +133,7 @@ const RewardClaims = () => {
       const token = getToken();
 
       const response = await fetch(
-        API_ENDPOINTS.REJECT_REWARD,
+        `${API_ENDPOINTS.REJECT_REWARD}/${selectedClaim.userRewardId}/reject`,
         {
           method: 'POST',
           headers: {

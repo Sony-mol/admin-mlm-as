@@ -79,7 +79,7 @@ const CombinedRewardsManagement = () => {
       if (activeTab === 'CLAIMS') {
         const endpoint = claimFilter === 'ALL' 
           ? API_ENDPOINTS.GET_ALL_USER_REWARDS
-          : API_ENDPOINTS.GET_USER_REWARDS;
+          : `${API_ENDPOINTS.GET_CLAIMS_BY_STATUS}/${claimFilter}`;
         promises.push(
           fetch(endpoint, { headers })
             .then(res => res.ok ? res.json() : { claims: [] })
@@ -139,7 +139,7 @@ const CombinedRewardsManagement = () => {
       const token = getToken();
 
       const response = await fetch(
-        API_ENDPOINTS.APPROVE_REWARD,
+        `${API_ENDPOINTS.APPROVE_REWARD}/${selectedClaim.userRewardId}/approve`,
         {
           method: 'POST',
           headers: {
@@ -178,7 +178,7 @@ const CombinedRewardsManagement = () => {
       const token = getToken();
 
       const response = await fetch(
-        API_ENDPOINTS.REJECT_REWARD,
+        `${API_ENDPOINTS.REJECT_REWARD}/${selectedClaim.userRewardId}/reject`,
         {
           method: 'POST',
           headers: {
