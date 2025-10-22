@@ -1,6 +1,6 @@
 // TableActions.jsx - Reusable table action components
 import React from 'react';
-import { Eye, Edit, Trash2, Download, MoreHorizontal, User, Mail, Phone, IndianRupee, UserCheck, UserX } from 'lucide-react';
+import { Eye, Edit, Trash2, Download, MoreHorizontal, User, Mail, Phone, IndianRupee, UserCheck, UserX, CheckCircle, XCircle } from 'lucide-react';
 
 // Standard action buttons for tables
 export const ActionButton = ({ 
@@ -230,48 +230,98 @@ export const PaymentActions = ({ payment, onView, onApprove, onReject, onRefund 
 );
 
 // Commission-specific actions
-export const CommissionActions = ({ commission, onView, onApprove, onReject }) => (
-  <div className="flex items-center gap-1">
-    {onView && <ViewAction onClick={() => onView(commission)} />}
-    <ActionDropdown
-      actions={[
-        ...(onApprove ? [{
-          icon: Eye,
-          label: 'Mark as Paid',
-          onClick: () => onApprove(commission)
-        }] : []),
-        ...(onReject ? [{
-          icon: Trash2,
-          label: 'Reject Commission',
-          onClick: () => onReject(commission),
-          variant: 'danger'
-        }] : [])
-      ]}
-    />
-  </div>
-);
+export const CommissionActions = ({ commission, onView, onApprove, onReject }) => {
+  // Don't show action buttons for paid or cancelled commissions
+  const isCompleted = commission.commissionStatus === 'PAID' || commission.commissionStatus === 'CANCELLED';
+  
+  return (
+    <div className="flex items-center gap-2">
+      {onView && <ViewAction onClick={() => onView(commission)} />}
+      {!isCompleted && (
+        <div className="flex items-center gap-1">
+          {onApprove && (
+            <button
+              onClick={() => onApprove(commission)}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+              title="Approve & Pay Commission"
+            >
+              <CheckCircle className="h-3 w-3" />
+              Approve
+            </button>
+          )}
+          {onReject && (
+            <button
+              onClick={() => onReject(commission)}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+              title="Reject Commission"
+            >
+              <XCircle className="h-3 w-3" />
+              Reject
+            </button>
+          )}
+        </div>
+      )}
+      {isCompleted && (
+        <div className="flex items-center gap-1">
+          <span className={`px-2 py-1 text-xs rounded-md ${
+            commission.commissionStatus === 'PAID' 
+              ? 'bg-green-100 text-green-700' 
+              : 'bg-red-100 text-red-700'
+          }`}>
+            {commission.commissionStatus === 'PAID' ? '✅ Paid' : '❌ Cancelled'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Withdrawal-specific actions
-export const WithdrawalActions = ({ withdrawal, onView, onApprove, onReject }) => (
-  <div className="flex items-center gap-1">
-    {onView && <ViewAction onClick={() => onView(withdrawal)} />}
-    <ActionDropdown
-      actions={[
-        ...(onApprove ? [{
-          icon: Eye,
-          label: 'Approve Withdrawal',
-          onClick: () => onApprove(withdrawal)
-        }] : []),
-        ...(onReject ? [{
-          icon: Trash2,
-          label: 'Reject Withdrawal',
-          onClick: () => onReject(withdrawal),
-          variant: 'danger'
-        }] : [])
-      ]}
-    />
-  </div>
-);
+export const WithdrawalActions = ({ withdrawal, onView, onApprove, onReject }) => {
+  // Don't show action buttons for completed or rejected withdrawals
+  const isCompleted = withdrawal.status === 'COMPLETED' || withdrawal.status === 'REJECTED';
+  
+  return (
+    <div className="flex items-center gap-2">
+      {onView && <ViewAction onClick={() => onView(withdrawal)} />}
+      {!isCompleted && (
+        <div className="flex items-center gap-1">
+          {onApprove && (
+            <button
+              onClick={() => onApprove(withdrawal)}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors"
+              title="Approve Withdrawal"
+            >
+              <CheckCircle className="h-3 w-3" />
+              Approve
+            </button>
+          )}
+          {onReject && (
+            <button
+              onClick={() => onReject(withdrawal)}
+              className="flex items-center gap-1 px-2 py-1 text-xs bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+              title="Reject Withdrawal"
+            >
+              <XCircle className="h-3 w-3" />
+              Reject
+            </button>
+          )}
+        </div>
+      )}
+      {isCompleted && (
+        <div className="flex items-center gap-1">
+          <span className={`px-2 py-1 text-xs rounded-md ${
+            withdrawal.status === 'COMPLETED' 
+              ? 'bg-green-100 text-green-700' 
+              : 'bg-red-100 text-red-700'
+          }`}>
+            {withdrawal.status === 'COMPLETED' ? '✅ Completed' : '❌ Rejected'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Product-specific actions
 export const ProductActions = ({ product, onView, onEdit, onDelete, onDuplicate }) => (

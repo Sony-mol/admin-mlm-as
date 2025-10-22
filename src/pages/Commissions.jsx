@@ -189,13 +189,14 @@ export default function Commissions() {
 
   // Confirmation function for single commission actions
   const confirmCommissionAction = (commission, action) => {
-    const actionText = action === 'PAID' ? 'approve and pay' : 'cancel';
+    const actionText = action === 'PAID' ? 'approve and pay' : 'reject';
     const actionColor = action === 'PAID' ? 'green' : 'red';
+    const actionIcon = action === 'PAID' ? '✅' : '❌';
     
     setConfirmAction({
       commission,
       action,
-      message: `Are you sure you want to ${actionText} this commission?`,
+      message: `${actionIcon} Are you sure you want to ${actionText} this commission?`,
       details: `Commission #${commission.id} - ${fINR(commission.commissionAmount)}`,
       actionColor
     });
@@ -257,7 +258,8 @@ export default function Commissions() {
       return;
     }
 
-    const actionText = bulkAction === 'PAID' ? 'approve and pay' : 'cancel';
+    const actionText = bulkAction === 'PAID' ? 'approve and pay' : 'reject';
+    const actionIcon = bulkAction === 'PAID' ? '✅' : '❌';
     const totalAmount = pendingCommissions
       .filter(c => selectedCommissions.has(c.id))
       .reduce((sum, c) => sum + (c.commissionAmount || 0), 0);
@@ -265,7 +267,7 @@ export default function Commissions() {
     setConfirmAction({
       isBulk: true,
       action: bulkAction,
-      message: `Are you sure you want to ${actionText} ${selectedCommissions.size} commissions?`,
+      message: `${actionIcon} Are you sure you want to ${actionText} ${selectedCommissions.size} commissions?`,
       details: `Total amount: ${fINR(totalAmount)}`,
       actionColor: bulkAction === 'PAID' ? 'green' : 'red'
     });
@@ -563,9 +565,9 @@ export default function Commissions() {
           filterable={false}
           selectable={true}
           bulkActions={[
-            { key: 'approve', label: 'Approve & Pay Selected' },
-            { key: 'cancel', label: 'Cancel Selected' },
-            { key: 'export', label: 'Export Selected' }
+            { key: 'approve', label: '✅ Approve & Pay Selected' },
+            { key: 'cancel', label: '❌ Reject Selected' },
+            { key: 'export', label: '📊 Export Selected' }
           ]}
           onBulkAction={(action, selectedIds) => {
             const selectedCommissions = selectedIds.map(id => pendingCommissions.find(commission => commission.id === id)).filter(Boolean);
@@ -594,7 +596,7 @@ export default function Commissions() {
             <CommissionActions
               commission={commission}
               onApprove={(commission) => confirmCommissionAction(commission, 'PAID')}
-              onCancel={(commission) => confirmCommissionAction(commission, 'CANCELLED')}
+              onReject={(commission) => confirmCommissionAction(commission, 'CANCELLED')}
               onView={(commission) => {/* View details */}}
             />
           )}

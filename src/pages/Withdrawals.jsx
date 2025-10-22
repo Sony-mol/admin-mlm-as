@@ -674,9 +674,9 @@ const Withdrawals = () => {
           filterable={false}
           selectable={true}
           bulkActions={[
-            { key: 'approve', label: 'Approve Selected' },
-            { key: 'reject', label: 'Reject Selected' },
-            { key: 'export', label: 'Export Selected' }
+            { key: 'approve', label: '✅ Approve Selected' },
+            { key: 'reject', label: '❌ Reject Selected' },
+            { key: 'export', label: '📊 Export Selected' }
           ]}
           onBulkAction={(action, selectedIds) => {
             const selectedWithdrawals = selectedIds.map(id => withdrawals.find(withdrawal => withdrawal.id === id)).filter(Boolean);
@@ -990,7 +990,7 @@ const Withdrawals = () => {
           <div className="rounded-lg p-6 max-w-md w-full mx-4 border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
-                Update Withdrawal Status
+                {actionType === 'COMPLETED' ? '✅ Approve Withdrawal' : actionType === 'REJECTED' ? '❌ Reject Withdrawal' : 'Update Withdrawal Status'}
               </h3>
               <button
                 onClick={() => setShowActionModal(false)}
@@ -1050,7 +1050,7 @@ const Withdrawals = () => {
                     : 'bg-blue-600'
                 }`}
               >
-                {actionLoading ? 'Updating...' : `Update to ${actionType}`}
+                {actionLoading ? 'Updating...' : actionType === 'COMPLETED' ? '✅ Approve Withdrawal' : actionType === 'REJECTED' ? '❌ Reject Withdrawal' : `Update to ${actionType}`}
               </button>
             </div>
           </div>
