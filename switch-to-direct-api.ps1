@@ -1,4 +1,14 @@
-﻿// API Configuration - Direct API Calls
+# Switch to Direct API Calls - Production Optimized
+# This script will configure the frontend for direct API calls to the backend
+
+Write-Host "=== Switching to Direct API Calls ===" -ForegroundColor Cyan
+
+# Update API configuration for direct calls
+Write-Host "`n=== Updating API Configuration ===" -ForegroundColor Yellow
+
+# Create new API config for direct calls
+$apiConfig = @"
+// API Configuration - Direct API Calls
 // Use direct backend URL for production
 const API_BASE_URL = 'https://asmlmbackend-production.up.railway.app';
 
@@ -81,3 +91,65 @@ export const API_ENDPOINTS = {
 };
 
 export default API_BASE_URL;
+"@
+
+# Write the new API config
+$apiConfig | Out-File -FilePath "src/config/api.js" -Encoding UTF8
+
+Write-Host "✓ API configuration updated for direct calls" -ForegroundColor Green
+
+# Update package.json to use static file serving
+Write-Host "`n=== Updating Production Server ===" -ForegroundColor Yellow
+
+# Update package.json start script
+$packageJson = Get-Content "package.json" | ConvertFrom-Json
+$packageJson.scripts.start = "npx serve dist --single --listen $PORT"
+$packageJson | ConvertTo-Json -Depth 10 | Out-File -FilePath "package.json" -Encoding UTF8
+
+Write-Host "✓ Package.json updated for static serving" -ForegroundColor Green
+
+# Update Railway configuration
+Write-Host "`n=== Updating Railway Configuration ===" -ForegroundColor Yellow
+
+# Update railway.json
+$railwayConfig = @"
+{
+  "`$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  }
+}
+"@
+
+$railwayConfig | Out-File -FilePath "railway.json" -Encoding UTF8
+
+Write-Host "✓ Railway configuration updated" -ForegroundColor Green
+
+# Build the frontend
+Write-Host "`n=== Building Frontend ===" -ForegroundColor Yellow
+npm run build
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "✗ Build failed!" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "✓ Frontend built successfully!" -ForegroundColor Green
+
+Write-Host "`n=== Direct API Configuration Complete ===" -ForegroundColor Green
+Write-Host "The frontend will now make direct API calls to:" -ForegroundColor White
+Write-Host "  https://asmlmbackend-production.up.railway.app" -ForegroundColor Cyan
+Write-Host "`nBenefits:" -ForegroundColor Yellow
+Write-Host "  ✓ Better performance (no proxy overhead)" -ForegroundColor Green
+Write-Host "  ✓ Better scalability" -ForegroundColor Green
+Write-Host "  ✓ Industry standard approach" -ForegroundColor Green
+Write-Host "  ✓ Reduced server load" -ForegroundColor Green
+Write-Host "`nNote: Ensure your backend has proper CORS configuration!" -ForegroundColor Yellow
