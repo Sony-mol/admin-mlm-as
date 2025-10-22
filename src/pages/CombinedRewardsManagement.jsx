@@ -37,6 +37,14 @@ const CombinedRewardsManagement = () => {
   const [userRewardFilter, setUserRewardFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Pagination states
+  const [pagination, setPagination] = useState({
+    currentPage: 0,
+    totalPages: 0,
+    totalElements: 0,
+    size: 20
+  });
+  
   // Modal states
   const [selectedClaim, setSelectedClaim] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -49,11 +57,24 @@ const CombinedRewardsManagement = () => {
 
   useEffect(() => {
     fetchData(false); // Don't show loading for filter changes
-  }, [claimFilter, userRewardFilter]);
+  }, [claimFilter, userRewardFilter, pagination.currentPage]);
 
   const getToken = () => {
     const auth = localStorage.getItem('auth');
     return auth ? JSON.parse(auth).accessToken : '';
+  };
+
+  const handlePageChange = (newPage) => {
+    setPagination(prev => ({ ...prev, currentPage: newPage }));
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    if (filterType === 'claim') {
+      setClaimFilter(value);
+    } else if (filterType === 'userReward') {
+      setUserRewardFilter(value);
+    }
+    setPagination(prev => ({ ...prev, currentPage: 0 }));
   };
 
   const fetchData = async (showLoading = true) => {
@@ -77,12 +98,18 @@ const CombinedRewardsManagement = () => {
 
       // Fetch claims if on claims tab
       if (activeTab === 'CLAIMS') {
+        const params = new URLSearchParams({
+          page: pagination.currentPage.toString(),
+          size: pagination.size.toString(),
+          sort: 'createdAt,desc' // Latest first
+        });
+        
         const endpoint = claimFilter === 'ALL' 
-          ? API_ENDPOINTS.GET_ALL_USER_REWARDS
-          : `${API_ENDPOINTS.GET_CLAIMS_BY_STATUS}/${claimFilter}`;
+          ? `${API_ENDPOINTS.GET_ALL_USER_REWARDS}?${params}`
+          : `${API_ENDPOINTS.GET_CLAIMS_BY_STATUS}/${claimFilter}?${params}`;
         promises.push(
           fetch(endpoint, { headers })
-            .then(res => res.ok ? res.json() : { claims: [] })
+            .then(res => res.ok ? res.json() : { claims: [], totalPages: 0, totalElements: 0 })
         );
       }
 
@@ -101,7 +128,49 @@ const CombinedRewardsManagement = () => {
       }
       
       if (activeTab === 'CLAIMS' && results[1]) {
-        setClaims(results[1].claims || results[1].allRewards || []);
+        const claimsData = results[1].claims || results[1].allRewards || [];
+        console.log('📊 Claims data received:', {
+          totalItems: claimsData.length,
+          pagination: results[1],
+          currentPage: pagination.currentPage
+        });
+        
+        // If backend doesn't support pagination, implement client-side pagination
+        if (!results[1].totalPages && claimsData.length > 0) {
+          // Sort by creation date (latest first) - client-side sorting
+          const sortedClaims = [...claimsData].sort((a, b) => {
+            const dateA = new Date(a.createdAt || a.claimedAt || 0);
+            const dateB = new Date(b.createdAt || b.claimedAt || 0);
+            return dateB - dateA; // Latest first
+          });
+          
+          const startIndex = pagination.currentPage * pagination.size;
+          const endIndex = startIndex + pagination.size;
+          const paginatedClaims = sortedClaims.slice(startIndex, endIndex);
+          const totalPages = Math.ceil(sortedClaims.length / pagination.size);
+          
+          console.log('🔄 Client-side pagination & sorting:', {
+            startIndex,
+            endIndex,
+            totalPages,
+            totalElements: sortedClaims.length,
+            sorted: true
+          });
+          
+          setClaims(paginatedClaims);
+          setPagination(prev => ({
+            ...prev,
+            totalPages,
+            totalElements: sortedClaims.length
+          }));
+        } else {
+          setClaims(claimsData);
+          setPagination(prev => ({
+            ...prev,
+            totalPages: results[1].totalPages || 0,
+            totalElements: results[1].totalElements || 0
+          }));
+        }
       }
       
       if (activeTab === 'USER_REWARDS' && results[1]) {
@@ -402,7 +471,7 @@ const CombinedRewardsManagement = () => {
                 key={`filter-${status}`}
                 onClick={(e) => {
                   e.preventDefault();
-                  setClaimFilter(status);
+                  handleFilterChange('claim', status);
                 }}
                 className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   claimFilter === status
@@ -421,6 +490,16 @@ const CombinedRewardsManagement = () => {
       {/* Content Area */}
       {activeTab === 'CLAIMS' && (
         <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] overflow-hidden">
+          <div className="px-4 py-3 border-b border-[rgb(var(--border))] bg-[rgb(var(--card-hover))]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Reward Claims</h3>
+              <div className="text-sm text-[rgb(var(--text-muted))]">
+                {pagination.totalElements > 0 && (
+                  <span>Total: {pagination.totalElements} claims • Latest first</span>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-[rgb(var(--card-hover))]">
@@ -524,6 +603,34 @@ const CombinedRewardsManagement = () => {
               </tbody>
             </table>
           </div>
+          
+          {/* Pagination for Claims */}
+          {(pagination.totalPages > 1 || pagination.totalElements > pagination.size) && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-[rgb(var(--border))] bg-[rgb(var(--card-hover))]">
+              <div className="text-sm text-[rgb(var(--text-muted))]">
+                Showing {pagination.currentPage * pagination.size + 1} to {Math.min((pagination.currentPage + 1) * pagination.size, pagination.totalElements)} of {pagination.totalElements} results
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage === 0}
+                  className="px-3 py-1 text-sm rounded-lg border border-[rgb(var(--border))] hover:bg-[rgb(var(--card-hover))] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="text-sm">
+                  Page {pagination.currentPage + 1} of {pagination.totalPages}
+                </span>
+                <button
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage >= pagination.totalPages - 1}
+                  className="px-3 py-1 text-sm rounded-lg border border-[rgb(var(--border))] hover:bg-[rgb(var(--card-hover))] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
