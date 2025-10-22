@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { SkeletonReferralTreePage } from '../components/SkeletonLoader';
 
 /** 🔁 REAL API (production) */
-const API_USERS = 'https://asmlmbackend-production.up.railway.app/api/users';
-const API_COMMISSIONS = 'https://asmlmbackend-production.up.railway.app/api/commissions';
+const API_USERS = '/api/users';
+const API_COMMISSIONS = '/api/commissions';
 
 const fmtINR = (n) =>
   Number(n || 0).toLocaleString('en-IN', {

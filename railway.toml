@@ -9,4 +9,5 @@ restartPolicyMaxRetries = 10
 PORT = "3000"
 NODE_ENV = "production"
 BACKEND_URL = "https://asmlmbackend-production.up.railway.app"
+VITE_API_BASE_URL = ""
 

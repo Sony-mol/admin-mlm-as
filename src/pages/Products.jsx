@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 
 // Canonical API base (same as backend). Prefer env if provided.
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://asmlmbackend-production.up.railway.app';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 // Enhanced default image system with better categorization
 const getDefaultImage = (productName, category = '') => {
