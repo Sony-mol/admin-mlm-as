@@ -20,8 +20,9 @@ import {
   Download,
   Settings,
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE = '';
 
 const CombinedRewardsManagement = () => {
   const [claims, setClaims] = useState([]);
@@ -70,15 +71,15 @@ const CombinedRewardsManagement = () => {
 
       // Always fetch stats
       promises.push(
-        fetch(`${API_BASE}/api/userrewards/stats`, { headers })
+        fetch(API_ENDPOINTS.GET_REWARD_STATS, { headers })
           .then(res => res.ok ? res.json() : {})
       );
 
       // Fetch claims if on claims tab
       if (activeTab === 'CLAIMS') {
         const endpoint = claimFilter === 'ALL' 
-          ? `${API_BASE}/api/userrewards/all`
-          : `${API_BASE}/api/userrewards/status/${claimFilter}`;
+          ? API_ENDPOINTS.GET_ALL_USER_REWARDS
+          : API_ENDPOINTS.GET_USER_REWARDS;
         promises.push(
           fetch(endpoint, { headers })
             .then(res => res.ok ? res.json() : { claims: [] })
@@ -88,7 +89,7 @@ const CombinedRewardsManagement = () => {
       // Fetch user rewards if on user rewards tab
       if (activeTab === 'USER_REWARDS') {
         promises.push(
-          fetch(`${API_BASE}/api/userrewards/all`, { headers })
+          fetch(API_ENDPOINTS.GET_ALL_USER_REWARDS, { headers })
             .then(res => res.ok ? res.json() : { allRewards: [] })
         );
       }
@@ -138,7 +139,7 @@ const CombinedRewardsManagement = () => {
       const token = getToken();
 
       const response = await fetch(
-        `${API_BASE}/api/userrewards/${selectedClaim.userRewardId}/approve`,
+        API_ENDPOINTS.APPROVE_REWARD,
         {
           method: 'POST',
           headers: {
@@ -177,7 +178,7 @@ const CombinedRewardsManagement = () => {
       const token = getToken();
 
       const response = await fetch(
-        `${API_BASE}/api/userrewards/${selectedClaim.userRewardId}/reject`,
+        API_ENDPOINTS.REJECT_REWARD,
         {
           method: 'POST',
           headers: {

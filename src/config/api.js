@@ -75,6 +75,8 @@ export const API_ENDPOINTS = {
   CLAIM_REWARD: getApiUrl('/api/userrewards/claim'),
   GET_ALL_USER_REWARDS: getApiUrl('/api/userrewards/all'),
   GET_REWARD_STATS: getApiUrl('/api/userrewards/stats'),
+  APPROVE_REWARD: getApiUrl('/api/userrewards/approve'),
+  REJECT_REWARD: getApiUrl('/api/userrewards/reject'),
   
   // Admin Dashboard Statistics
   DASHBOARD_STATISTICS: getApiUrl('/api/admin/dashboard-statistics'),

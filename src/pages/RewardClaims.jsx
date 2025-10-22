@@ -13,8 +13,9 @@ import {
   ThumbsDown,
   Loader2,
 } from 'lucide-react';
+import { API_ENDPOINTS } from '../config/api';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE = '';
 
 const RewardClaims = () => {
   const [claims, setClaims] = useState([]);
@@ -47,12 +48,12 @@ const RewardClaims = () => {
 
       // Fetch claims by status
       const endpoint = filter === 'ALL' 
-        ? `${API_BASE}/api/userrewards/all`
-        : `${API_BASE}/api/userrewards/status/${filter}`;
+        ? API_ENDPOINTS.GET_ALL_USER_REWARDS
+        : API_ENDPOINTS.GET_USER_REWARDS;
       
       const [claimsRes, statsRes] = await Promise.all([
         fetch(endpoint, { headers }),
-        fetch(`${API_BASE}/api/userrewards/stats`, { headers }),
+        fetch(API_ENDPOINTS.GET_REWARD_STATS, { headers }),
       ]);
 
       if (!claimsRes.ok || !statsRes.ok) {
@@ -93,7 +94,7 @@ const RewardClaims = () => {
       const token = getToken();
 
       const response = await fetch(
-        `${API_BASE}/api/userrewards/${selectedClaim.userRewardId}/approve`,
+        API_ENDPOINTS.APPROVE_REWARD,
         {
           method: 'POST',
           headers: {
@@ -132,7 +133,7 @@ const RewardClaims = () => {
       const token = getToken();
 
       const response = await fetch(
-        `${API_BASE}/api/userrewards/${selectedClaim.userRewardId}/reject`,
+        API_ENDPOINTS.REJECT_REWARD,
         {
           method: 'POST',
           headers: {
