@@ -13,7 +13,7 @@ const Analytics = () => {
     performance: true,
     userGrowth: true,
     commission: true,
-    revenue: true
+    revenue: false  // Hide Revenue Analytics section
   });
 
   // ⚡ No blocking loader - child components handle their own loading
