@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Activity, Search, Filter, Download, Calendar, User, Shield, AlertTriangle, Info, Clock } from "lucide-react";
 import { API_ENDPOINTS } from '../config/api';
 import ResponsiveTable from '../components/ResponsiveTable';
@@ -45,7 +45,7 @@ export default function ActivityLogs() {
 
   const severities = ["INFO", "WARNING", "ERROR", "CRITICAL"];
 
-  const loadActivityLogs = async (forceRefresh = false) => {
+  const loadActivityLogs = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(prev => ({ ...prev, logs: true }));
       const params = new URLSearchParams({
@@ -91,9 +91,9 @@ export default function ActivityLogs() {
     } finally {
       setLoading(prev => ({ ...prev, logs: false }));
     }
-  };
+  }, [pagination.currentPage, pagination.size, searchTerm, filters]);
 
-  const loadRecentActivity = async () => {
+  const loadRecentActivity = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, recent: true }));
       const response = await fetch(RECENT_ACTIVITY_API, {
@@ -113,9 +113,9 @@ export default function ActivityLogs() {
     } finally {
       setLoading(prev => ({ ...prev, recent: false }));
     }
-  };
+  }, []);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, stats: true }));
       const response = await fetch(ACTIVITY_STATS_API, {
@@ -135,14 +135,14 @@ export default function ActivityLogs() {
     } finally {
       setLoading(prev => ({ ...prev, stats: false }));
     }
-  };
+  }, []);
 
   // ⚡ PROGRESSIVE LOADING - All 3 API calls run in parallel
   useEffect(() => {
     loadActivityLogs();
     loadRecentActivity();
     loadStats();
-  }, [pagination.currentPage, searchTerm, filters]);
+  }, [loadActivityLogs, loadRecentActivity, loadStats]);
 
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, currentPage: newPage }));
@@ -421,7 +421,7 @@ export default function ActivityLogs() {
           </p>
         </div>
 
-        {loading ? (
+        {loading.logs ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
             <p className="mt-2 opacity-70">Loading activity logs...</p>
@@ -532,7 +532,7 @@ export default function ActivityLogs() {
               }
             ]}
             data={logs}
-            loading={loading}
+            loading={loading.logs}
             emptyMessage="No activity logs found"
             searchable={false}
             filterable={false}
