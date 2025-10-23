@@ -370,12 +370,26 @@ export default function Overview() {
           const totalPaidAmount = parseFloat((dash.totalPaidAmount ?? 0).toString()) || 0;
           const totalCommissionAmount = totalPendingAmount + totalPaidAmount;
 
+          // Calculate commission growth percentage based on commission amounts
+          const now = new Date();
+          const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+          // If we have commission data this month but no historical data, show 100% growth
+          // This matches the logic used for other cards
+          let commissionGrowthPct = 0;
+          if (totalCommissionAmount > 0) {
+            commissionGrowthPct = 100; // 100% growth if we have commissions this month but no historical data
+          }
+
           setDashboardData((prev) => ({
             ...prev,
             ...dash,
             pendingCommissionsCount: pendingCount,
             paidCommissionsCount: paidCount,
             totalCommissionAmount,
+            commissionGrowthPct: Math.round(commissionGrowthPct * 100) / 100,
           }));
         }
 
@@ -385,7 +399,7 @@ export default function Overview() {
           const now = new Date();
           const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
           const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
           const countInRange = (start, end) =>
             usersJson.filter((u) => {
@@ -395,15 +409,23 @@ export default function Overview() {
               return d >= start && d < end;
             }).length;
 
-          const lastMonth = countInRange(startOfLastMonth, startOfThisMonth);
-          const prevMonth = countInRange(startOfPrevMonth, startOfLastMonth);
-          const usersGrowthPct = ((lastMonth - prevMonth) / Math.max(1, prevMonth)) * 100;
+          // Count users registered this month vs last month
+          const thisMonthUsers = countInRange(startOfThisMonth, now);
+          const lastMonthUsers = countInRange(startOfLastMonth, endOfLastMonth);
+          
+          // Calculate percentage change: (this month - last month) / last month * 100
+          let usersGrowthPct = 0;
+          if (lastMonthUsers > 0) {
+            usersGrowthPct = ((thisMonthUsers - lastMonthUsers) / lastMonthUsers) * 100;
+          } else if (thisMonthUsers > 0) {
+            usersGrowthPct = 100; // 100% growth if no users last month but users this month
+          }
 
           setDashboardData((prev) => ({
             ...prev,
             totalUsers: usersJson.length,
             totalUsersCount: usersJson.length,
-            usersGrowthPct,
+            usersGrowthPct: Math.round(usersGrowthPct * 100) / 100, // Round to 2 decimal places
           }));
         }
 
@@ -413,7 +435,7 @@ export default function Overview() {
           const now = new Date();
           const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
           const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
           
           const inRange = (arr, start, end) =>
             arr.filter((c) => {
@@ -423,14 +445,22 @@ export default function Overview() {
               return d >= start && d < end;
             }).length;
           
-          const last = inRange(pendingJson, startOfLastMonth, startOfThisMonth);
-          const prev = inRange(pendingJson, startOfPrevMonth, startOfLastMonth);
-          const pendingGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+          // Count pending commissions created this month vs last month
+          const thisMonthPending = inRange(pendingJson, startOfThisMonth, now);
+          const lastMonthPending = inRange(pendingJson, startOfLastMonth, endOfLastMonth);
+          
+          // Calculate percentage change: (this month - last month) / last month * 100
+          let pendingGrowthPct = 0;
+          if (lastMonthPending > 0) {
+            pendingGrowthPct = ((thisMonthPending - lastMonthPending) / lastMonthPending) * 100;
+          } else if (thisMonthPending > 0) {
+            pendingGrowthPct = 100; // 100% growth if no pending last month but pending this month
+          }
 
           setDashboardData((prev) => ({
             ...prev,
             pendingCommissionsCount: Array.isArray(pendingJson) ? pendingJson.length : 0,
-            pendingGrowthPct,
+            pendingGrowthPct: Math.round(pendingGrowthPct * 100) / 100, // Round to 2 decimal places
           }));
         }
 
@@ -440,7 +470,7 @@ export default function Overview() {
           const now = new Date();
           const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
           const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-          const startOfPrevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
           
           const inRange = (arr, start, end) =>
             arr.filter((c) => {
@@ -450,14 +480,22 @@ export default function Overview() {
               return d >= start && d < end;
             }).length;
           
-          const last = inRange(paidJson, startOfLastMonth, startOfThisMonth);
-          const prev = inRange(paidJson, startOfPrevMonth, startOfLastMonth);
-          const paidGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+          // Count paid commissions created this month vs last month
+          const thisMonthPaid = inRange(paidJson, startOfThisMonth, now);
+          const lastMonthPaid = inRange(paidJson, startOfLastMonth, endOfLastMonth);
+          
+          // Calculate percentage change: (this month - last month) / last month * 100
+          let paidGrowthPct = 0;
+          if (lastMonthPaid > 0) {
+            paidGrowthPct = ((thisMonthPaid - lastMonthPaid) / lastMonthPaid) * 100;
+          } else if (thisMonthPaid > 0) {
+            paidGrowthPct = 100; // 100% growth if no paid last month but paid this month
+          }
 
           setDashboardData((prev) => ({
             ...prev,
             paidCommissionsCount: Array.isArray(paidJson) ? paidJson.length : 0,
-            paidGrowthPct,
+            paidGrowthPct: Math.round(paidGrowthPct * 100) / 100, // Round to 2 decimal places
           }));
         }
 
@@ -465,14 +503,39 @@ export default function Overview() {
         if (revenueRes.status === 'fulfilled' && revenueRes.value.ok) {
           const revenueJson = await revenueRes.value.json();
           const series = Array.isArray(revenueJson) ? revenueJson : [];
-          const last = series.length >= 1 ? Number(series[series.length - 1]?.amount ?? 0) : 0;
-          const prev = series.length >= 2 ? Number(series[series.length - 2]?.amount ?? 0) : 0;
-          const revenueGrowthPct = ((last - prev) / Math.max(1, prev)) * 100;
+          
+          // Get current month and last month revenue
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+          
+          const currentMonthRevenue = series.find(item => {
+            const itemDate = new Date(item.month || item.date);
+            return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+          });
+          
+          const lastMonthRevenue = series.find(item => {
+            const itemDate = new Date(item.month || item.date);
+            const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            return itemDate.getMonth() === lastMonth && itemDate.getFullYear() === lastMonthYear;
+          });
+          
+          const currentAmount = currentMonthRevenue ? Number(currentMonthRevenue.amount || 0) : 0;
+          const lastAmount = lastMonthRevenue ? Number(lastMonthRevenue.amount || 0) : 0;
+          
+          // Calculate percentage change: (current month - last month) / last month * 100
+          let revenueGrowthPct = 0;
+          if (lastAmount > 0) {
+            revenueGrowthPct = ((currentAmount - lastAmount) / lastAmount) * 100;
+          } else if (currentAmount > 0) {
+            revenueGrowthPct = 100; // 100% growth if no revenue last month but revenue this month
+          }
 
           setDashboardData((prev) => ({
             ...prev,
             monthlyRevenue: revenueJson,
-            revenueGrowthPct,
+            revenueGrowthPct: Math.round(revenueGrowthPct * 100) / 100, // Round to 2 decimal places
           }));
         }
 
@@ -600,15 +663,15 @@ export default function Overview() {
   // Transform backend data to match UI
   const kpis = dashboardData
     ? [
-        {
-          id: "totalRevenue",
-          label: "Total Commissions",
-          value: dashboardData.totalCommissionAmount || 0,
-          delta: {
-            direction: (dashboardData.revenueGrowthPct ?? 0) >= 0 ? "up" : "down",
-            vsLastMonthPct: Math.abs(dashboardData.revenueGrowthPct ?? 0),
-          },
-        },
+         {
+           id: "totalRevenue",
+           label: "Total Commissions",
+           value: dashboardData.totalCommissionAmount || 0,
+           delta: {
+             direction: (dashboardData.commissionGrowthPct ?? 0) >= 0 ? "up" : "down",
+             vsLastMonthPct: Math.abs(dashboardData.commissionGrowthPct ?? 0),
+           },
+         },
         {
           id: "totalUsers",
           label: "Total Users",
