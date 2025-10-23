@@ -74,6 +74,8 @@ export default function Commissions() {
   const [actionLoading, setActionLoading] = useState(false);
   const [q, setQ] = useState('');
   const [paidSearchQuery, setPaidSearchQuery] = useState('');
+  const [selectedCommission, setSelectedCommission] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Pending list pagination + filtering
   const [pendingPage, setPendingPage] = useState(1);
@@ -308,6 +310,12 @@ export default function Commissions() {
     
     await handleBulkUpdate();
     setConfirmAction(null);
+  };
+
+  // Handle commission details modal
+  const handleViewDetails = (commission) => {
+    setSelectedCommission(commission);
+    setShowDetailsModal(true);
   };
 
   // Bulk update commissions
@@ -615,7 +623,7 @@ export default function Commissions() {
               commission={commission}
               onApprove={(commission) => confirmCommissionAction(commission, 'PAID')}
               onReject={(commission) => confirmCommissionAction(commission, 'CANCELLED')}
-              onView={(commission) => {/* View details */}}
+              onView={(commission) => handleViewDetails(commission)}
             />
           )}
           pagination={{
@@ -740,6 +748,113 @@ export default function Commissions() {
                      (confirmAction.isBulk ? 'Approve & Pay All' : 'Approve & Pay') : 
                      (confirmAction.isBulk ? 'Cancel All' : 'Cancel Commission')}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Commission Details Modal */}
+      {showDetailsModal && selectedCommission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="relative w-[min(600px,90vw)] max-h-[80vh] overflow-y-auto rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold">Commission Details</h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="rounded-full h-8 w-8 grid place-items-center border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Commission Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">Commission ID</div>
+                  <div className="font-semibold">#{selectedCommission.id}</div>
+                </div>
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">Status</div>
+                  <StatusPill value={selectedCommission.commissionStatus} />
+                </div>
+              </div>
+
+              {/* Users Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-blue-50">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Users className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="text-sm text-[rgba(var(--fg),0.7)]">Referrer</div>
+                  </div>
+                  <div className="font-semibold">
+                    {userNames[selectedCommission.referrerUserId] || `User ${selectedCommission.referrerUserId}`}
+                  </div>
+                  <div className="text-xs text-[rgba(var(--fg),0.6)]">ID: {selectedCommission.referrerUserId}</div>
+                </div>
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-green-50">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <Users className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div className="text-sm text-[rgba(var(--fg),0.7)]">Referred</div>
+                  </div>
+                  <div className="font-semibold">
+                    {userNames[selectedCommission.referredUserId] || `User ${selectedCommission.referredUserId}`}
+                  </div>
+                  <div className="text-xs text-[rgba(var(--fg),0.6)]">ID: {selectedCommission.referredUserId}</div>
+                </div>
+              </div>
+
+              {/* Commission Details */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">Commission Amount</div>
+                  <div className="font-semibold text-lg text-green-600">
+                    {fINR(selectedCommission.commissionAmount)}
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">Referral Level</div>
+                  <div className="font-semibold">Level {selectedCommission.referralLevel}</div>
+                </div>
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">Commission Rate</div>
+                  <div className="font-semibold">{selectedCommission.commissionPercentage}%</div>
+                </div>
+              </div>
+
+              {/* Order Info */}
+              {selectedCommission.order && (
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-2">Order Information</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs text-[rgba(var(--fg),0.6)]">Order Number</div>
+                      <div className="font-medium">{selectedCommission.order.orderNumber || 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-[rgba(var(--fg),0.6)]">Order Amount</div>
+                      <div className="font-medium">{fINR(selectedCommission.order.totalAmount || 0)}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Timestamps */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">Created At</div>
+                  <div className="font-medium">{fDate(selectedCommission.createdAt)}</div>
+                </div>
+                <div className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(var(--fg),0.02)]">
+                  <div className="text-sm text-[rgba(var(--fg),0.7)] mb-1">Last Updated</div>
+                  <div className="font-medium">{fDate(selectedCommission.updatedAt)}</div>
+                </div>
               </div>
             </div>
           </div>
