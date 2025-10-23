@@ -61,10 +61,12 @@ export default function Commissions() {
   const [dashboardData, setDashboardData] = useState(null);
   const [pendingCommissions, setPendingCommissions] = useState([]);
   const [paidCommissions, setPaidCommissions] = useState([]);
+  const [userNames, setUserNames] = useState({}); // Map of userId -> userName
   const [loading, setLoading] = useState({
     dashboard: true,
     pending: true,
-    paid: true
+    paid: true,
+    users: true
   });
   const [selectedCommissions, setSelectedCommissions] = useState(new Set());
   const [bulkAction, setBulkAction] = useState('');
@@ -105,6 +107,30 @@ export default function Commissions() {
     return filteredPaid.slice(start, start + paidPageSize);
   }, [filteredPaid, paidPage, paidPageSize]);
 
+  // Load users to get name mapping
+  const loadUsers = async () => {
+    try {
+      const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
+      const headers = { 'Authorization': `Bearer ${token}` };
+      
+      console.log('👥 Loading users for name mapping...');
+      const usersRes = await fetch(API_ENDPOINTS.USERS, { headers });
+      if (usersRes.ok) {
+        const users = await usersRes.json();
+        const nameMap = {};
+        users.forEach(user => {
+          nameMap[user.id] = user.name || user.email || `User ${user.id}`;
+        });
+        setUserNames(nameMap);
+        console.log('✅ User names loaded:', Object.keys(nameMap).length, 'users');
+      }
+    } catch (e) {
+      console.error('❌ Error loading users:', e);
+    } finally {
+      setLoading(prev => ({ ...prev, users: false }));
+    }
+  };
+
   // ⚡ PROGRESSIVE LOADING - Load all commission data in parallel
   useEffect(() => {
     let mounted = true;
@@ -112,6 +138,9 @@ export default function Commissions() {
     const headers = { 'Authorization': `Bearer ${token}` };
 
     console.log('🔍 COMMISSIONS PAGE - Starting parallel API calls...');
+    
+    // Load users first
+    loadUsers();
 
     // Load dashboard data
     (async () => {
@@ -497,7 +526,9 @@ export default function Commissions() {
                     <Users className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
-                    <div className="font-medium">User {commission.referrerUserId}</div>
+                    <div className="font-medium">
+                      {userNames[commission.referrerUserId] || `User ${commission.referrerUserId}`}
+                    </div>
                     <div className="text-sm text-gray-500">Referrer</div>
                   </div>
                 </div>
@@ -513,7 +544,9 @@ export default function Commissions() {
                     <Users className="h-4 w-4 text-green-600" />
                   </div>
                   <div>
-                    <div className="font-medium">User {commission.referredUserId}</div>
+                    <div className="font-medium">
+                      {userNames[commission.referredUserId] || `User ${commission.referredUserId}`}
+                    </div>
                     <div className="text-sm text-gray-500">Referred</div>
                   </div>
                 </div>
@@ -530,21 +563,6 @@ export default function Commissions() {
                     {fINR(commission.commissionAmount)}
                   </span>
                 </div>
-              )
-            },
-            {
-              key: 'order',
-              title: 'Order Info',
-              sortable: false,
-              render: (value, commission) => (
-                commission.order ? (
-                  <div>
-                    <div className="font-medium">{commission.order.orderNumber || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">{fINR(commission.order.totalAmount || 0)}</div>
-                  </div>
-                ) : (
-                  <span className="text-gray-500">No order</span>
-                )
               )
             },
             {
@@ -653,7 +671,7 @@ export default function Commissions() {
                       Commission #{commission.id}
                     </div>
                     <div className="text-sm opacity-70">
-                      Referrer: User {commission.referrerUserId} → Referred: User {commission.referredUserId}
+                      Referrer: {userNames[commission.referrerUserId] || `User ${commission.referrerUserId}`} → Referred: {userNames[commission.referredUserId] || `User ${commission.referredUserId}`}
                     </div>
                     <div className="text-xs opacity-60">
                       Level {commission.referralLevel} • {commission.commissionPercentage}% • {fDate(commission.createdAt)}
