@@ -4,7 +4,6 @@ import { SkeletonPaymentsPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
 import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
-import { PaymentActions } from '../components/TableActions';
 import { CreditCard, User, IndianRupee } from 'lucide-react';
 
 // Import API configuration
@@ -561,22 +560,10 @@ export default function Payments() {
         selectable={false}
         cardView={true}
         stickyHeader={true}
-        actions={(payment) => (
-          <PaymentActions
-            payment={payment}
-            onView={async (payment) => {
-              setModalItem(payment);
-              await fetchDetailedPayment(payment.id);
-            }}
-            onApprove={(payment) => {/* Approve functionality */}}
-            onReject={(payment) => {/* Reject functionality */}}
-            onRefund={(payment) => {/* Refund functionality */}}
-          />
-        )}
         onRowClick={async (payment) => {
-                        setModalItem(payment);
-                        await fetchDetailedPayment(payment.id);
-                      }}
+          setModalItem(payment);
+          await fetchDetailedPayment(payment.id);
+        }}
         pagination={{
           currentPage: page,
           totalPages: Math.ceil(filtered.length / pageSize),
