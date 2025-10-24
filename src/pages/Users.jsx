@@ -739,7 +739,7 @@ export default function Users() {
     // Close user details modal if open
     setSelected(null);
     
-    // Use setTimeout to ensure modal closes before showing confirm modal
+    // Increase delay to 300ms to ensure modal animation completes
     setTimeout(() => {
       setConfirmAction({
         user,
@@ -750,7 +750,7 @@ export default function Users() {
           ? `Are you sure you want to activate ${user.name}? They will regain access to the system.`
           : `Are you sure you want to DELETE ${user.name}? This action cannot be undone and will permanently remove the user and all their data.`
       });
-    }, 100);
+    }, 300);
   }
 
   async function executeConfirmedAction() {
@@ -1296,12 +1296,12 @@ export default function Users() {
         }}
       />
 
-      {/* Modal */}
-      <UserModal user={selected} onClose={() => setSelected(null)} />
+      {/* Modal - Only show when no confirmation action is pending */}
+      {!confirmAction && <UserModal user={selected} onClose={() => setSelected(null)} />}
 
       {/* Confirmation Modal */}
       {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
           <div className="relative w-[min(400px,90vw)] rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl">
             <div className="text-center">
               <div className="mb-4 text-2xl">⚠️</div>
