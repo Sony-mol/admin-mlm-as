@@ -33,11 +33,56 @@ function StatusPill({ value }) {
 
 /* =================== Order Modal Component =================== */
 export default function OrderModal({ order, detailedOrder, onClose, onUpdateStatus }) {
+  // ✅ All hooks MUST be called unconditionally
+  const [pendingStatus, setPendingStatus] = React.useState(null);
+  const [showConfirmation, setShowConfirmation] = React.useState(false);
+  const [selectKey, setSelectKey] = React.useState(0); // Key to force re-render of select
+  const [localStatus, setLocalStatus] = React.useState(null); // Track local status changes
+  
+  // Reset local status when order changes
+  React.useEffect(() => {
+    setLocalStatus(null);
+  }, [order?.id, detailedOrder?.id]);
+  
+  // Early return AFTER all hooks
   if (!order) return null;
   
   // Use detailed order data if available, otherwise fall back to basic order data
   const displayOrder = detailedOrder || order;
+  
+  // Use local status if available, otherwise use order's delivery status
+  const currentStatus = localStatus || displayOrder.deliveryStatus || 'PENDING';
+  
   const statuses = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"];
+  
+  const handleStatusChange = (newStatus) => {
+    // Don't show confirmation if selecting the same status
+    if (newStatus === currentStatus) {
+      return;
+    }
+    // Store the pending status and show confirmation
+    setPendingStatus(newStatus);
+    setShowConfirmation(true);
+  };
+  
+  const confirmStatusChange = async () => {
+    if (pendingStatus && onUpdateStatus) {
+      // Update local status immediately for instant UI feedback
+      setLocalStatus(pendingStatus);
+      
+      // Call the parent update function
+      await onUpdateStatus(displayOrder, pendingStatus);
+    }
+    setShowConfirmation(false);
+    setPendingStatus(null);
+  };
+  
+  const cancelStatusChange = () => {
+    setShowConfirmation(false);
+    setPendingStatus(null);
+    // Force re-render of select to reset to current status
+    setSelectKey(prev => prev + 1);
+  };
 
   return (
     <div
@@ -78,7 +123,7 @@ export default function OrderModal({ order, detailedOrder, onClose, onUpdateStat
           
           <div className="bg-[rgb(var(--bg))] rounded-lg p-4">
             <div className="text-sm opacity-70 mb-2">Delivery Status</div>
-            <StatusPill value={displayOrder.deliveryStatus || 'PENDING'} />
+            <StatusPill value={currentStatus} />
             {displayOrder.isExpired && displayOrder.status === 'PENDING' && (
               <div className="text-xs text-red-500 mt-1">⚠️ Expired</div>
             )}
@@ -228,8 +273,9 @@ export default function OrderModal({ order, detailedOrder, onClose, onUpdateStat
             <div>
               <label className="block text-sm font-semibold uppercase opacity-70 mb-3">Update Delivery Status</label>
               <select
-                value={displayOrder.deliveryStatus || 'PENDING'}
-                onChange={(e) => onUpdateStatus && onUpdateStatus(displayOrder, e.target.value)}
+                key={selectKey}
+                value={currentStatus}
+                onChange={(e) => handleStatusChange(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] mb-4"
               >
                 {statuses.map((s) => (
@@ -238,7 +284,7 @@ export default function OrderModal({ order, detailedOrder, onClose, onUpdateStat
               </select>
               
               <div className="text-xs opacity-60">
-                Current status: <span className="font-medium">{displayOrder.deliveryStatus || 'PENDING'}</span>
+                Current status: <span className="font-medium">{currentStatus}</span>
               </div>
             </div>
           </div>
@@ -262,6 +308,46 @@ export default function OrderModal({ order, detailedOrder, onClose, onUpdateStat
             </div>
           </div>
         </div>
+        
+        {/* Confirmation Modal for Status Change */}
+        {showConfirmation && (
+          <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4" 
+            style={{ background: "rgba(0,0,0,0.7)" }}
+            onClick={cancelStatusChange}
+          >
+            <div 
+              className="relative w-[min(400px,90vw)] rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="mb-4 text-2xl">⚠️</div>
+                <h3 className="mb-4 text-xl font-semibold">Confirm Status Change</h3>
+                <p className="mb-2 text-gray-600">
+                  Are you sure you want to change the delivery status from <span className="font-bold">{currentStatus}</span> to <span className="font-bold">{pendingStatus}</span>?
+                </p>
+                <p className="mb-6 text-sm text-gray-500">
+                  Order #{displayOrder.orderNo} for {displayOrder.customerName}
+                </p>
+                
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={cancelStatusChange}
+                    className="px-6 py-2 rounded-lg bg-gray-500 text-white hover:bg-gray-600 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmStatusChange}
+                    className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                  >
+                    Confirm Change
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -4,7 +4,6 @@ import { SkeletonOrdersPage } from '../components/SkeletonLoader';
 import ExportButton from '../components/ExportButton';
 import EnhancedExportButton from '../components/EnhancedExportButton';
 import ResponsiveTable from '../components/ResponsiveTable';
-import { OrderActions } from '../components/TableActions';
 
 // Import API configuration
 import { API_ENDPOINTS } from '../config/api';
@@ -440,16 +439,6 @@ export default function Orders() {
             )
           },
           {
-            key: 'products',
-            title: 'Products',
-            sortable: false,
-            render: (value, order) => (
-              <div className="text-sm opacity-90">
-                {(order.products || []).join(", ")}
-              </div>
-            )
-          },
-          {
             key: 'amount',
             title: 'Amount',
             sortable: true,
@@ -496,18 +485,6 @@ export default function Orders() {
         selectable={false}
         cardView={true}
         stickyHeader={true}
-        actions={(order) => (
-          <OrderActions
-            order={order}
-            onView={async (order) => {
-              setView(order);
-              await fetchDetailedOrder(order.id);
-            }}
-            onEdit={(order) => {/* Edit functionality */}}
-            onCancel={(order) => {/* Cancel functionality */}}
-            onRefund={(order) => {/* Refund functionality */}}
-          />
-        )}
         onRowClick={async (order) => {
           setView(order);
           await fetchDetailedOrder(order.id);
