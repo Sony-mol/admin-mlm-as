@@ -341,10 +341,23 @@ export default function Settings() {
                         // Sort commission levels within each level (Commission Level 1, 2, 3, etc.)
                         return (configA.commissionLevel || 0) - (configB.commissionLevel || 0);
                       })
-                      .map(config => (
-                      <div key={config.id} className="border border-[rgb(var(--border))] rounded-lg p-4">
-                        <div className="text-sm font-medium mb-2">
-                          Commission Level {config.commissionLevel}
+                      .map(config => {
+                        const isActive = getCurrentValue(config.id, 'isActive', config.isActive);
+                        return (
+                      <div key={config.id} className={`border rounded-lg p-4 transition-all ${
+                        isActive 
+                          ? 'border-[rgb(var(--border))] opacity-100' 
+                          : 'border-red-300 opacity-60 bg-red-50 dark:bg-red-900/10'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm font-medium">
+                            Commission Level {config.commissionLevel}
+                          </div>
+                          {!isActive && (
+                            <span className="text-xs px-2 py-0.5 bg-red-500 text-white rounded-full">
+                              Inactive
+                            </span>
+                          )}
                         </div>
                         <NumberInput 
                           label="Commission %" 
@@ -361,18 +374,19 @@ export default function Settings() {
                           min={1}
                         />
                         <div className="mt-2">
-                          <label className="flex items-center gap-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={getCurrentValue(config.id, 'isActive', config.isActive)}
+                              checked={isActive}
                               onChange={(e) => updateCommissionConfig(config.id, 'isActive', e.target.checked)}
-                              className="w-4 h-4"
+                              className="w-4 h-4 cursor-pointer"
                             />
-                            <span className="text-sm">Active</span>
+                            <span className="text-sm">{isActive ? 'Active' : 'Inactive'}</span>
                           </label>
                         </div>
                       </div>
-                    ))}
+                    );
+                      })}
                   </div>
                 </div>
               ))}
