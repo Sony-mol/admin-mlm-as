@@ -945,7 +945,7 @@ export default function Overview() {
                 <div className="pt-3 border-t border-[rgb(var(--border))]">
                   <a
                     href="/products"
-                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 transition-colors text-sm font-medium"
+                    className="btn-modern btn-success flex items-center justify-center"
                   >
                     <Settings className="w-4 h-4" />
                     Manage Products

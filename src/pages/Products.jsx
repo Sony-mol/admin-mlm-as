@@ -879,7 +879,7 @@ export default function Products() {
               />
             <button
               onClick={() => setShowForm(true)}
-              className="btn-gradient-primary flex items-center space-x-2"
+              className="btn-modern btn-primary"
             >
               <Plus className="w-5 h-5" />
               <span>Add Product</span>
