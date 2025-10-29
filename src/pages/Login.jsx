@@ -43,10 +43,10 @@ export default function Login() {
           </div>
           
           <div className="text-center space-y-4 max-w-md">
-            <h1 className="text-4xl font-bold text-[rgb(var(--fg))] leading-tight">
+            <h1 className="text-5xl font-bold text-gradient leading-tight">
               CQwealth
             </h1>
-            <p className="text-xl font-semibold text-[rgb(var(--fg))]">
+            <p className="text-xl font-semibold text-gradient">
               MLM Management Platform
             </p>
             <p className="text-[rgb(var(--fg))] opacity-70 leading-relaxed">
@@ -55,22 +55,22 @@ export default function Login() {
             </p>
             
             <div className="grid grid-cols-2 gap-4 pt-4">
-              <div className="group bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="modern-card p-4 group">
                 <div className="text-2xl mb-2">🚀</div>
                 <div className="text-xs font-semibold text-[rgb(var(--fg))] mb-1">Easy Setup</div>
                 <div className="text-xs text-[rgb(var(--fg))] opacity-60">Quick onboarding</div>
               </div>
-              <div className="group bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="modern-card p-4 group">
                 <div className="text-2xl mb-2">💰</div>
                 <div className="text-xs font-semibold text-[rgb(var(--fg))] mb-1">Track Earnings</div>
                 <div className="text-xs text-[rgb(var(--fg))] opacity-60">Real-time updates</div>
               </div>
-              <div className="group bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="modern-card p-4 group">
                 <div className="text-2xl mb-2">👥</div>
                 <div className="text-xs font-semibold text-[rgb(var(--fg))] mb-1">Referral Tree</div>
                 <div className="text-xs text-[rgb(var(--fg))] opacity-60">Visualize network</div>
               </div>
-              <div className="group bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+              <div className="modern-card p-4 group">
                 <div className="text-2xl mb-2">📊</div>
                 <div className="text-xs font-semibold text-[rgb(var(--fg))] mb-1">Analytics</div>
                 <div className="text-xs text-[rgb(var(--fg))] opacity-60">Detailed insights</div>
@@ -82,7 +82,7 @@ export default function Login() {
         {/* Right Side - Login Form */}
         <div className="w-full max-w-md mx-auto lg:mx-0">
           {/* Mobile Logo - Only visible on small screens */}
-          <div className="lg:hidden flex flex-col items-center mb-6">
+          <div className="lg:hidden flex flex-col items-center mb-6 animate-fade-in">
             <div className="w-32 h-32 mb-4">
               <img 
                 src="https://asmlm-production.up.railway.app/Logo-300-x-300-px-150-x-150-px.png" 
@@ -90,7 +90,7 @@ export default function Login() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <h1 className="text-3xl font-bold text-[rgb(var(--fg))] mb-2">
+            <h1 className="text-3xl font-bold text-gradient mb-2">
               CQwealth
             </h1>
             <p className="text-base text-[rgb(var(--fg))] opacity-70 font-medium">MLM Management Platform</p>
@@ -98,9 +98,9 @@ export default function Login() {
 
           <form
             onSubmit={handleSubmit}
-            className="w-full p-8 rounded-2xl bg-[rgb(var(--card))] border border-[rgb(var(--border))] shadow-lg"
+            className="modern-card w-full p-8 animate-fade-in"
           >
-            <h2 className="text-2xl font-bold mb-6 text-center text-[rgb(var(--fg))]">Welcome Back</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center text-gradient">Welcome Back</h2>
 
         {successMessage && (
           <div className="mb-4 rounded-lg border border-green-500/50 bg-green-500/10 text-green-600 px-3 py-2 text-sm">
@@ -122,7 +122,7 @@ export default function Login() {
               autoComplete="username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] focus:border-[rgb(var(--fg))] focus:ring-1 focus:ring-[rgb(var(--fg))] transition-all duration-200 text-[rgb(var(--fg))] placeholder-[rgb(var(--fg))] placeholder-opacity-50"
+              className="modern-input w-full"
               placeholder="Enter your email"
               required
             />
@@ -136,7 +136,7 @@ export default function Login() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 pr-10 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] focus:border-[rgb(var(--fg))] focus:ring-1 focus:ring-[rgb(var(--fg))] transition-all duration-200 text-[rgb(var(--fg))] placeholder-[rgb(var(--fg))] placeholder-opacity-50"
+                className="modern-input w-full pr-10"
                 placeholder="Enter your password"
                 required
               />
@@ -173,7 +173,7 @@ export default function Login() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full rounded-lg px-4 py-2 font-medium text-white bg-[rgb(var(--fg))] hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
+          className="btn-gradient-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? (
             <span className="flex items-center justify-center">

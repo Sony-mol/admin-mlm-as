@@ -328,7 +328,7 @@ const CombinedRewardsManagement = () => {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="flex items-center gap-3 p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="flex items-center gap-3 modern-card p-6">
           <Loader2 className="w-6 h-6 animate-spin" />
           <span>Loading rewards data...</span>
         </div>
@@ -341,7 +341,7 @@ const CombinedRewardsManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Rewards Management</h1>
+          <h1 className="text-3xl font-bold text-gradient">Rewards Management</h1>
           <p className="text-[rgb(var(--text-muted))] mt-1">
             Complete rewards system - claims processing and user rewards tracking
           </p>
@@ -360,61 +360,61 @@ const CombinedRewardsManagement = () => {
       {/* Statistics Dashboard */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="stat-card animate-fade-in">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-blue-500/10">
-                <Gift className="w-6 h-6 text-blue-500" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-modern">
+                <Gift className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{stats.totalRewards || 0}</div>
+                <div className="text-3xl font-bold text-gradient">{stats.totalRewards || 0}</div>
                 <div className="text-sm text-[rgb(var(--text-muted))]">Total Rewards</div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="stat-card animate-fade-in">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-yellow-500/10">
-                <Clock className="w-6 h-6 text-yellow-500" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 shadow-modern">
+                <Clock className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{stats.pendingClaims || 0}</div>
+                <div className="text-3xl font-bold text-gradient">{stats.pendingClaims || 0}</div>
                 <div className="text-sm text-[rgb(var(--text-muted))]">Pending Claims</div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="stat-card animate-fade-in">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-green-500/10">
-                <CheckCircle className="w-6 h-6 text-green-500" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-modern">
+                <CheckCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{stats.approvedClaims || 0}</div>
+                <div className="text-3xl font-bold text-gradient">{stats.approvedClaims || 0}</div>
                 <div className="text-sm text-[rgb(var(--text-muted))]">Approved</div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="stat-card animate-fade-in">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-red-500/10">
-                <XCircle className="w-6 h-6 text-red-500" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 shadow-modern">
+                <XCircle className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{stats.rejectedClaims || 0}</div>
+                <div className="text-3xl font-bold text-gradient">{stats.rejectedClaims || 0}</div>
                 <div className="text-sm text-[rgb(var(--text-muted))]">Rejected</div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="stat-card animate-fade-in">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-purple-500/10">
-                <TrendingUp className="w-6 h-6 text-purple-500" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 shadow-modern">
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{Math.round(stats.approvalRate || 0)}%</div>
+                <div className="text-3xl font-bold text-gradient">{Math.round(stats.approvalRate || 0)}%</div>
                 <div className="text-sm text-[rgb(var(--text-muted))]">Approval Rate</div>
               </div>
             </div>
@@ -714,7 +714,7 @@ const CombinedRewardsManagement = () => {
 
       {activeTab === 'STATS' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="modern-card p-6">
             <h3 className="text-lg font-semibold mb-4">Reward Distribution</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
@@ -740,7 +740,7 @@ const CombinedRewardsManagement = () => {
             </div>
           </div>
 
-          <div className="p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="modern-card p-6">
             <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
@@ -761,7 +761,7 @@ const CombinedRewardsManagement = () => {
       {/* Action Modal */}
       {showModal && selectedClaim && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[rgb(var(--card))] rounded-xl border border-[rgb(var(--border))] max-w-lg w-full p-6">
+          <div className="modern-card max-w-lg w-full p-6">
             <h3 className="text-xl font-bold mb-4">
               {actionType === 'approve' ? '✅ Approve' : '❌ Reject'} Reward Claim
             </h3>

@@ -16,31 +16,31 @@ import OrderModal from '../components/OrderModal';
 const tierAttr = (t='') => String(t||'').toLowerCase();
 
 const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-5 ${className}`}>{children}</div>
+  <div className={`modern-card p-5 ${className}`}>{children}</div>
 );
 
 const Stat = ({ label, value, sub }) => (
-  <Card>
+  <div className="stat-card animate-fade-in">
     <div>
       <div className="text-sm opacity-80">{label}</div>
-      <div className="text-2xl font-semibold">{value}</div>
+      <div className="text-3xl font-bold text-gradient">{value}</div>
       {sub && <div className="text-xs opacity-70 mt-1">{sub}</div>}
     </div>
-  </Card>
+  </div>
 );
 
 function StatusPill({ value }) {
   const key = String(value || "").toLowerCase();
-  const color =
-    key === "shipped" ? "bg-teal-500" :
-    key === "delivered" || key === "approved" ? "bg-violet-600" :
-    key === "completed" ? "bg-emerald-500" :
-    key === "pending" || key === "processing" ? "bg-amber-500" :
-    key === "active" ? "bg-emerald-500" :
-    key === "failed" || key === "suspended" || key === "cancelled" || key === "canceled" || key === "rejected" ? "bg-red-500" :
-    "bg-slate-400";
+  const badgeClass =
+    key === "shipped" ? "badge-modern badge-info" :
+    key === "delivered" || key === "approved" ? "badge-modern" :
+    key === "completed" ? "badge-modern badge-success" :
+    key === "pending" || key === "processing" ? "badge-modern badge-warning" :
+    key === "active" ? "badge-modern badge-success" :
+    key === "failed" || key === "suspended" || key === "cancelled" || key === "canceled" || key === "rejected" ? "badge-modern badge-danger" :
+    "badge-modern badge-info";
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white ${color}`}>
+    <span className={badgeClass}>
       {value || "—"}
     </span>
   );
@@ -57,7 +57,7 @@ const Modal = ({ open, onClose, children }) => {
       <div className="absolute inset-0 bg-black/40" />
       <div className="absolute inset-0 grid place-items-center p-4">
         <div
-          className="relative w-[min(720px,92vw)] md:w-[min(860px,92vw)] max-h-[90vh] overflow-y-auto rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl"
+          className="relative w-[min(720px,92vw)] md:w-[min(860px,92vw)] max-h-[90vh] overflow-y-auto modern-card p-6 shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {children}
@@ -359,7 +359,7 @@ export default function Payments() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Payments</h1>
+        <h1 className="text-3xl font-bold text-gradient">Payments</h1>
         <EnhancedExportButton
           data={filtered}
           dataType="payments"

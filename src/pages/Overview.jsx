@@ -57,11 +57,11 @@ const prettyTierName = (s = "") =>
 /* ---------- Enhanced UI helpers ---------- */
 const Card = ({ children, className = "", loading = false }) => (
   <div
-    className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] transition-all duration-300 hover:shadow-lg ${className}`}
+    className={`modern-card ${className}`}
   >
     {loading ? (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
         <span className="ml-2 text-sm text-[rgba(var(--fg),0.7)]">
           Loading...
         </span>
@@ -73,51 +73,52 @@ const Card = ({ children, className = "", loading = false }) => (
 );
 
 const StatCard = ({ title, value, change, icon: Icon, trend, loading = false }) => (
-  <Card className="p-6 hover:shadow-xl transition-all duration-300">
+  <div className="stat-card animate-fade-in">
     <div className="flex items-center justify-between">
       <div className="flex-1">
-        <p className="text-sm font-medium text-[rgba(var(--fg),0.7)] mb-1">
+        <p className="text-sm font-medium text-[rgba(var(--fg),0.7)] mb-2">
           {title}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2">
           {loading ? (
-            <div className="h-8 w-20 rounded animate-pulse bg-[rgba(var(--fg),0.15)]"></div>
+            <div className="skeleton-modern h-10 w-24 rounded"></div>
           ) : (
-            <p className="text-2xl font-bold text-[rgb(var(--fg))]">{value}</p>
+            <p className="text-3xl font-bold text-gradient">{value}</p>
           )}
           {!loading && change && (
             <div
-              className={`flex items-center gap-1 text-sm ${
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                 trend === "up"
-                  ? "text-green-600"
+                  ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-md shadow-green-500/20"
                   : trend === "down"
-                  ? "text-red-600"
-                  : "text-[rgba(var(--fg),0.7)]"
+                  ? "bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-md shadow-red-500/20"
+                  : "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md shadow-blue-500/20"
               }`}
+              style={{ alignSelf: 'flex-start' }}
             >
               {trend === "up" ? (
-                <ArrowUpRight className="w-4 h-4" />
+                <ArrowUpRight className="w-2.5 h-2.5" strokeWidth={2.5} />
               ) : trend === "down" ? (
-                <ArrowDownRight className="w-4 h-4" />
+                <ArrowDownRight className="w-2.5 h-2.5" strokeWidth={2.5} />
               ) : null}
-              <span>{change}</span>
+              <span className="font-bold">{change}</span>
             </div>
           )}
         </div>
       </div>
       {Icon && (
-        <div className="p-3 rounded-full bg-blue-50 text-blue-600">
-          <Icon className="w-6 h-6" />
+        <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-violet-600 shadow-modern flex items-center justify-center">
+          <Icon className="w-5 h-5 text-white" strokeWidth={2} />
         </div>
       )}
     </div>
-  </Card>
+  </div>
 );
 
 const Header = ({ title, subtitle }) => (
-  <div className="mb-4">
-    <h1 className="text-2xl font-semibold">{title}</h1>
-    {subtitle && <p className="text-sm opacity-70">{subtitle}</p>}
+  <div className="mb-6 animate-fade-in">
+    <h1 className="text-3xl font-bold text-gradient">{title}</h1>
+    {subtitle && <p className="text-sm opacity-70 mt-1">{subtitle}</p>}
   </div>
 );
 

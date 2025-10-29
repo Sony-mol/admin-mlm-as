@@ -205,7 +205,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 text-[rgb(var(--fg))]">
-      <h2 className="text-2xl font-semibold">Settings</h2>
+      <h2 className="text-3xl font-bold text-gradient">Settings</h2>
 
       <div className="flex items-center justify-between">
         <Tabs
@@ -263,7 +263,7 @@ export default function Settings() {
               <div className="text-lg font-semibold mb-4">📊 System Statistics</div>
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{systemStats.totalConfigurations || 0}</div>
+                  <div className="text-3xl font-bold text-gradient">{systemStats.totalConfigurations || 0}</div>
                   <div className="text-sm opacity-70">Total Configurations</div>
                 </div>
                 <div className="text-center">

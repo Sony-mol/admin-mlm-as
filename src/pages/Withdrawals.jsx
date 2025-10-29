@@ -379,7 +379,7 @@ const Withdrawals = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold text-[rgb(var(--fg))] mb-2">
+            <h1 className="text-3xl font-bold text-gradient mb-2">
               Withdrawal Management
             </h1>
             <p className="opacity-70">Manage user withdrawal requests and payments</p>
@@ -437,70 +437,70 @@ const Withdrawals = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-        <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center">
-            <div className="p-2 rounded-lg bg-blue-100">
-              <IndianRupee className="w-6 h-6 text-blue-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-modern">
+              <IndianRupee className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Total Amount</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+              <p className="text-3xl font-bold text-gradient">
                 ₹{statistics.totalAmount || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center">
-            <div className="p-2 rounded-lg bg-yellow-100">
-              <Clock className="w-6 h-6 text-yellow-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 shadow-modern">
+              <Clock className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Pending</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+              <p className="text-3xl font-bold text-gradient">
                 {statistics.pendingCount || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center">
-            <div className="p-2 rounded-lg bg-orange-100">
-              <AlertCircle className="w-6 h-6 text-orange-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 shadow-modern">
+              <AlertCircle className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Processing</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+              <p className="text-3xl font-bold text-gradient">
                 {statistics.processingCount || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center">
-            <div className="p-2 rounded-lg bg-green-100">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-modern">
+              <CheckCircle className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Completed</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+              <p className="text-3xl font-bold text-gradient">
                 {statistics.completedCount || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-lg p-6 shadow-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center">
-            <div className="p-2 rounded-lg bg-red-100">
-              <XCircle className="w-6 h-6 text-red-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 shadow-modern">
+              <XCircle className="w-6 h-6 text-white" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium opacity-70">Rejected</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+              <p className="text-3xl font-bold text-gradient">
                 {statistics.rejectedCount || 0}
               </p>
             </div>

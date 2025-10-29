@@ -48,15 +48,15 @@ const tierKey = (label = '') => {
 /* ---------- Shared: status pill ---------- */
 function StatusPill({ value }) {
   const key = String(value || '').toLowerCase();
-  const color =
-    key === 'shipped' ? 'bg-teal-500' :
-    key === 'delivered' ? 'bg-violet-600' :
-    key === 'pending' || key === 'processing' ? 'bg-amber-500' :
-    key === 'active' || key === 'approved' || key === 'completed' ? 'bg-emerald-500' :
-    key === 'suspended' || key === 'cancelled' || key === 'canceled' || key === 'rejected' ? 'bg-red-500' :
-    'bg-slate-400';
+  const badgeClass =
+    key === 'shipped' ? 'badge-modern badge-info' :
+    key === 'delivered' ? 'badge-modern' :
+    key === 'pending' || key === 'processing' ? 'badge-modern badge-warning' :
+    key === 'active' || key === 'approved' || key === 'completed' ? 'badge-modern badge-success' :
+    key === 'suspended' || key === 'cancelled' || key === 'canceled' || key === 'rejected' ? 'badge-modern badge-danger' :
+    'badge-modern badge-info';
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white ${color}`}>
+    <span className={badgeClass}>
       {value || '—'}
     </span>
   );
@@ -117,7 +117,7 @@ function CalendarPopover({ open, onClose, selectedDates, onToggleDate, onClear }
   return (
     <div
       id="calendar-popover"
-      className="absolute z-50 mt-2 right-0 w-[min(340px,92vw)] rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] shadow-2xl"
+      className="absolute z-50 mt-2 right-0 w-[min(340px,92vw)] modern-card shadow-2xl"
       role="dialog"
       aria-modal="true"
       onClick={(e) => e.stopPropagation()}
@@ -233,7 +233,7 @@ function UserModal({ user, onClose }) {
       style={{ background: 'rgba(0,0,0,0.5)' }}
     >
       <div
-        className="relative w-[min(720px,92vw)] md:w-[min(860px,92vw)] max-h-[90vh] overflow-y-auto rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl"
+        className="relative w-[min(720px,92vw)] md:w-[min(860px,92vw)] max-h-[90vh] overflow-y-auto modern-card p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between">
@@ -435,7 +435,7 @@ function EditUserModal({ user, onClose, onSave, loading }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-      <div className="relative w-[min(500px,90vw)] rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl">
+      <div className="relative w-[min(500px,90vw)] modern-card p-6 shadow-2xl">
         <div className="mb-6">
           <h3 className="text-xl font-semibold">Edit User</h3>
           <p className="text-sm text-gray-600 mt-1">Update user information</p>
@@ -1042,7 +1042,7 @@ export default function Users() {
 
       {/* Bulk Actions */}
       {selectedUsers.size > 0 && (
-        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+        <div className="modern-card p-4">
           <div className="flex items-center gap-4">
             <span className="font-medium">Bulk Actions:</span>
             <select
@@ -1066,7 +1066,7 @@ export default function Users() {
       )}
 
       {/* Filters + Calendar */}
-      <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+      <div className="modern-card p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-medium">Filters & Selection</h3>
           {/* Calendar trigger + popover */}
@@ -1302,7 +1302,7 @@ export default function Users() {
       {/* Confirmation Modal */}
       {confirmAction && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div className="relative w-[min(400px,90vw)] rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl">
+          <div className="relative w-[min(400px,90vw)] modern-card p-6 shadow-2xl">
             <div className="text-center">
               <div className="mb-4 text-2xl">⚠️</div>
               <h3 className="mb-4 text-xl font-semibold">

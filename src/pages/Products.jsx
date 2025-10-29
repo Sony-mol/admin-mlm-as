@@ -857,9 +857,9 @@ export default function Products() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between animate-fade-in">
             <div>
-              <h1 className="text-3xl font-bold text-[rgb(var(--fg))]">Product Management</h1>
+              <h1 className="text-3xl font-bold text-gradient">Product Management</h1>
               <p className="text-[rgba(var(--fg),0.7)] mt-2">Manage your product catalog with photos and details</p>
             </div>
             <div className="flex items-center gap-3">
@@ -879,7 +879,7 @@ export default function Products() {
               />
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="btn-gradient-primary flex items-center space-x-2"
             >
               <Plus className="w-5 h-5" />
               <span>Add Product</span>
@@ -889,7 +889,7 @@ export default function Products() {
         </div>
 
         {/* Filters and Search */}
-        <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 mb-8">
+        <div className="modern-card p-6 mb-8 animate-fade-in">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="relative">
@@ -899,13 +899,13 @@ export default function Products() {
                   placeholder="Search products..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
+                  className="modern-input pl-10"
                 />
               </div>
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-[rgb(var(--border))] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-[rgb(var(--card))] text-[rgb(var(--fg))]"
+                className="modern-input"
               >
                 <option value="">All Categories</option>
                 <option value="electronics">Electronics</option>

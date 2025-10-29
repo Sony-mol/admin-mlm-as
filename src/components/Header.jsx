@@ -35,8 +35,8 @@ export default function Header({ collapsed = false, onToggle = () => {}, isMobil
       sm:px-6 sm:py-4
       border-b border-[rgb(var(--border))] 
       bg-[rgb(var(--card))] 
-      backdrop-blur-sm
-      shadow-sm
+      backdrop-blur-md
+      shadow-modern
     ">
       {/* Left: Mobile menu button + responsive title */}
       <div className="flex items-center gap-3">
@@ -60,8 +60,8 @@ export default function Header({ collapsed = false, onToggle = () => {}, isMobil
         
         {/* Show page title on mobile */}
         {isMobile && (
-          <h1 className="text-lg font-semibold text-[rgb(var(--fg))] truncate">
-            MLM Admin Pro
+          <h1 className="text-lg font-bold text-gradient truncate">
+            CQwealth
           </h1>
         )}
       </div>
@@ -100,9 +100,11 @@ export default function Header({ collapsed = false, onToggle = () => {}, isMobil
               rounded-full 
               w-9 h-9 
               flex items-center justify-center 
-              bg-[rgb(var(--card))] 
-              border border-[rgb(var(--border))] 
-              hover:bg-[rgba(var(--fg),0.05)]
+              bg-gradient-to-r from-blue-500 to-purple-600
+              border-none
+              text-white
+              hover:shadow-modern
+              hover:scale-105
               transition-all duration-200
               focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
             "

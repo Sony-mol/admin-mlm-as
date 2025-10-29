@@ -258,7 +258,7 @@ const PerformanceMetrics = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+          <div key={i} className="modern-card p-6">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
               <div className="h-8 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -272,7 +272,7 @@ const PerformanceMetrics = () => {
 
   if (error) {
     return (
-      <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6 mb-8">
+      <div className="modern-card p-6 mb-8">
         <div className="text-center text-red-500">
           <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
           <p>{error}</p>
@@ -285,54 +285,54 @@ const PerformanceMetrics = () => {
     <div className="space-y-6 mb-8">
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[rgba(var(--fg),0.6)] mb-1">Total Users</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">{(metrics.totalUsers || 0).toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gradient">{(metrics.totalUsers || 0).toLocaleString()}</p>
               <p className="text-sm text-green-600 mt-1">+{metrics.newUsersToday || 0} today</p>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="h-6 w-6 text-blue-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-modern">
+              <Users className="h-6 w-6 text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[rgba(var(--fg),0.6)] mb-1">Active Users</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">{(metrics.activeUsers || 0).toLocaleString()}</p>
+              <p className="text-3xl font-bold text-gradient">{(metrics.activeUsers || 0).toLocaleString()}</p>
               <p className="text-sm text-green-600 mt-1">{metrics.conversionRate || 0}% active rate</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-green-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-modern">
+              <TrendingUp className="h-6 w-6 text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[rgba(var(--fg),0.6)] mb-1">Total Commissions</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">{formatCurrency(metrics.totalCommissions || 0)}</p>
+              <p className="text-3xl font-bold text-gradient">{formatCurrency(metrics.totalCommissions || 0)}</p>
               <p className="text-sm text-blue-600 mt-1">{formatCurrency(metrics.avgCommissionPerUser || 0)} avg/user</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="h-6 w-6 text-purple-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl flex items-center justify-center shadow-modern">
+              <DollarSign className="h-6 w-6 text-white" />
             </div>
           </div>
         </div>
 
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-[rgba(var(--fg),0.6)] mb-1">Pending Commissions</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">{formatCurrency(metrics.pendingCommissions || 0)}</p>
+              <p className="text-3xl font-bold text-gradient">{formatCurrency(metrics.pendingCommissions || 0)}</p>
               <p className="text-sm text-orange-600 mt-1">Awaiting approval</p>
             </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <Clock className="h-6 w-6 text-orange-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl flex items-center justify-center shadow-modern">
+              <Clock className="h-6 w-6 text-white" />
             </div>
           </div>
         </div>
@@ -341,7 +341,7 @@ const PerformanceMetrics = () => {
       {/* Top Performers and Recent Activities */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Performers */}
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="modern-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">Top 5 Performers</h3>
             <span className="text-sm text-[rgba(var(--fg),0.6)]">
@@ -391,7 +391,7 @@ const PerformanceMetrics = () => {
         </div>
 
         {/* Recent Activities */}
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="modern-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">Recent Activities</h3>
             <span className="text-sm text-[rgba(var(--fg),0.6)]">

@@ -12,33 +12,33 @@ import { Check, X, Clock, IndianRupee, Users, TrendingUp } from 'lucide-react';
 import { API_ENDPOINTS } from '../config/api';
 
 const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-5 ${className}`}>{children}</div>
+  <div className={`modern-card p-5 ${className}`}>{children}</div>
 );
 
 const Stat = ({ label, value, sub, icon: Icon, color = "text-blue-600" }) => (
-  <Card>
+  <div className="stat-card animate-fade-in">
     <div className="flex items-center justify-between">
       <div>
         <div className="text-sm opacity-80">{label}</div>
-        <div className="text-2xl font-semibold">{value}</div>
+        <div className="text-3xl font-bold text-gradient">{value}</div>
         {sub && <div className="text-xs opacity-70 mt-1">{sub}</div>}
       </div>
       {Icon && <Icon className={`w-8 h-8 ${color}`} />}
     </div>
-  </Card>
+  </div>
 );
 
 function StatusPill({ value, onClick }) {
   const key = String(value || "").toLowerCase();
-  const color =
-    key === "paid" ? "bg-green-600" :
-    key === "pending" ? "bg-yellow-600" :
-    key === "cancelled" ? "bg-red-600" :
-    "bg-[rgba(var(--fg),0.4)]";
+  const badgeClass =
+    key === "paid" ? "badge-modern badge-success" :
+    key === "pending" ? "badge-modern badge-warning" :
+    key === "cancelled" ? "badge-modern badge-danger" :
+    "badge-modern badge-info";
   
   return (
     <span 
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white ${color} ${onClick ? 'cursor-pointer hover:opacity-80' : ''}`}
+      className={`${badgeClass} ${onClick ? 'cursor-pointer hover:opacity-80' : ''}`}
       onClick={onClick}
     >
       {value || "—"}
@@ -829,7 +829,7 @@ export default function Commissions() {
       {/* Confirmation Modal */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="relative w-[min(400px,90vw)] rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl">
+          <div className="relative w-[min(400px,90vw)] modern-card p-6 shadow-2xl">
             <div className="text-center">
               <div className="mb-4 text-2xl">
                 {confirmAction.action === 'PAID' ? '✅' : '❌'}
@@ -871,7 +871,7 @@ export default function Commissions() {
       {/* Commission Details Modal */}
       {showDetailsModal && selectedCommission && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="relative w-[min(600px,90vw)] max-h-[80vh] overflow-y-auto rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-6 shadow-2xl">
+          <div className="relative w-[min(600px,90vw)] max-h-[80vh] overflow-y-auto modern-card p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold">Commission Details</h3>
               <button

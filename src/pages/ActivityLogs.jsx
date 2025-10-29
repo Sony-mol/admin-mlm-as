@@ -236,7 +236,7 @@ export default function ActivityLogs() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[rgb(var(--fg))]">Activity Logs</h1>
+          <h1 className="text-3xl font-bold text-gradient">Activity Logs</h1>
           <p className="opacity-70">Monitor system activities and audit trail</p>
         </div>
         <div className="flex items-center gap-3">
@@ -276,57 +276,65 @@ export default function ActivityLogs() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium opacity-70">Total Logs</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+              <p className="text-3xl font-bold text-gradient">
                 {stats.overview?.totalLogs || pagination.totalElements || logs.length || 0}
               </p>
             </div>
-            <Activity className="w-8 h-8 text-blue-500" />
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-modern">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium opacity-70">Unique Users</p>
-              <p className="text-2xl font-bold text-[rgb(var(--fg))]">
+              <p className="text-3xl font-bold text-gradient">
                 {stats.overview?.uniqueUsers || new Set(logs.map(log => log.userId).filter(Boolean)).size || 0}
               </p>
             </div>
-            <User className="w-8 h-8 text-green-500" />
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-modern">
+              <User className="w-5 h-5 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium opacity-70">Errors</p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-3xl font-bold text-gradient">
                 {stats.overview?.errorCount || logs.filter(log => log.severity === 'ERROR' || log.severity === 'CRITICAL').length || 0}
               </p>
             </div>
-            <AlertTriangle className="w-8 h-8 text-red-500" />
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 shadow-modern">
+              <AlertTriangle className="w-5 h-5 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+        <div className="stat-card animate-fade-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium opacity-70">Warnings</p>
-              <p className="text-2xl font-bold text-yellow-600">
+              <p className="text-3xl font-bold text-gradient">
                 {stats.overview?.warningCount || logs.filter(log => log.severity === 'WARNING').length || 0}
               </p>
             </div>
-            <AlertTriangle className="w-8 h-8 text-yellow-500" />
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-yellow-500 to-amber-600 shadow-modern">
+              <AlertTriangle className="w-5 h-5 text-white" />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="p-6 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+      <div className="modern-card p-6">
         <div className="flex items-center gap-4 mb-4">
           <Filter className="w-5 h-5 opacity-60" />
           <h3 className="text-lg font-semibold">Filters</h3>

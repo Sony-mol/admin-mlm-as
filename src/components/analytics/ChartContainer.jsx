@@ -11,7 +11,7 @@ const ChartContainer = ({
 }) => {
   if (loading) {
     return (
-      <div className={`bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6 ${className}`}>
+      <div className={`modern-card p-6 ${className}`}>
         <div className="animate-pulse">
           <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
@@ -23,7 +23,7 @@ const ChartContainer = ({
 
   if (error) {
     return (
-      <div className={`bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6 ${className}`}>
+      <div className={`modern-card p-6 ${className}`}>
         <div className="flex items-center justify-center h-64 text-red-500">
           <div className="text-center">
             <div className="text-lg font-medium mb-2">Chart Error</div>
@@ -35,7 +35,7 @@ const ChartContainer = ({
   }
 
   return (
-    <div className={`bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6 ${className}`}>
+    <div className={`modern-card p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">{title}</h3>

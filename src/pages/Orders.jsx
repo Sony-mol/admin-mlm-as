@@ -28,16 +28,16 @@ const fmtDate = (iso) => {
 /* ---------- Shared: status pill ---------- */
 function StatusPill({ value }) {
   const key = String(value || "").toLowerCase();
-  const color =
-    key === "shipped" ? "bg-teal-500" :
-    key === "delivered" ? "bg-violet-600" :
-    key === "pending" || key === "processing" ? "bg-amber-500" :
-    key === "confirmed" ? "bg-blue-500" :
-    key === "active" || key === "approved" || key === "completed" || key === "success" ? "bg-emerald-500" :
-    key === "suspended" || key === "cancelled" || key === "canceled" || key === "rejected" || key === "failed" ? "bg-red-500" :
-    "bg-slate-400";
+  const badgeClass =
+    key === "shipped" ? "badge-modern badge-info" :
+    key === "delivered" ? "badge-modern" :
+    key === "pending" || key === "processing" ? "badge-modern badge-warning" :
+    key === "confirmed" ? "badge-modern badge-info" :
+    key === "active" || key === "approved" || key === "completed" || key === "success" ? "badge-modern badge-success" :
+    key === "suspended" || key === "cancelled" || key === "canceled" || key === "rejected" || key === "failed" ? "badge-modern badge-danger" :
+    "badge-modern badge-info";
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold text-white ${color}`}>
+    <span className={badgeClass}>
       {value || "—"}
     </span>
   );
@@ -314,7 +314,7 @@ export default function Orders() {
 
   if (err) {
     return (
-      <div className="p-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+      <div className="modern-card p-4">
         <div className="font-semibold mb-1">Couldn't load orders</div>
         <div className="text-sm opacity-80">{err}</div>
         <button onClick={load} className="mt-3 rounded px-3 py-2 border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)]">Retry</button>
@@ -325,7 +325,7 @@ export default function Orders() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Orders</h2>
+        <h2 className="text-3xl font-bold text-gradient">Orders</h2>
         <EnhancedExportButton
           data={filtered}
           dataType="orders"
@@ -347,7 +347,7 @@ export default function Orders() {
         {loading.kpis ? (
           // Skeleton loaders for KPIs
           Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+            <div key={index} className="modern-card p-4">
               <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
               <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
             </div>
@@ -361,16 +361,16 @@ export default function Orders() {
             ["Delivered", kpis.delivered],
             ["Cancelled", kpis.cancelled],
           ].map(([label, value]) => (
-            <div key={label} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 transition-colors hover:bg-[rgba(var(--fg),0.02)]">
+            <div key={label} className="stat-card animate-fade-in">
               <div className="text-sm opacity-80">{label}</div>
-              <div className="text-3xl font-semibold mt-2">{value}</div>
+              <div className="text-3xl font-bold text-gradient mt-2">{value}</div>
             </div>
           ))
         )}
       </div>
 
       {/* Controls */}
-      <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4">
+      <div className="modern-card p-4">
         <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
           <div className="flex-1 flex items-center gap-2">
             <span>🔍</span>

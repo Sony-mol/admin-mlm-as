@@ -50,9 +50,9 @@ const Analytics = () => {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
         <div>
-          <h1 className="text-2xl font-bold text-[rgb(var(--fg))]">Analytics Dashboard</h1>
+          <h1 className="text-3xl font-bold text-gradient">Analytics Dashboard</h1>
           <p className="text-sm text-[rgba(var(--fg),0.6)] mt-1">
             Comprehensive insights into your MLM business performance
           </p>
@@ -62,7 +62,7 @@ const Analytics = () => {
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="text-sm border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-[rgb(var(--fg))] rounded px-3 py-2"
+            className="modern-input text-sm"
           >
             {dateRangeOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -74,7 +74,7 @@ const Analytics = () => {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:shadow-modern transition-all disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -82,7 +82,7 @@ const Analytics = () => {
           
           <button
             onClick={handleExportAll}
-            className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:shadow-modern transition-all"
           >
             <Download className="h-4 w-4" />
             Export All
@@ -94,8 +94,8 @@ const Analytics = () => {
       <PerformanceMetrics />
 
       {/* Chart Toggle Controls */}
-      <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-[rgb(var(--fg))] mb-4">Chart Visibility Controls</h3>
+      <div className="modern-card p-4 animate-fade-in">
+        <h3 className="text-lg font-semibold text-gradient mb-4">Chart Visibility Controls</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Object.entries(selectedCharts).map(([key, value]) => (
             <label key={key} className="flex items-center gap-2 cursor-pointer">
@@ -125,12 +125,12 @@ const Analytics = () => {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="modern-card p-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-modern">
+              <BarChart3 className="h-5 w-5 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">Chart Insights</h3>
+            <h3 className="text-lg font-semibold text-gradient">Chart Insights</h3>
           </div>
           <p className="text-sm text-[rgba(var(--fg),0.6)]">
             All charts are interactive and support real-time data updates. 
@@ -138,12 +138,12 @@ const Analytics = () => {
           </p>
         </div>
 
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="modern-card p-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="h-5 w-5 text-green-600" />
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-modern">
+              <TrendingUp className="h-5 w-5 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">Performance Tips</h3>
+            <h3 className="text-lg font-semibold text-gradient">Performance Tips</h3>
           </div>
           <p className="text-sm text-[rgba(var(--fg),0.6)]">
             Monitor user growth trends and commission patterns to optimize 
@@ -151,12 +151,12 @@ const Analytics = () => {
           </p>
         </div>
 
-        <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-lg p-6">
+        <div className="modern-card p-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Calendar className="h-5 w-5 text-purple-600" />
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-modern">
+              <Calendar className="h-5 w-5 text-white" />
             </div>
-            <h3 className="text-lg font-semibold text-[rgb(var(--fg))]">Date Range</h3>
+            <h3 className="text-lg font-semibold text-gradient">Date Range</h3>
           </div>
           <p className="text-sm text-[rgba(var(--fg),0.6)]">
             Current view: {dateRangeOptions.find(opt => opt.value === dateRange)?.label}. 

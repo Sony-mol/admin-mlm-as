@@ -386,7 +386,7 @@ export default function TierManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Tier Management</h1>
+          <h1 className="text-3xl font-bold text-gradient">Tier Management</h1>
           <p className="text-sm opacity-70">Manage referral rewards structure and tier levels</p>
         </div>
         <div className="flex items-center gap-2">
@@ -644,13 +644,17 @@ function Field({ label, type = 'text', value, onChange, min, placeholder, select
 
 function StatCard({ icon: Icon, title, value, accent }) {
   return (
-    <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-5">
+    <div className="stat-card animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm opacity-70">{title}</div>
-          <div className={`text-2xl font-semibold ${accent || ''}`}>{value}</div>
+          <div className="text-3xl font-bold text-gradient">{value}</div>
         </div>
-        {Icon && <Icon className={`w-7 h-7 ${accent || 'text-blue-600'}`} />}
+        {Icon && (
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-violet-600 shadow-modern">
+            <Icon className="w-5 h-5 text-white" />
+          </div>
+        )}
       </div>
     </div>
   );

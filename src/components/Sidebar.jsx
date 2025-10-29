@@ -47,14 +47,12 @@ export default function Sidebar({ open = true, onNavigate = () => {}, isMobile =
   return (
     <aside
       className={[
-        "sidebar",
+        "sidebar sidebar-modern",
         "fixed left-0 top-0 h-screen",
         "w-[85vw] sm:w-72 lg:w-72",
-        "border-r border-[rgb(var(--border))] bg-[rgb(var(--card))]",
         "px-3 pb-4 pt-3 z-40",
         "transition-transform duration-300 ease-out",
         "flex flex-col",
-        "shadow-lg lg:shadow-none",
         open ? "translate-x-0" : "-translate-x-full",
       ].join(" ")}
       aria-hidden={!open}
@@ -83,9 +81,10 @@ export default function Sidebar({ open = true, onNavigate = () => {}, isMobile =
           
           {/* Brand Text - Inline with logo */}
           <div className="flex flex-col">
-            <h1 className="text-xl font-bold text-[rgb(var(--fg))] tracking-wide leading-tight">
+            <h1 className="text-xl font-bold text-gradient tracking-wide leading-tight">
               CQwealth
             </h1>
+            <p className="text-xs text-[rgba(var(--fg),0.6)] font-medium">Admin Dashboard</p>
           </div>
         </a>
       </div>
@@ -103,10 +102,8 @@ export default function Sidebar({ open = true, onNavigate = () => {}, isMobile =
             {({ isActive }) => (
               <div
                 className={[
-                  "relative flex items-center gap-3 px-3 py-2 rounded-lg border transition-all duration-300 ease-out",
-                  isActive
-                    ? "text-[rgb(var(--accent-1))] bg-[rgba(var(--accent-1),0.12)] border-[rgba(var(--accent-1),0.35)]"
-                    : "text-[rgb(var(--fg))] border-transparent",
+                  "sidebar-link relative flex items-center gap-3",
+                  isActive && "active",
                 ].join(" ")}
               >
                 {!isActive && (
