@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import AddTierModal from '../components/AddTierModal';
 import AddLevelModal from '../components/AddLevelModal';
+import RewardSelector from '../components/RewardSelector';
 
 // API endpoints
 const TIER_STRUCTURE_API = API_ENDPOINTS.TIER_STRUCTURE;    // levels per tier (no id)
@@ -548,12 +549,10 @@ export default function TierManagement() {
                       selectOnFocus
                       onChange={(v) => updateLocalLevelField(tierName, index, 'referrals', v)}
                     />
-                    <Field
-                      label="Reward"
-                      type="text"
+                    <RewardSelector
                       value={level.reward}
-                      placeholder="No Reward"
                       onChange={(v) => updateLocalLevelField(tierName, index, 'reward', v)}
+                      placeholder="Select or type reward..."
                     />
                   </div>
 
