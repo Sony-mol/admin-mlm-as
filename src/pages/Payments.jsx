@@ -98,20 +98,36 @@ export default function Payments() {
     // Load payments
     (async () => {
       try {
-        console.log('💳 Fetching real payments from:', API_ENDPOINTS.PAYMENTS);
-        const paymentsRes = await fetch(API_ENDPOINTS.PAYMENTS, { headers });
+        // Prefer server-side pagination with index-aligned sort
+        const qs = new URLSearchParams();
+        qs.set('page', String(Math.max(0, page - 1)));
+        qs.set('size', String(pageSize));
+        // Align sort with created_at index
+        qs.set('sort', 'createdAt,DESC');
+        if (q && q.trim()) qs.set('q', q.trim());
+        if (status !== 'All') qs.set('status', status.toUpperCase());
+        if (ptype !== 'All') qs.set('type', ptype.toUpperCase().replace(/\s+/g,'_'));
+        if (dateFrom) qs.set('from', dateFrom);
+        if (dateTo) qs.set('to', dateTo);
+        if (amountMin) qs.set('min', String(amountMin));
+        if (amountMax) qs.set('max', String(amountMax));
+
+        console.log('💳 Fetching real payments from:', `${API_ENDPOINTS.PAYMENTS}?${qs.toString()}`);
+        let paymentsRes = await fetch(`${API_ENDPOINTS.PAYMENTS}?${qs.toString()}`, { headers, cache: 'no-store' });
+        if (!paymentsRes.ok) {
+          console.warn('⚠️ Paginated payments endpoint unavailable, falling back');
+          paymentsRes = await fetch(API_ENDPOINTS.PAYMENTS, { headers, cache: 'no-store' });
+        }
         console.log('💳 Payments Response Status:', paymentsRes.status);
       
       if (paymentsRes.ok) {
-        const response = await paymentsRes.json();
-        console.log('✅ Real Payments Data Received:', response);
-        console.log('📊 Total Payments Found:', response.payments ? response.payments.length : 0);
-        
-        // Extract payments array from response
-        const realPayments = response.payments || [];
+        const payload = await paymentsRes.json();
+        console.log('✅ Real Payments Data Received');
+        const realPayments = Array.isArray(payload) ? (payload.payments || payload) : (payload.content || payload.payments || []);
+        const totalFromServer = Array.isArray(payload) ? realPayments.length : (payload.totalElements ?? payload.total ?? realPayments.length);
         
         // Transform backend payment data to match frontend format
-        const transformedPayments = (response.payments || []).map(p => ({
+        const transformedPayments = (realPayments || []).map(p => ({
           id: p.id,
           code: `PAY${p.id}`,
           // 👇 Map top-level fields into a flat user object your UI expects
@@ -155,14 +171,18 @@ export default function Payments() {
           deliveryStatus: p.deliveryStatus || null,
         }));
 
-        // Sort payments by date (latest first)
-        transformedPayments.sort((a, b) => {
-          const dateA = new Date(a.requestedAt || a.processedAt || 0);
-          const dateB = new Date(b.requestedAt || b.processedAt || 0);
-          return dateB - dateA; // Descending order (latest first)
-        });
-        
-        setPayments(transformedPayments);
+        // Keep server order if paginated; otherwise sort locally
+        if (!Array.isArray(payload)) {
+          setPayments(transformedPayments);
+        } else {
+          transformedPayments.sort((a, b) => {
+            const dateA = new Date(a.requestedAt || a.processedAt || 0);
+            const dateB = new Date(b.requestedAt || b.processedAt || 0);
+            return dateB - dateA;
+          });
+          setPayments(transformedPayments);
+        }
+        setServerTotal(totalFromServer);
         setErr(null);
         console.log('✅ Payments loaded successfully:', transformedPayments.length);
       } else {
@@ -310,11 +330,15 @@ export default function Payments() {
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  useEffect(() => { setPage(1); }, [q, status, ptype]);
+  const [serverTotal, setServerTotal] = useState(null);
+  useEffect(() => { setPage(1); }, [q, status, ptype, dateFrom, dateTo, amountMin, amountMax]);
+  // Re-fetch when pagination/filters change to leverage backend indexes
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, pageSize, q, status, ptype, dateFrom, dateTo, amountMin, amountMax]);
   const paged = useMemo(() => {
+    if (serverTotal != null) return payments; // already represents the server page
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
+  }, [filtered, payments, page, pageSize, serverTotal]);
 
   const kpis = useMemo(() => {
     console.log('🔍 KPIs Calculation - paymentStats:', paymentStats);
@@ -566,12 +590,12 @@ export default function Payments() {
         }}
         pagination={{
           currentPage: page,
-          totalPages: Math.ceil(filtered.length / pageSize),
+          totalPages: Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
           start: (page - 1) * pageSize + 1,
-          end: Math.min(page * pageSize, filtered.length),
-          total: filtered.length,
+          end: Math.min(page * pageSize, (serverTotal != null ? serverTotal : filtered.length)),
+          total: serverTotal != null ? serverTotal : filtered.length,
           hasPrevious: page > 1,
-          hasNext: page < Math.ceil(filtered.length / pageSize),
+          hasNext: page < Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
           onPrevious: () => setPage(page - 1),
           onNext: () => setPage(page + 1)
         }}

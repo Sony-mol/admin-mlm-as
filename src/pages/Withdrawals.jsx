@@ -29,6 +29,7 @@ const Withdrawals = () => {
   const [selectedWithdrawals, setSelectedWithdrawals] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
   const [statistics, setStatistics] = useState({});
+  const [serverTotal, setServerTotal] = useState(null);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
   const [detailedWithdrawal, setDetailedWithdrawal] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -37,6 +38,9 @@ const Withdrawals = () => {
   const [actionType, setActionType] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [error, setError] = useState(null);
+  // Pagination state must be declared before effects that use it
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // API endpoints
   const WITHDRAWALS_API = API_ENDPOINTS.WITHDRAWALS;
@@ -56,6 +60,22 @@ const Withdrawals = () => {
     fetchWithdrawals();
     fetchStatistics();
   }, []);
+
+  // Sync page and size with URL; read initial on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = parseInt(params.get('page') || '1', 10);
+    const s = parseInt(params.get('size') || '20', 10);
+    setPage(isFinite(p) && p > 0 ? p : 1);
+    setPageSize(isFinite(s) && s > 0 ? s : 20);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(page));
+    params.set('size', String(pageSize));
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }, [page, pageSize]);
 
   useEffect(() => {
     console.log('Withdrawals state updated:', {
@@ -84,14 +104,32 @@ const Withdrawals = () => {
         : '';
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      console.log('Fetching withdrawals from:', WITHDRAWALS_API);
-      const response = await fetch(WITHDRAWALS_API, { headers });
+      // Prefer server-side pagination with index-aligned sort
+      const qs = new URLSearchParams();
+      qs.set('page', String(Math.max(0, page - 1)));
+      qs.set('size', String(pageSize));
+      qs.set('sort', 'createdAt,DESC');
+      if (searchTerm) qs.set('q', searchTerm);
+      if (selectedStatus !== 'ALL') qs.set('status', selectedStatus);
+      if (dateFrom) qs.set('from', dateFrom);
+      if (dateTo) qs.set('to', dateTo);
+
+      console.log('Fetching withdrawals from:', `${WITHDRAWALS_API}?${qs.toString()}`);
+      let response = await fetch(`${WITHDRAWALS_API}?${qs.toString()}`, { headers, cache: 'no-store' });
+      if (!response.ok) {
+        console.warn('⚠️ Paginated withdrawals endpoint unavailable, falling back');
+        response = await fetch(WITHDRAWALS_API, { headers, cache: 'no-store' });
+      }
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const responseData = await response.json();
-      console.log('Withdrawals data received:', responseData);
 
-      const raw = responseData.withdrawals || responseData || [];
+      const raw = Array.isArray(responseData)
+        ? (responseData.withdrawals || responseData)
+        : (responseData.content || responseData.withdrawals || []);
+      const totalFromServer = Array.isArray(responseData)
+        ? raw.length
+        : (responseData.totalElements ?? responseData.total ?? raw.length);
       const mapped = (Array.isArray(raw) ? raw : []).map((w) => ({
         ...w,
         // Normalize user object from top-level fields
@@ -104,6 +142,7 @@ const Withdrawals = () => {
       }));
 
       setWithdrawals(mapped);
+      setServerTotal(totalFromServer);
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
       // Demo fallback
@@ -336,13 +375,14 @@ const Withdrawals = () => {
   });
 
   // Pagination
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  useEffect(() => { setPage(1); }, [searchTerm, selectedStatus]);
+  useEffect(() => { setPage(1); }, [searchTerm, selectedStatus, dateFrom, dateTo]);
+  // Re-fetch when pagination/filters change to leverage backend indexes
+  useEffect(() => { fetchWithdrawals(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, pageSize, searchTerm, selectedStatus, dateFrom, dateTo]);
   const paged = useMemo(() => {
+    if (serverTotal != null) return withdrawals; // already current server page
     const start = (page - 1) * pageSize;
     return filteredWithdrawals.slice(start, start + pageSize);
-  }, [filteredWithdrawals, page, pageSize]);
+  }, [filteredWithdrawals, withdrawals, page, pageSize, serverTotal]);
 
   const statusOptions = [
     { value: 'ALL', label: 'All Withdrawals', count: withdrawals.length },
@@ -546,6 +586,14 @@ const Withdrawals = () => {
             <input type="date" value={dateFrom} onChange={(e)=>setDateFrom(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]" />
             <span className="opacity-60">to</span>
             <input type="date" value={dateTo} onChange={(e)=>setDateTo(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]" />
+            <span className="ml-auto text-sm opacity-70">Page size</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              className="px-2 py-1 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-sm"
+            >
+              {[10,20,50,100].map(v => (<option key={v} value={v}>{v}</option>))}
+            </select>
           </div>
           </div>
 
@@ -733,12 +781,12 @@ const Withdrawals = () => {
           )}
           pagination={{
             currentPage: page,
-            totalPages: Math.ceil(filteredWithdrawals.length / pageSize),
+            totalPages: Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filteredWithdrawals.length) / pageSize)),
             start: (page - 1) * pageSize + 1,
-            end: Math.min(page * pageSize, filteredWithdrawals.length),
-            total: filteredWithdrawals.length,
+            end: Math.min(page * pageSize, (serverTotal != null ? serverTotal : filteredWithdrawals.length)),
+            total: serverTotal != null ? serverTotal : filteredWithdrawals.length,
             hasPrevious: page > 1,
-            hasNext: page < Math.ceil(filteredWithdrawals.length / pageSize),
+            hasNext: page < Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filteredWithdrawals.length) / pageSize)),
             onPrevious: () => setPage(page - 1),
             onNext: () => setPage(page + 1)
           }}

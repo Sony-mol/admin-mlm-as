@@ -93,6 +93,26 @@ export default function ActivityLogs() {
     }
   }, [pagination.currentPage, pagination.size, searchTerm, filters]);
 
+  // Read initial page/size from URL and keep them in sync
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = parseInt(params.get('page') || '1', 10);
+    const s = parseInt(params.get('size') || '20', 10);
+    setPagination(prev => ({
+      ...prev,
+      currentPage: isFinite(p) && p > 0 ? p - 1 : prev.currentPage,
+      size: isFinite(s) && s > 0 ? s : prev.size
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(pagination.currentPage + 1));
+    params.set('size', String(pagination.size));
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }, [pagination.currentPage, pagination.size]);
+
   const loadRecentActivity = useCallback(async () => {
     try {
       setLoading(prev => ({ ...prev, recent: true }));
@@ -338,6 +358,16 @@ export default function ActivityLogs() {
         <div className="flex items-center gap-4 mb-4">
           <Filter className="w-5 h-5 opacity-60" />
           <h3 className="text-lg font-semibold">Filters</h3>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-sm opacity-70">Page size</span>
+            <select
+              value={pagination.size}
+              onChange={(e) => setPagination(prev => ({ ...prev, size: Number(e.target.value), currentPage: 0 }))}
+              className="px-2 py-1 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-sm"
+            >
+              {[10,20,50,100].map(v => (<option key={v} value={v}>{v}</option>))}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

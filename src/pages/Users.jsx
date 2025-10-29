@@ -553,11 +553,33 @@ export default function Users() {
       const token = localStorage.getItem('auth') ? JSON.parse(localStorage.getItem('auth')).accessToken : '';
       const headers = { 'Authorization': `Bearer ${token}` };
 
-      const res = await fetch(API_ENDPOINTS.USERS, { headers });
+      // Prefer optimized paginated endpoint; gracefully fall back to full list
+      const qs = new URLSearchParams();
+      // Spring Data uses 0-based pages
+      qs.set('page', String(Math.max(0, page - 1)));
+      qs.set('size', String(pageSize));
+      // Align with created_at index for default sort
+      qs.set('sort', 'createdAt,DESC');
+      if (q && q.trim()) qs.set('q', q.trim());
+      if (status !== 'ALL') qs.set('status', status);
+      if (tier !== 'ALL') qs.set('tier', tier);
+      if (level !== 'ALL') qs.set('level', String(levelNumFromString(level)));
+      if (joinedFrom) qs.set('from', joinedFrom);
+      if (joinedTo) qs.set('to', joinedTo);
+
+      let res = await fetch(`${API_ENDPOINTS.USERS_PAGINATED}?${qs.toString()}`, { headers, cache: 'no-store' });
+      // If paginated endpoint not available, fall back
+      if (!res.ok) {
+        console.warn('⚠️ Paginated endpoint unavailable, falling back to /users');
+        res = await fetch(API_ENDPOINTS.USERS, { headers, cache: 'no-store' });
+      }
+
       if (res.ok) {
-        const realUsers = await res.json();
-        console.log('✅ Users fetched successfully:', realUsers);
-        console.log('🔍 User sample data structure:', realUsers[0]);
+        const payload = await res.json();
+        // Support both array and Spring Page response shapes
+        const realUsers = Array.isArray(payload) ? payload : (payload.content || payload.users || []);
+        const totalFromServer = Array.isArray(payload) ? realUsers.length : (payload.totalElements ?? payload.total ?? realUsers.length);
+        console.log('✅ Users fetched successfully (optimized when available). Count:', realUsers.length, 'Total:', totalFromServer);
         const transformedUsers = realUsers.map(user => ({
           id: user.id,
           code: user.referenceCode || '--',
@@ -576,8 +598,16 @@ export default function Users() {
           referrerEmail: user.referrerEmail || null,
           referrerCode: user.referredByCode || '--'
         }));
-        transformedUsers.sort((a, b) => new Date(b.joinDate || 0) - new Date(a.joinDate || 0));
-        setList(transformedUsers);
+        // If server sorted by createdAt,DESC this keeps order; otherwise sort locally
+        if (!Array.isArray(payload)) {
+          // assume already sorted
+          setList(transformedUsers);
+        } else {
+          transformedUsers.sort((a, b) => new Date(b.joinDate || 0) - new Date(a.joinDate || 0));
+          setList(transformedUsers);
+        }
+        // Track total for server-side pagination UI
+        setServerTotal(totalFromServer);
         setErr(null);
       } else {
         setErr(`Couldn't load users: ${res.status}`);
@@ -870,11 +900,20 @@ export default function Users() {
   // ===== Pagination =====
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  useEffect(() => { setPage(1); }, [q, status, tier, level, selectedDates]);
+  const [serverTotal, setServerTotal] = useState(null); // when using server-side pagination
+  useEffect(() => { setPage(1); }, [q, status, tier, level, selectedDates, joinedFrom, joinedTo]);
+  // When server pagination is active, we show current page slice directly from list
   const paged = useMemo(() => {
+    if (serverTotal != null) return list; // list already represents the current page
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
+  }, [filtered, list, page, pageSize, serverTotal]);
+
+  // Re-fetch when pagination or filters change to leverage indexes on backend
+  useEffect(() => {
+    loadUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, q, status, tier, level, joinedFrom, joinedTo]);
 
   // ===== Export helpers (unchanged) =====
   function mapUsersToUserDetailsRows(users) {
@@ -1285,12 +1324,12 @@ export default function Users() {
         onRowClick={(user) => setSelected(user)}
         pagination={{
           currentPage: page,
-          totalPages: Math.ceil(filtered.length / pageSize),
+          totalPages: Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
           start: (page - 1) * pageSize + 1,
-          end: Math.min(page * pageSize, filtered.length),
-          total: filtered.length,
+          end: Math.min(page * pageSize, (serverTotal != null ? serverTotal : filtered.length)),
+          total: serverTotal != null ? serverTotal : filtered.length,
           hasPrevious: page > 1,
-          hasNext: page < Math.ceil(filtered.length / pageSize),
+          hasNext: page < Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
           onPrevious: () => setPage(page - 1),
           onNext: () => setPage(page + 1)
         }}

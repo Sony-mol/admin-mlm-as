@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
   RESET_PASSWORD: getApiUrl('/api/users/reset-password'),
   PROFILE: getApiUrl('/api/users/profile'),
   USERS: getApiUrl('/api/users'),
+  USERS_PAGINATED: getApiUrl('/api/users/paginated'), // PHASE 1: Optimized paginated endpoint
   DASHBOARD: getApiUrl('/api/commissions/admin/dashboard'),
   PRODUCTS: getApiUrl('/api/products'),
   WITHDRAWALS: getApiUrl('/api/withdrawals'),

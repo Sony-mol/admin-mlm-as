@@ -69,19 +69,31 @@ export default function Orders() {
       console.log('🔑 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
       console.log('📡 Headers:', headers);
       
-      // Fetch real orders from backend
-      console.log('📦 Fetching real orders from:', API_ENDPOINTS.ORDERS);
-      const ordersRes = await fetch(API_ENDPOINTS.ORDERS, { headers });
+      // Fetch real orders from backend with server-side pagination
+      const qs = new URLSearchParams();
+      qs.set('page', String(Math.max(0, page - 1)));
+      qs.set('size', String(pageSize));
+      qs.set('sort', 'createdAt,DESC');
+      if (q && q.trim()) qs.set('q', q.trim());
+      if (status !== 'All') qs.set('status', status.toUpperCase());
+      if (dateFrom) qs.set('from', dateFrom);
+      if (dateTo) qs.set('to', dateTo);
+      if (amountMin) qs.set('min', String(amountMin));
+      if (amountMax) qs.set('max', String(amountMax));
+
+      console.log('📦 Fetching real orders from:', `${API_ENDPOINTS.ORDERS}?${qs.toString()}`);
+      let ordersRes = await fetch(`${API_ENDPOINTS.ORDERS}?${qs.toString()}`, { headers, cache: 'no-store' });
+      if (!ordersRes.ok) {
+        console.warn('⚠️ Paginated orders endpoint unavailable, falling back');
+        ordersRes = await fetch(API_ENDPOINTS.ORDERS, { headers, cache: 'no-store' });
+      }
       console.log('📦 Orders Response Status:', ordersRes.status);
       console.log('📦 Orders Response Headers:', Object.fromEntries(ordersRes.headers.entries()));
       
       if (ordersRes.ok) {
-        const response = await ordersRes.json();
-        console.log('✅ Real Orders Data Received:', response);
-        console.log('📊 Total Orders Found:', response.orders ? response.orders.length : 0);
-        
-        // Extract orders array from response
-        const realOrders = response.orders || [];
+        const payload = await ordersRes.json();
+        const realOrders = Array.isArray(payload) ? (payload.orders || payload) : (payload.content || payload.orders || []);
+        const totalFromServer = Array.isArray(payload) ? realOrders.length : (payload.totalElements ?? payload.total ?? realOrders.length);
         
         // Transform backend order data to match frontend format
         const transformedOrders = realOrders.map(order => {
@@ -146,14 +158,18 @@ export default function Orders() {
           };
         });
         
-        // Sort orders by date (latest first)
-        transformedOrders.sort((a, b) => {
-          const dateA = new Date(a.date || 0);
-          const dateB = new Date(b.date || 0);
-          return dateB - dateA; // Descending order (latest first)
-        });
-        
-        setOrders(transformedOrders);
+        // Keep server order if paginated; otherwise sort locally
+        if (!Array.isArray(payload)) {
+          setOrders(transformedOrders);
+        } else {
+          transformedOrders.sort((a, b) => {
+            const dateA = new Date(a.date || 0);
+            const dateB = new Date(b.date || 0);
+            return dateB - dateA;
+          });
+          setOrders(transformedOrders);
+        }
+        setServerTotal(totalFromServer);
         setErr(null);
         console.log('✅ Orders loaded successfully:', transformedOrders.length);
       } else {
@@ -206,11 +222,15 @@ export default function Orders() {
   // Pagination
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  useEffect(() => { setPage(1); }, [q, status]);
+  const [serverTotal, setServerTotal] = useState(null);
+  useEffect(() => { setPage(1); }, [q, status, dateFrom, dateTo, amountMin, amountMax]);
+  // Re-fetch when pagination/filters change to leverage backend indexes
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, pageSize, q, status, dateFrom, dateTo, amountMin, amountMax]);
   const paged = useMemo(() => {
+    if (serverTotal != null) return orders; // server provides the current page
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-  }, [filtered, page, pageSize]);
+  }, [filtered, orders, page, pageSize, serverTotal]);
 
   const kpis = useMemo(() => {
     const total = orders.length;
@@ -491,12 +511,12 @@ export default function Orders() {
         }}
         pagination={{
           currentPage: page,
-          totalPages: Math.ceil(filtered.length / pageSize),
+          totalPages: Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
           start: (page - 1) * pageSize + 1,
-          end: Math.min(page * pageSize, filtered.length),
-          total: filtered.length,
+          end: Math.min(page * pageSize, (serverTotal != null ? serverTotal : filtered.length)),
+          total: serverTotal != null ? serverTotal : filtered.length,
           hasPrevious: page > 1,
-          hasNext: page < Math.ceil(filtered.length / pageSize),
+          hasNext: page < Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
           onPrevious: () => setPage(page - 1),
           onNext: () => setPage(page + 1)
         }}
