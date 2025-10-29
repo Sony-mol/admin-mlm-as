@@ -68,14 +68,14 @@ export default function Sidebar({ open = true, onNavigate = () => {}, isMobile =
           href="https://camelq.net/" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex items-center gap-3 group hover:opacity-80 transition-opacity duration-300 cursor-pointer"
-          title="Visit CAMELQ Website"
+          className="flex items-center gap-6 group hover:opacity-80 transition-opacity duration-300 cursor-pointer"
+          title="Visit CQwealth Website"
         >
           {/* Logo Image */}
           <div className="relative">
             <img
               src="/Logo-300-x-300-px-150-x-150-px.png"
-              alt="CAMELQ SOFTWARE SOLUTIONS"
+              alt="CQwealth"
               className="h-12 w-12 drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
               draggable="false"
             />
@@ -83,12 +83,9 @@ export default function Sidebar({ open = true, onNavigate = () => {}, isMobile =
           
           {/* Brand Text - Inline with logo */}
           <div className="flex flex-col">
-            <h1 className="text-lg font-bold text-[rgb(var(--fg))] tracking-wide leading-tight">
-              CAMELQ
+            <h1 className="text-xl font-bold text-[rgb(var(--fg))] tracking-wide leading-tight">
+              CQwealth
             </h1>
-            <p className="text-xs text-[rgba(var(--fg),0.7)] font-medium tracking-wider uppercase leading-tight">
-              Software Solutions
-            </p>
           </div>
         </a>
       </div>

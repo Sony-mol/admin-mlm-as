@@ -69,6 +69,7 @@ export default function Commissions() {
     users: true
   });
   const [selectedCommissions, setSelectedCommissions] = useState(new Set());
+  const [selectedPaidCommissions, setSelectedPaidCommissions] = useState(new Set());
   const [bulkAction, setBulkAction] = useState('');
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -383,6 +384,70 @@ export default function Commissions() {
     setSelectedCommissions(new Set());
   };
 
+  // Toggle paid commission selection
+  const togglePaidCommission = (commissionId) => {
+    setSelectedPaidCommissions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(commissionId)) {
+        newSet.delete(commissionId);
+      } else {
+        newSet.add(commissionId);
+      }
+      return newSet;
+    });
+  };
+
+  // Select all paid commissions
+  const selectAllPaidCommissions = () => {
+    const allIds = filteredPaid.map(c => c.id);
+    setSelectedPaidCommissions(new Set(allIds));
+  };
+
+  // Clear paid commission selection
+  const clearPaidSelection = () => {
+    setSelectedPaidCommissions(new Set());
+  };
+
+  // Export selected paid commissions
+  const exportSelectedPaidCommissions = () => {
+    if (selectedPaidCommissions.size === 0) {
+      alert('Please select at least one commission to export');
+      return;
+    }
+
+    const selectedData = paidCommissions.filter(c => selectedPaidCommissions.has(c.id));
+    
+    // Format data for export
+    const exportData = selectedData.map(commission => ({
+      'Commission ID': commission.id,
+      'Referrer User ID': commission.referrerUserId,
+      'Referrer Name': userNames[commission.referrerUserId] || `User ${commission.referrerUserId}`,
+      'Referred User ID': commission.referredUserId,
+      'Referred Name': userNames[commission.referredUserId] || `User ${commission.referredUserId}`,
+      'Commission Amount': commission.commissionAmount,
+      'Referral Level': commission.referralLevel,
+      'Commission Percentage': commission.commissionPercentage,
+      'Status': commission.commissionStatus,
+      'Order Number': commission.order?.orderNumber || 'N/A',
+      'Order Amount': commission.order?.totalAmount || 0,
+      'Created At': commission.createdAt ? new Date(commission.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A',
+      'Updated At': commission.updatedAt ? new Date(commission.updatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A'
+    }));
+
+    // Import ExportService dynamically and export
+    import('../services/ExportService').then(({ default: ExportService }) => {
+      try {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `paid_commissions_selected_${timestamp}`;
+        ExportService.exportToExcel(exportData, filename, 'Paid Commissions');
+        alert(`✅ Successfully exported ${selectedPaidCommissions.size} commission(s)`);
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('Failed to export commissions. Please try again.');
+      }
+    });
+  };
+
   // Show structure immediately with progressive loading
   const isLoading = loading.dashboard || loading.pending || loading.paid;
 
@@ -642,9 +707,40 @@ export default function Commissions() {
 
       {/* Paid Commissions */}
       <Card>
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Paid Commissions</h2>
-          <p className="text-sm opacity-70">Recently approved commissions</p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Paid Commissions</h2>
+            <p className="text-sm opacity-70">Recently approved commissions</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {selectedPaidCommissions.size > 0 && (
+              <>
+                <button
+                  onClick={exportSelectedPaidCommissions}
+                  className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export {selectedPaidCommissions.size} Selected
+                </button>
+                <button
+                  onClick={clearPaidSelection}
+                  className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)] transition-colors text-sm"
+                >
+                  Clear Selection
+                </button>
+              </>
+            )}
+            {filteredPaid.length > 0 && (
+              <button
+                onClick={selectAllPaidCommissions}
+                className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)] transition-colors text-sm"
+              >
+                Select All ({filteredPaid.length})
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Paid Commissions Search */}
@@ -671,31 +767,49 @@ export default function Commissions() {
             {paidPaged.map((commission) => (
               <div
                 key={commission.id}
-                className="p-4 rounded-lg border border-[rgb(var(--border))] bg-[rgba(22,163,74,0.12)]"
+                className={`p-4 rounded-lg border transition-all ${
+                  selectedPaidCommissions.has(commission.id)
+                    ? 'border-green-500 bg-[rgba(22,163,74,0.2)] shadow-md'
+                    : 'border-[rgb(var(--border))] bg-[rgba(22,163,74,0.12)]'
+                }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium">
-                      Commission #{commission.id}
-                    </div>
-                    <div className="text-sm opacity-70">
-                      Referrer: {userNames[commission.referrerUserId] || `User ${commission.referrerUserId}`} → Referred: {userNames[commission.referredUserId] || `User ${commission.referredUserId}`}
-                    </div>
-                    <div className="text-xs opacity-60">
-                      Level {commission.referralLevel} • {commission.commissionPercentage}% • {fDate(commission.createdAt)}
-                    </div>
-                    {commission.order && (
-                      <div className="text-xs opacity-60 mt-1">
-                        Order: {commission.order.orderNumber || 'N/A'} • Amount: {fINR(commission.order.totalAmount || 0)}
-                      </div>
-                    )}
+                <div className="flex items-center gap-4">
+                  {/* Checkbox */}
+                  <div className="flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={selectedPaidCommissions.has(commission.id)}
+                      onChange={() => togglePaidCommission(commission.id)}
+                      className="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                      aria-label={`Select commission ${commission.id}`}
+                    />
                   </div>
                   
-                  <div className="text-right">
-                    <div className="font-semibold text-lg text-green-700">
-                      {fINR(commission.commissionAmount)}
+                  {/* Commission Info */}
+                  <div className="flex-1 flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">
+                        Commission #{commission.id}
+                      </div>
+                      <div className="text-sm opacity-70">
+                        Referrer: {userNames[commission.referrerUserId] || `User ${commission.referrerUserId}`} → Referred: {userNames[commission.referredUserId] || `User ${commission.referredUserId}`}
+                      </div>
+                      <div className="text-xs opacity-60">
+                        Level {commission.referralLevel} • {commission.commissionPercentage}% • {fDate(commission.createdAt)}
+                      </div>
+                      {commission.order && (
+                        <div className="text-xs opacity-60 mt-1">
+                          Order: {commission.order.orderNumber || 'N/A'} • Amount: {fINR(commission.order.totalAmount || 0)}
+                        </div>
+                      )}
                     </div>
-                    <StatusPill value={commission.commissionStatus} />
+                    
+                    <div className="text-right">
+                      <div className="font-semibold text-lg text-green-700">
+                        {fINR(commission.commissionAmount)}
+                      </div>
+                      <StatusPill value={commission.commissionStatus} />
+                    </div>
                   </div>
                 </div>
               </div>
