@@ -523,6 +523,7 @@ export default function Users() {
   const [level, setLevel] = useState('ALL');       // dynamic from TIER_STRUCTURE ("Level X")
   const [joinedFrom, setJoinedFrom] = useState('');
   const [joinedTo, setJoinedTo] = useState('');
+  const [hasPaidActivation, setHasPaidActivation] = useState('ALL'); // ALL | true | false
   const [selected, setSelected] = useState(null);
 
   // management
@@ -566,6 +567,7 @@ export default function Users() {
       if (level !== 'ALL') qs.set('level', String(levelNumFromString(level)));
       if (joinedFrom) qs.set('from', joinedFrom);
       if (joinedTo) qs.set('to', joinedTo);
+      if (hasPaidActivation !== 'ALL') qs.set('hasPaidActivation', hasPaidActivation);
 
       let res = await fetch(`${API_ENDPOINTS.USERS_PAGINATED}?${qs.toString()}`, { headers, cache: 'no-store' });
       // If paginated endpoint not available, fall back
@@ -596,7 +598,8 @@ export default function Users() {
           role: user.role || 'USER',
           referrerName: user.referrerName || null,
           referrerEmail: user.referrerEmail || null,
-          referrerCode: user.referredByCode || '--'
+          referrerCode: user.referredByCode || '--',
+          hasPaidActivation: user.hasPaidActivation || false // Boolean field
         }));
         // If server sorted by createdAt,DESC this keeps order; otherwise sort locally
         if (!Array.isArray(payload)) {
@@ -893,9 +896,14 @@ export default function Users() {
       const joinedFromOk = !joinedFrom || ts >= new Date(joinedFrom + 'T00:00:00').getTime();
       const joinedToOk = !joinedTo || ts <= new Date(joinedTo + 'T23:59:59').getTime();
 
-      return matchQ && matchStatus && matchTier && matchLevel && matchDate && joinedFromOk && joinedToOk;
+      // Has paid activation filter
+      const matchPaidActivation = hasPaidActivation === 'ALL' || 
+        (hasPaidActivation === 'true' && u.hasPaidActivation) ||
+        (hasPaidActivation === 'false' && !u.hasPaidActivation);
+
+      return matchQ && matchStatus && matchTier && matchLevel && matchDate && joinedFromOk && joinedToOk && matchPaidActivation;
     });
-  }, [list, q, status, tier, level, selectedDates, joinedFrom, joinedTo]);
+  }, [list, q, status, tier, level, selectedDates, joinedFrom, joinedTo, hasPaidActivation]);
 
   // ===== Pagination =====
   const [page, setPage] = useState(1);
@@ -921,6 +929,8 @@ export default function Users() {
     if (levelParam) setLevel(levelParam);
     if (fromParam) setJoinedFrom(fromParam);
     if (toParam) setJoinedTo(toParam);
+    const paidParam = params.get('hasPaidActivation');
+    if (paidParam) setHasPaidActivation(paidParam);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   // Keep URL in sync on change
@@ -934,21 +944,32 @@ export default function Users() {
     if (level && level !== 'ALL') params.set('level', level); else params.delete('level');
     if (joinedFrom) params.set('from', joinedFrom); else params.delete('from');
     if (joinedTo) params.set('to', joinedTo); else params.delete('to');
+    if (hasPaidActivation && hasPaidActivation !== 'ALL') params.set('hasPaidActivation', hasPaidActivation); else params.delete('hasPaidActivation');
     window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
-  }, [page, pageSize, q, status, tier, level, joinedFrom, joinedTo]);
-  useEffect(() => { setPage(1); }, [q, status, tier, level, selectedDates, joinedFrom, joinedTo]);
+  }, [page, pageSize, q, status, tier, level, joinedFrom, joinedTo, hasPaidActivation]);
+  useEffect(() => { setPage(1); }, [q, status, tier, level, selectedDates, joinedFrom, joinedTo, hasPaidActivation]);
   // When server pagination is active, we show current page slice directly from list
+  // But if client-side filters are active (hasPaidActivation or selectedDates), we need to filter
   const paged = useMemo(() => {
+    // If we have server pagination but also have client-side only filters, filter the list
+    const hasClientOnlyFilters = hasPaidActivation !== 'ALL' || selectedDates.size > 0;
+    
+    if (serverTotal != null && hasClientOnlyFilters) {
+      // Apply client-side filtering and pagination to server data
+      const start = (page - 1) * pageSize;
+      return filtered.slice(start, start + pageSize);
+    }
+    
     if (serverTotal != null) return list; // list already represents the current page
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
-  }, [filtered, list, page, pageSize, serverTotal]);
+  }, [filtered, list, page, pageSize, serverTotal, hasPaidActivation, selectedDates]);
 
   // Re-fetch when pagination or filters change to leverage indexes on backend
   useEffect(() => {
     loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, q, status, tier, level, joinedFrom, joinedTo]);
+  }, [page, pageSize, q, status, tier, level, joinedFrom, joinedTo, hasPaidActivation]);
 
   // ===== Export helpers (unchanged) =====
   function mapUsersToUserDetailsRows(users) {
@@ -1084,7 +1105,8 @@ export default function Users() {
             status: status,
             level: level,
             joinedFrom: joinedFrom,
-            joinedTo: joinedTo
+            joinedTo: joinedTo,
+            hasPaidActivation: hasPaidActivation
           }}
           currentSort={null}
           showAdvancedOptions={true}
@@ -1166,7 +1188,7 @@ export default function Users() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-stretch">
           {/* Search */}
           <div className="flex items-center gap-2 md:col-span-2">
             <span>🔍</span>
@@ -1216,9 +1238,20 @@ export default function Users() {
               </option>
             ))}
           </select>
+
+          {/* Has Paid Activation filter */}
+          <select
+            value={hasPaidActivation}
+            onChange={(e) => setHasPaidActivation(e.target.value)}
+            className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+          >
+            <option value="ALL">All Activation</option>
+            <option value="true">Paid</option>
+            <option value="false">Not Paid</option>
+          </select>
           
           {/* Joined Date Range */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:col-span-2">
             <input type="date" value={joinedFrom} onChange={(e)=>setJoinedFrom(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
             <span className="opacity-60">to</span>
             <input type="date" value={joinedTo} onChange={(e)=>setJoinedTo(e.target.value)} className="px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]" />
@@ -1359,12 +1392,12 @@ export default function Users() {
         onRowClick={(user) => setSelected(user)}
         pagination={{
           currentPage: page,
-          totalPages: Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
+          totalPages: Math.max(1, Math.ceil(((hasPaidActivation !== 'ALL' || selectedDates.size > 0) ? filtered.length : (serverTotal != null ? serverTotal : filtered.length)) / pageSize)),
           start: (page - 1) * pageSize + 1,
-          end: Math.min(page * pageSize, (serverTotal != null ? serverTotal : filtered.length)),
-          total: serverTotal != null ? serverTotal : filtered.length,
+          end: Math.min(page * pageSize, (hasPaidActivation !== 'ALL' || selectedDates.size > 0) ? filtered.length : (serverTotal != null ? serverTotal : filtered.length)),
+          total: (hasPaidActivation !== 'ALL' || selectedDates.size > 0) ? filtered.length : (serverTotal != null ? serverTotal : filtered.length),
           hasPrevious: page > 1,
-          hasNext: page < Math.max(1, Math.ceil((serverTotal != null ? serverTotal : filtered.length) / pageSize)),
+          hasNext: page < Math.max(1, Math.ceil(((hasPaidActivation !== 'ALL' || selectedDates.size > 0) ? filtered.length : (serverTotal != null ? serverTotal : filtered.length)) / pageSize)),
           onPrevious: () => setPage(page - 1),
           onNext: () => setPage(page + 1)
         }}
