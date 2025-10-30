@@ -20,6 +20,7 @@ import RewardSelector from '../components/RewardSelector';
 const TIER_STRUCTURE_API = API_ENDPOINTS.TIER_STRUCTURE;    // levels per tier (no id)
 const RESET_DEFAULT_API = API_ENDPOINTS.RESET_DEFAULT;
 const TIER_STATISTICS_API = API_ENDPOINTS.TIER_STATISTICS;
+const RECOMPUTE_ALL_API = API_ENDPOINTS.RECOMPUTE_ALL_TIERS;
 // Per-level edit endpoints
 const UPDATE_LEVEL_API = API_ENDPOINTS.UPDATE_LEVEL_PROPERTIES;
 const DELETE_LEVEL_API = API_ENDPOINTS.DELETE_LEVEL;
@@ -222,6 +223,29 @@ export default function TierManagement() {
     }
   }
 
+  // Manually trigger full recompute (debug/backfill)
+  async function recomputeAllTiers() {
+    if (!window.confirm('Recompute tiers/levels for ALL users now?')) return;
+    try {
+      setSaving(true);
+      const token = getToken();
+      const res = await fetch(RECOMPUTE_ALL_API, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        showToast('✅ Recompute triggered for all users');
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert('Failed to trigger recompute: ' + (err.error || res.status));
+      }
+    } catch (e) {
+      alert('Error triggering recompute: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   /* ---------------- Delete Tier (ids from TIERS_API_BASE) ---------------- */
   const handleDeleteTier = async (tierName) => {
     const tierId = tierInfo?.[tierName]?.id;
@@ -404,6 +428,15 @@ export default function TierManagement() {
           >
             <RotateCcw className="w-4 h-4" />
             Reset to Default
+          </button>
+          <button
+            onClick={recomputeAllTiers}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[rgb(var(--border))] hover:bg-[rgba(var(--fg),0.05)] disabled:opacity-50"
+            title="Recompute tiers for all users"
+          >
+            <Loader2 className="w-4 h-4" />
+            Recompute All
           </button>
           <button
             onClick={saveChanges}

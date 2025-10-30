@@ -47,6 +47,10 @@ export const API_ENDPOINTS = {
   INITIALIZE: getApiUrl('/api/settings/commission-configs/initialize'),
   BULK_UPDATE_CONFIGS: getApiUrl('/api/settings/commission-configs/bulk'),
   
+  // Tier Progression (manual recompute)
+  RECOMPUTE_ALL_TIERS: getApiUrl('/api/admin/tier-progression/update-all-users'),
+  RECOMPUTE_USER_TIER: getApiUrl('/api/admin/tier-progression/update-user'),
+  
   // Tier Management APIs
   CREATE_TIER: getApiUrl('/api/tiers'),
   GET_ALL_TIERS: getApiUrl('/api/tiers'),
