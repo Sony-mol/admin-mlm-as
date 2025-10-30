@@ -21,10 +21,31 @@ export default function TermsManagement() {
   const [message, setMessage] = useState('');
   const [versions, setVersions] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
+  
+  // App Config state
+  const [apkUrl, setApkUrl] = useState('');
+  const [shareTemplate, setShareTemplate] = useState('');
 
   useEffect(() => {
     fetchCurrentTerms();
+    extractAppConfigFromTerms();
   }, []);
+
+  const extractAppConfigFromTerms = () => {
+    const combinedContent = `${termsData.content}\n\n${privacyData.content}`;
+    const urlPattern = /(https?:\/\/[^\s]+)/g;
+    const urls = combinedContent.match(urlPattern) || [];
+    const expoUrl = urls.find(url => url.includes('expo.dev') || url.includes('apk') || url.includes('download'));
+    if (expoUrl) {
+      setApkUrl(expoUrl);
+    } else {
+      setApkUrl('https://expo.dev/accounts/arun-j/projects/MLMApp/builds/c55b55cb-c3d4-4b60-bcc4-2c79e6433976');
+    }
+  };
+  
+  useEffect(() => {
+    extractAppConfigFromTerms();
+  }, [termsData.content, privacyData.content]);
 
   // Helper to read token/userId from the unified auth storage
   function getAuthInfo() {
@@ -176,11 +197,74 @@ export default function TermsManagement() {
           >
             Privacy Policy
           </button>
+          <button
+            onClick={() => setActiveTab('CONFIG')}
+            className={`px-6 py-3 font-medium transition-colors ${
+              activeTab === 'CONFIG' ? 'border-b-2' : 'opacity-70 hover:opacity-100'
+            } border-[rgb(var(--border))]`}
+          >
+            App Config
+          </button>
         </div>
       </div>
 
       {/* Editor */}
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {activeTab === 'CONFIG' ? (
+          // App Config Tab
+          <div className="bg-[rgb(var(--card))] rounded-2xl p-6 border border-[rgb(var(--border))] shadow">
+            <h2 className="text-xl font-semibold mb-6">App Configuration</h2>
+            
+            {/* APK Download URL */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2 opacity-80">
+                APK Download URL
+              </label>
+              <input
+                type="text"
+                value={apkUrl}
+                onChange={(e) => setApkUrl(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))]"
+                placeholder="https://expo.dev/accounts/..."
+              />
+              <p className="opacity-70 text-xs mt-2">
+                This URL will be included in referral share messages. Users will download the APK from this link.
+              </p>
+            </div>
+
+            {/* Share Message Template */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2 opacity-80">
+                Share Message Template
+              </label>
+              <textarea
+                value={shareTemplate}
+                onChange={(e) => setShareTemplate(e.target.value)}
+                className="w-full h-48 px-3 py-2 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] font-mono text-sm resize-none"
+                placeholder="Use {referralCode} and {apkUrl} as placeholders"
+              />
+              <p className="opacity-70 text-xs mt-2">
+                Available placeholders: <code className="bg-[rgb(var(--bg))] px-2 py-1 rounded">&#123;referralCode&#125;</code>, <code className="bg-[rgb(var(--bg))] px-2 py-1 rounded">&#123;apkUrl&#125;</code>, <code className="bg-[rgb(var(--bg))] px-2 py-1 rounded">&#123;userName&#125;</code>
+              </p>
+            </div>
+
+            {/* Info Box */}
+            <div className="bg-blue-500/15 border border-blue-600/60 rounded-lg p-4 mb-6">
+              <p className="text-sm opacity-90">
+                <strong>Note:</strong> To make these settings available to users, add them to either Terms & Conditions or Privacy Policy content. 
+                The user app will automatically detect the APK URL from the content.
+              </p>
+            </div>
+
+            {/* Preview */}
+            <div className="bg-[rgb(var(--bg))] rounded-lg p-4 border border-[rgb(var(--border))]">
+              <h3 className="text-sm font-semibold mb-2">Preview Share Message:</h3>
+              <div className="text-sm opacity-80 whitespace-pre-wrap font-mono">
+                {shareTemplate.replace(/\{referralCode\}/g, 'ABC123').replace(/\{apkUrl\}/g, apkUrl || 'https://example.com/app.apk').replace(/\{userName\}/g, 'John Doe')}
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Editor */}
           <div className="lg:col-span-2">
@@ -357,11 +441,16 @@ export default function TermsManagement() {
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Footer */}
       <div className="max-w-7xl mx-auto px-4 py-8 text-center opacity-70 text-sm">
-        <p>💡 All changes are saved with version control. Users will see the latest version automatically.</p>
+        {activeTab === 'CONFIG' ? (
+          <p>💡 Add the APK URL to your Terms or Privacy Policy content to make it accessible to users.</p>
+        ) : (
+          <p>💡 All changes are saved with version control. Users will see the latest version automatically.</p>
+        )}
       </div>
     </div>
   );
