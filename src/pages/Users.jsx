@@ -901,6 +901,41 @@ export default function Users() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [serverTotal, setServerTotal] = useState(null); // when using server-side pagination
+  // Read initial pagination from URL once
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = parseInt(params.get('page') || '1', 10);
+    const s = parseInt(params.get('size') || '20', 10);
+    // filters
+    const qParam = params.get('q');
+    const stParam = params.get('status');
+    const tierParam = params.get('tier');
+    const levelParam = params.get('level');
+    const fromParam = params.get('from');
+    const toParam = params.get('to');
+    if (isFinite(p) && p > 0) setPage(p);
+    if (isFinite(s) && s > 0) setPageSize(s);
+    if (qParam != null) setQ(qParam);
+    if (stParam) setStatus(stParam);
+    if (tierParam) setTier(tierParam);
+    if (levelParam) setLevel(levelParam);
+    if (fromParam) setJoinedFrom(fromParam);
+    if (toParam) setJoinedTo(toParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Keep URL in sync on change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(page));
+    params.set('size', String(pageSize));
+    if (q) params.set('q', q); else params.delete('q');
+    if (status && status !== 'ALL') params.set('status', status); else params.delete('status');
+    if (tier && tier !== 'ALL') params.set('tier', tier); else params.delete('tier');
+    if (level && level !== 'ALL') params.set('level', level); else params.delete('level');
+    if (joinedFrom) params.set('from', joinedFrom); else params.delete('from');
+    if (joinedTo) params.set('to', joinedTo); else params.delete('to');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }, [page, pageSize, q, status, tier, level, joinedFrom, joinedTo]);
   useEffect(() => { setPage(1); }, [q, status, tier, level, selectedDates, joinedFrom, joinedTo]);
   // When server pagination is active, we show current page slice directly from list
   const paged = useMemo(() => {

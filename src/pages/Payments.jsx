@@ -331,6 +331,44 @@ export default function Payments() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [serverTotal, setServerTotal] = useState(null);
+  // Read initial pagination from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = parseInt(params.get('page') || '1', 10);
+    const s = parseInt(params.get('size') || '20', 10);
+    // filters
+    const qParam = params.get('q');
+    const stParam = params.get('status');
+    const typeParam = params.get('type');
+    const fromParam = params.get('from');
+    const toParam = params.get('to');
+    const minParam = params.get('min');
+    const maxParam = params.get('max');
+    if (isFinite(p) && p > 0) setPage(p);
+    if (isFinite(s) && s > 0) setPageSize(s);
+    if (qParam != null) setQ(qParam);
+    if (stParam) setStatus(stParam);
+    if (typeParam) setPtype(typeParam.replace(/_/g,' ').replace(/\b\w/g,c=>c));
+    if (fromParam) setDateFrom(fromParam);
+    if (toParam) setDateTo(toParam);
+    if (minParam) setAmountMin(minParam);
+    if (maxParam) setAmountMax(maxParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Keep URL in sync
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(page));
+    params.set('size', String(pageSize));
+    if (q) params.set('q', q); else params.delete('q');
+    if (status && status !== 'All') params.set('status', status); else params.delete('status');
+    if (ptype && ptype !== 'All') params.set('type', ptype.toUpperCase().replace(/\s+/g,'_')); else params.delete('type');
+    if (dateFrom) params.set('from', dateFrom); else params.delete('from');
+    if (dateTo) params.set('to', dateTo); else params.delete('to');
+    if (amountMin) params.set('min', String(amountMin)); else params.delete('min');
+    if (amountMax) params.set('max', String(amountMax)); else params.delete('max');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }, [page, pageSize, q, status, ptype, dateFrom, dateTo, amountMin, amountMax]);
   useEffect(() => { setPage(1); }, [q, status, ptype, dateFrom, dateTo, amountMin, amountMax]);
   // Re-fetch when pagination/filters change to leverage backend indexes
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, pageSize, q, status, ptype, dateFrom, dateTo, amountMin, amountMax]);
@@ -462,6 +500,7 @@ export default function Payments() {
             setDateTo("");
             setAmountMin("");
             setAmountMax("");
+            setPage(1);
           }}
           className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
         >

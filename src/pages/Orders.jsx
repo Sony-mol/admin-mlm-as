@@ -223,6 +223,41 @@ export default function Orders() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [serverTotal, setServerTotal] = useState(null);
+  // Read initial pagination from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const p = parseInt(params.get('page') || '1', 10);
+    const s = parseInt(params.get('size') || '20', 10);
+    // filters
+    const qParam = params.get('q');
+    const stParam = params.get('status');
+    const fromParam = params.get('from');
+    const toParam = params.get('to');
+    const minParam = params.get('min');
+    const maxParam = params.get('max');
+    if (isFinite(p) && p > 0) setPage(p);
+    if (isFinite(s) && s > 0) setPageSize(s);
+    if (qParam != null) setQ(qParam);
+    if (stParam) setStatus(stParam);
+    if (fromParam) setDateFrom(fromParam);
+    if (toParam) setDateTo(toParam);
+    if (minParam) setAmountMin(minParam);
+    if (maxParam) setAmountMax(maxParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // Keep URL in sync
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', String(page));
+    params.set('size', String(pageSize));
+    if (q) params.set('q', q); else params.delete('q');
+    if (status && status !== 'All') params.set('status', status); else params.delete('status');
+    if (dateFrom) params.set('from', dateFrom); else params.delete('from');
+    if (dateTo) params.set('to', dateTo); else params.delete('to');
+    if (amountMin) params.set('min', String(amountMin)); else params.delete('min');
+    if (amountMax) params.set('max', String(amountMax)); else params.delete('max');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }, [page, pageSize, q, status, dateFrom, dateTo, amountMin, amountMax]);
   useEffect(() => { setPage(1); }, [q, status, dateFrom, dateTo, amountMin, amountMax]);
   // Re-fetch when pagination/filters change to leverage backend indexes
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [page, pageSize, q, status, dateFrom, dateTo, amountMin, amountMax]);
